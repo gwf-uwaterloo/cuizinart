@@ -2,3 +2,6 @@ target/
 project/project
 *.pdf
 data/
+*.iml
+.idea
+node_modules
