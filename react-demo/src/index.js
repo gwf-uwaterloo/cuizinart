@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { render } from 'react-dom';
 import { Map, TileLayer, Rectangle, FeatureGroup, Circle, Polygon } from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
+import axios from 'axios';
 
 
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -37,6 +38,10 @@ export default class App extends Component {
     }
 
     componentDidMount() {
+        axios.get(`https://httpbin.org/get`)
+            .then(res => {
+               console.log(res);
+            });
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
             const updatedZoomLevel = leafletMap.getZoom();
