@@ -287,10 +287,7 @@ object Gddp {
 
     sparkContext.stop
 
-    // println(s"MINS: $mins")
-    // println(s"MEANS: $means")
-    // println(s"MAXS: $maxs")
-    println(s"Value of the given point: $values")
+    // println(s"Value of the given point: $values")
     println(s"Values inside the polygon: $polyVals")
   }
 }

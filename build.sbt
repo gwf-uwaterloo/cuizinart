@@ -41,6 +41,8 @@ lazy val commonSettings = Seq(
   resolvers  += Resolver.mavenLocal,
   libraryDependencies ++= Seq(
     "com.amazonaws" % "aws-java-sdk-s3" % "1.11.92",
+    "com.typesafe.akka" %% "akka-http"   % "10.1.5", 
+    "com.typesafe.akka" %% "akka-stream" % "2.5.18", 
     "edu.ucar" % "cdm" % "5.0.0-SNAPSHOT",
     "org.apache.hadoop" % "hadoop-client" % "2.7.3" exclude("javax.servlet", "servlet-api")
   ),
