@@ -1,6 +1,7 @@
 import os
 import pdb
 import json
+from flask import send_file
 from subprocess import call as proccall
 from flask import Flask
 from flask import request
@@ -13,7 +14,7 @@ CORS(app)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 def parse_json(obj):
-	all_coordinates = obj["coordinates"]
+	all_coordinates = obj["coordinates"][0]
 	geo_type = obj["type"]
 	top_left = all_coordinates[0]
 	top_right = all_coordinates[1]
@@ -73,7 +74,7 @@ def parse_json(obj):
 			    }
 			  ]
 			}
-	with open("geojson.json", w) as f:
+	with open("geojson.json", 'w') as f:
 		f.write(json.dumps(geojson))
 
 	return geojson
@@ -95,7 +96,7 @@ def fetchResult():
 			'local[*]',
 			'gddp/target/scala-2.11/gddp-assembly-0.22.7.jar',
 			'data/test.nc',
-			'geojson.json'
+			
 		])
 		# process completed.
 		return send_file('gddp1.png', mimetype='image/png')
