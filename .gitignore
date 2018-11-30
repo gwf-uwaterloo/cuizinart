@@ -4,4 +4,4 @@ project/project
 data/
 *.iml
 .idea
-node_modules
+react-demo/node_modules
