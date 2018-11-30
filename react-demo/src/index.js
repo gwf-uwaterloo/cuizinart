@@ -7,7 +7,7 @@ import axios from 'axios';
 
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const zoomLevel = 10;
+const zoomLevel = 8;
 const initialBounds = window.location.hash ? window.location.hash.replace(/^#/,'') : null;
 let rectangle = [[0.0000, 0.0000], [0.0000, 0.0000]];
 let mapCenter = [43.4643, -80.5204];
@@ -38,9 +38,10 @@ export default class App extends Component {
     }
 
     componentDidMount() {
-        axios.get(`https://httpbin.org/get`)
+        axios.get(`http://127.0.0.1:5000/getBoundary`)
             .then(res => {
-               console.log(res);
+               // console.log(res.data);
+               rectangle = res.data;
             });
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
@@ -91,6 +92,13 @@ export default class App extends Component {
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
         console.log(geojsonData);
+        axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry)
+            .then(function (response) {
+                console.log(response);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
         //onChange(geojsonData);
     };
 

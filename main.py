@@ -5,6 +5,7 @@ from subprocess import call as proccall
 from flask import Flask
 from flask import request
 from flask_cors import CORS
+from flask import jsonify
 
 
 app = Flask("NetCDF-Server")
@@ -78,41 +79,29 @@ def parse_json(obj):
 	return geojson
 
 
-@app.route('/')
-def main():
-	if request.method == 'GET': 
-		min_lat = 38.2270393371582
-		min_lon = -95.11832427978516
-		max_lat = 51.424442291259766
-		max_lon = -71.68765258789062
-		
-		bounding_box = {
-			"data": "Five Great Lakes",
-			"min_lon": min_lon,
-			"min_lat": min_lat,
-			"max_lon": max_lon,
-			"max_lat": max_lat,
-		}
-		return json.dumps(bounding_box)
+@app.route('/getBoundary',methods = ['GET'])
+def getBoundary():
+	boundary = [[38.2270393371582,-95.11832427978516], [51.424442291259766, -71.68765258789062]]
+	return jsonify(boundary)
 
-	elif request.method == 'POST':
-		# data is supposed to be a JSON object
-		# make the geoJson polygon and pass it to process call
-		data = parse_json(request.get_json())
-		if data:
-			proccall([
-				'spark-submit',
-				'--master',
-				'local[*]',
-				'gddp/target/scala-2.11/gddp-assembly-0.22.7.jar',
-				'data/test.nc',
-				'geojson.json'
-			])
-			# process completed.
-			return send_file('gddp1.png', mimetype='image/png')
-			pass
-		else: 
-			return '{message: "Server Error"}'
+@app.route('/fetchResult',methods = ['POST'])
+def fetchResult():
+	data = parse_json(request.get_json())
+	print(request.get_json())
+	if data:
+		proccall([
+			'spark-submit',
+			'--master',
+			'local[*]',
+			'gddp/target/scala-2.11/gddp-assembly-0.22.7.jar',
+			'data/test.nc',
+			'geojson.json'
+		])
+		# process completed.
+		return send_file('gddp1.png', mimetype='image/png')
+		pass
+	else: 
+		return '{message: "Server Error"}'
 
 
 if __name__ == '__main__':
