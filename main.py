@@ -90,14 +90,9 @@ def fetchResult():
 	data = parse_json(request.get_json())
 	print(request.get_json())
 	if data:
-		proccall([
-			'spark-submit',
-			'--master',
-			'local[*]',
-			'gddp/target/scala-2.11/gddp-assembly-0.22.7.jar',
-			'data/test.nc',
-			
-		])
+		proccall("spark-submit --master 'local[*]' gddp/target/scala-2.11/gddp-assembly-0.22.7.jar data/test.nc",
+			shell = True
+		)
 		# process completed.
 		return send_file('gddp1.png', mimetype='image/png')
 		pass

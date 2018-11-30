@@ -3,6 +3,7 @@ import { render } from 'react-dom';
 import { Map, TileLayer, Rectangle, FeatureGroup, Circle, Polygon } from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
+import saveAs from 'file-saver';
 
 
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -92,9 +93,9 @@ export default class App extends Component {
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
         console.log(geojsonData);
-        axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry)
+        axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry, {responseType: 'blob'})
             .then(function (response) {
-                console.log(response);
+                saveAs(new Blob([response.data], {type:'image/png'}));
             })
             .catch(function (error) {
                 console.log(error);
