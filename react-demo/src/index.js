@@ -1,3 +1,5 @@
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-draw/dist/leaflet.draw.css'
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import { Map, TileLayer, Rectangle, FeatureGroup, Circle, Polygon } from 'react-leaflet';
