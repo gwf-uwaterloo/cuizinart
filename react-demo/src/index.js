@@ -2,36 +2,25 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import { Map, TileLayer, Rectangle, FeatureGroup, Circle, Polygon } from 'react-leaflet';
+import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
 import saveAs from 'file-saver';
 
-
+const colors = ["#f2740b", "#2cb42c", "#5d9598", "#ff0000", "#000000", "#8E44AD", "#154360","#F4D03F"];
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const zoomLevel = 8;
-const initialBounds = window.location.hash ? window.location.hash.replace(/^#/,'') : null;
-let rectangle = [[0.0000, 0.0000], [0.0000, 0.0000]];
+//let rectangle = [[0.0000, 0.0000], [0.0000, 0.0000]];
 let mapCenter = [43.4643, -80.5204];
-if(initialBounds){
-    if(validateStringAsBounds(initialBounds)){
-        let splitBounds = initialBounds.split(',');
-        rectangle = [[splitBounds[0],splitBounds[1]], [splitBounds[2],splitBounds[3]]];
-        mapCenter = rectangle[0];
-    }
-}
+let datasets = [];
 
-function validateStringAsBounds(bounds) {
-    let splitBounds = bounds ? bounds.split(',') : null;
-    return ((splitBounds !== null) &&
-        (splitBounds.length === 4) &&
-        ((-90.0 <= parseFloat(splitBounds[0]) <= 90.0) &&
-            (-180.0 <= parseFloat(splitBounds[1]) <= 180.0) &&
-            (-90.0 <= parseFloat(splitBounds[2]) <= 90.0) &&
-            (-180.0 <= parseFloat(splitBounds[3]) <= 180.0)) &&
-        (parseFloat(splitBounds[0]) < parseFloat(splitBounds[2]) &&
-            parseFloat(splitBounds[1]) < parseFloat(splitBounds[3])))
+class Dataset {
+    constructor(boundary, description, headerAttributes){
+        this.boundary = boundary; // rect, color
+        this.description = description;
+        this.headerAttributes = headerAttributes;
+    }
 }
 
 export default class App extends Component {
@@ -43,8 +32,11 @@ export default class App extends Component {
     componentDidMount() {
         axios.get(`http://127.0.0.1:5000/getBoundary`)
             .then(res => {
-               // console.log(res.data);
-               rectangle = res.data;
+                // console.log(res.data);
+                let dataset1 = new Dataset({bound: res.data, color: '#'+Math.floor(Math.random()*16777215).toString(16)}, "Five Lakes");
+                let dataset2 = new Dataset({bound: [[43.6764444,-80.7178777],[43.862008,-80.272744]], color: '#'+Math.floor(Math.random()*16777215).toString(16)}, "Random Set");
+                datasets.push(dataset1);
+                datasets.push(dataset2);
             });
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
@@ -95,13 +87,19 @@ export default class App extends Component {
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
         console.log(geojsonData);
-        axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry, {responseType: 'blob'})
-            .then(function (response) {
-                saveAs(new Blob([response.data], {type:'image/png'}));
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
+        if (window.confirm("Do you want to process?")) {
+            axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry, {responseType: 'blob'})
+                .then(function (response) {
+                    saveAs(new Blob([response.data], {type:'image/png'}));
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        }
+        else{
+
+        }
+
         //onChange(geojsonData);
     };
 
@@ -135,7 +133,12 @@ export default class App extends Component {
                         attribution={stamenTonerAttr}
                         url={stamenTonerTiles}
                     />
-                    <Rectangle bounds={rectangle} color="black" />
+                    {datasets.map(d =>
+                        <Rectangle bounds={d.boundary.bound} color={d.boundary.color}>
+                            <Tooltip sticky>{d.description}</Tooltip>
+                        </Rectangle>
+                    )}
+
                     <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
                         <EditControl
                             position='topright'
