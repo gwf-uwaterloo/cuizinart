@@ -16,7 +16,7 @@ class App extends Component {
 
 render(
     <App />,
-    document.getElementById('root')
+    document.getElementById('content')
 );
 
 export default App;

@@ -3,7 +3,7 @@ import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
 import saveAs from 'file-saver';
-import Banner from "./banner";
+import SideBar from "./sideBar";
 
 const colors = ["#f2740b", "#2cb42c", "#5d9598", "#ff0000", "#000000", "#8E44AD", "#154360","#F4D03F"];
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -121,32 +121,36 @@ export default class MapComp extends Component {
 
     render() {
         return (
-            <div>
-                <Banner/>
-                <Map
-                    ref={m => { this.leafletMap = m; }}
-                    center={mapCenter}
-                    zoom={zoomLevel}
-                >
-                    <TileLayer
-                        attribution={stamenTonerAttr}
-                        url={stamenTonerTiles}
-                    />
-                    {datasets.map(d =>
-                        <Rectangle bounds={d.boundary.bound} color={d.boundary.color}>
-                            <Tooltip sticky>{d.description}</Tooltip>
-                        </Rectangle>
-                    )}
-
-                    <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
-                        <EditControl
-                            position='topright'
-                            onEdited={this._onEdited}
-                            onCreated={this._onCreated}
-                            onDeleted={this._onDeleted}
+            <div className="row">
+                <div className="col col-lg-3">
+                    <SideBar/>
+                </div>
+                <div className="col col-lg-9">
+                    <Map
+                        ref={m => { this.leafletMap = m; }}
+                        center={mapCenter}
+                        zoom={zoomLevel}
+                    >
+                        <TileLayer
+                            attribution={stamenTonerAttr}
+                            url={stamenTonerTiles}
                         />
-                    </FeatureGroup>
-                </Map>
+                        {datasets.map(d =>
+                            <Rectangle bounds={d.boundary.bound} color={d.boundary.color}>
+                                <Tooltip sticky>{d.description}</Tooltip>
+                            </Rectangle>
+                        )}
+
+                        <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
+                            <EditControl
+                                position='topright'
+                                onEdited={this._onEdited}
+                                onCreated={this._onCreated}
+                                onDeleted={this._onDeleted}
+                            />
+                        </FeatureGroup>
+                    </Map>
+                </div>
             </div>
         );
     }

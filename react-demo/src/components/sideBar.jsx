@@ -3,7 +3,7 @@ import DateRangePicker from 'react-bootstrap-daterangepicker';
 /*
     show date range picker, headers checkbox
  */
-export default class Banner extends Component {
+export default class SideBar extends Component {
     render() {
         return (
             <div>
