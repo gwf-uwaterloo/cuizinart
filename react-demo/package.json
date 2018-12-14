@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "axios": "0.16.2",
+    "bootstrap": "^4.1.1",
     "esri-leaflet": "2.1.2",
     "file-saver": "^2.0.0",
     "latest": "^0.2.0",

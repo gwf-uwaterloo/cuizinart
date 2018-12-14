@@ -1,5 +1,6 @@
-import 'leaflet/dist/leaflet.css'
-import 'leaflet-draw/dist/leaflet.draw.css'
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'bootstrap/dist/css/bootstrap.css';
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
