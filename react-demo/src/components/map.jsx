@@ -3,7 +3,6 @@ import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
 import saveAs from 'file-saver';
-import SideBar from "./sideBar";
 
 const colors = ["#f2740b", "#2cb42c", "#5d9598", "#ff0000", "#000000", "#8E44AD", "#154360","#F4D03F"];
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -14,8 +13,10 @@ let mapCenter = [43.4643, -80.5204];
 let datasets = [];
 
 class Dataset {
-    constructor(boundary, description, headerAttributes){
-        this.boundary = boundary; // rect, color
+    constructor(id, boundary, color, description, headerAttributes){
+        this.id = id;
+        this.boundary = boundary; // rect
+        this.color = color;
         this.description = description;
         this.headerAttributes = headerAttributes;
     }
@@ -31,10 +32,12 @@ export default class MapComp extends Component {
         axios.get(`http://127.0.0.1:5000/getBoundary`)
             .then(res => {
                 // console.log(res.data);
-                let dataset1 = new Dataset({bound: res.data, color: '#'+Math.floor(Math.random()*16777215).toString(16)}, "Five Lakes");
-                let dataset2 = new Dataset({bound: [[43.6764444,-80.7178777],[43.862008,-80.272744]], color: '#'+Math.floor(Math.random()*16777215).toString(16)}, "Random Set");
+                let dataset1 = new Dataset(1, res.data, '#'+Math.floor(Math.random()*16777215).toString(16), "Five Lakes", ["header1", "header2"]);
+                let dataset2 = new Dataset(2, [[43.6764444,-80.7178777],[43.862008,-80.272744]], '#'+Math.floor(Math.random()*16777215).toString(16), "Random Set", ["h1", "h2"]);
                 datasets.push(dataset1);
                 datasets.push(dataset2);
+                this.props.event(datasets);
+                console.log(this.props);
             });
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
@@ -84,7 +87,9 @@ export default class MapComp extends Component {
         // }
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
+        let postSetting = this.props.settings;
         console.log(geojsonData);
+        console.log(postSetting);
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry, {responseType: 'blob'})
                 .then(function (response) {
@@ -121,37 +126,31 @@ export default class MapComp extends Component {
 
     render() {
         return (
-            <div className="row">
-                <div className="col col-lg-3">
-                    <SideBar/>
-                </div>
-                <div className="col col-lg-9">
-                    <Map
-                        ref={m => { this.leafletMap = m; }}
-                        center={mapCenter}
-                        zoom={zoomLevel}
-                    >
-                        <TileLayer
-                            attribution={stamenTonerAttr}
-                            url={stamenTonerTiles}
-                        />
-                        {datasets.map(d =>
-                            <Rectangle bounds={d.boundary.bound} color={d.boundary.color}>
-                                <Tooltip sticky>{d.description}</Tooltip>
-                            </Rectangle>
-                        )}
+            <Map
+                ref={m => { this.leafletMap = m; }}
+                center={mapCenter}
+                zoom={zoomLevel}
+            >
+                <TileLayer
+                    attribution={stamenTonerAttr}
+                    url={stamenTonerTiles}
+                />
+                {datasets.map(d =>
+                    <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
+                        <Tooltip sticky>{d.description}</Tooltip>
+                    </Rectangle>
+                )}
 
-                        <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
-                            <EditControl
-                                position='topright'
-                                onEdited={this._onEdited}
-                                onCreated={this._onCreated}
-                                onDeleted={this._onDeleted}
-                            />
-                        </FeatureGroup>
-                    </Map>
-                </div>
-            </div>
+                <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
+                    <EditControl
+                        position='topright'
+                        onEdited={this._onEdited}
+                        onCreated={this._onCreated}
+                        onDeleted={this._onDeleted}
+                    />
+                </FeatureGroup>
+            </Map>
+
         );
     }
 }
