@@ -30,7 +30,7 @@ object Gddp {
   val logger = Logger.getLogger(Gddp.getClass)
   val earth_radius = 6371
 
-  //Find the indexes for a given point
+  //Find (x and y) indexes for a given point (lat, lon)
   def getIndexes(latArray:Array[Float], lonArray:Array[Float], lat:Double, lon:Double): Array[Int] = { 
     var diffLonArray = collection.mutable.ArrayBuffer[Double]()
     for(i <- 0 to lonArray.length-1){
@@ -56,10 +56,13 @@ object Gddp {
         minIndexLat = i
       }
     }
-    var yIndex = Math.floor(minIndexLat / 1771).toInt
-    var xIndex = (minIndexLon % 1178).toInt
+    var yIndex = Math.floor(minIndexLat / 1178).toInt
+    var xIndex = (minIndexLat % 1178).toInt
 
-    return Array[Int](yIndex, xIndex) 
+    var yIndex1 = Math.floor(minIndexLon / 1178 ).toInt
+    var xIndex1 = (minIndexLon % 1178).toInt
+
+    return Array[Int](yIndex, xIndex, yIndex1, xIndex1) 
   }
 
   /**
@@ -76,12 +79,8 @@ object Gddp {
     * Return a ucar.nc2.NetcdfFile
     */
   def open(uri: String) = {
-    if (uri.startsWith("s3:")) {
-      val raf = new ucar.unidata.io.s3.S3RandomAccessFile(uri, 1<<15, 1<<24)
-      NetcdfFile.open(raf, uri, null, null)
-    } else {
-      NetcdfFile.open(uri)
-    }
+    
+    NetcdfFile.open(uri)
   }
 
 
@@ -89,20 +88,14 @@ object Gddp {
     * Main
     */
   def main(args: Array[String]) : Unit = {
-    val netcdfUri =
-      if (args.size > 0) args(0)
-      else "s3://nasanex/NEX-GDDP/BCSD/rcp85/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp85_r1i1p1_inmcm4_2099.nc"
-      // else "/tmp/tasmin_day_BCSD_rcp85_r1i1p1_inmcm4_2099.nc"
+    val netcdfUri = args(0)
+      // else "/tmp/temp_day_BCSD_rcp85_r1i1p1_inmcm4_2099.nc"
     val geojsonUri =
       if (args.size > 1) args(1)
       else "./geojson/LAMI.geo.json"
-    val latLng =
-      if (args.size > 2) args(2)
-      else "46.01213,-71.1232"
+  
 
-    val Array(lat, lon) = latLng.split(",").map(_.toDouble)
-
-    // Get first tile and NODATA value
+    // Get first tile and NODATA value and arrays of x, y, lat and lon
     val ncfile = open(netcdfUri)
     val vs = ncfile.getVariables()
     val ucarType = vs.get(1).getDataType()
@@ -114,63 +107,12 @@ object Gddp {
     val xArray = vs.get(2).read().get1DJavaArray(ucarTypeX).asInstanceOf[Array[Float]]
     val yArray = vs.get(5).read().get1DJavaArray(ucarTypeX).asInstanceOf[Array[Float]]
 
-    //Finding the Bounding Box
 
-    var minLon = Double.MaxValue
-
-    for( i <- 0 to lonArray.length-1){
-      if (lonArray(i) < minLon){
-        minLon = lonArray(i)
-      }
-    }
-
-    var minLat = Double.MaxValue
-
-    for( i <- 0 to latArray.length-1){
-      if (latArray(i) < minLat){
-        minLat = latArray(i)
-      }
-    }
-
-    var maxLon = Double.MinValue
-
-    for( i <- 0 to lonArray.length-1){
-      if (lonArray(i) > maxLon){
-        maxLon = lonArray(i)
-      }
-    }
-
-    var maxLat = Double.MinValue
-
-    for( i <- 0 to latArray.length-1){
-      if (latArray(i) > maxLat){
-        maxLat = latArray(i)
-      }
-    }
-
-    println("Bounding Box: " + minLat + ", " + minLon + " <-> " + maxLat + ", " + maxLon)
-   
-    // println("LAT.length: " + latArray.length)
-    // println("LON.length: " + lonArray.length)
-
-    // println("lonArray: " + latArray.mkString(" "))
-  
-    var indexes = getIndexes(latArray, lonArray, lat, lon)
-    // println(indexes(0))
-    // println(indexes(1))
-    val xIndex = indexes(1)
-    val yIndex = indexes(0)
-
-    val tempArray = vs.asScala
-      .filter({ v => v.getFullName == "LST_LWST_avg_daily" || v.getFullName == "tasmin" || v.getFullName == "pr" })
-      .head
-    println("tempreature size: " + tempArray.getSize())
-
-    val tasmin = vs.asScala
-      .filter({ v => v.getFullName == "LST_LWST_avg_daily" || v.getFullName == "tasmin" || v.getFullName == "pr" })
+    val temp = vs.asScala
+      .filter({ v => v.getFullName == "LST_LWST_avg_daily" })
       .head
 
-    val nodata = tasmin
+    val nodata = temp
       .getAttributes.asScala
       .filter({ v => v.getFullName == "_FillValue" })
       .head.getValues.getFloat(0)
@@ -189,7 +131,7 @@ object Gddp {
     val png = wholeTile.renderPng(ramp).bytes
     dump(png, new File("gddp.png"))
 
-    // Get polygon
+    // Get polygon of the bounding box
     val polygon =
       scala.io.Source.fromFile(geojsonUri, "UTF-8")
         .getLines
@@ -198,15 +140,22 @@ object Gddp {
         .head
     val polygonExtent = polygon.envelope
 
-    // Get extent, slice positions, and tile size (in pixels) for the
-    // area around the query polygon
     var PolyMinIndexes = getIndexes(latArray, lonArray, polygonExtent.ymin, polygonExtent.xmin)
     var PolyMaxIndexes = getIndexes(latArray, lonArray, polygonExtent.ymax, polygonExtent.xmax)
 
-    val xSliceStart = PolyMaxIndexes(1)
-    val xSliceStop = PolyMinIndexes(1)
-    val ySliceStart = PolyMaxIndexes(0)
-    val ySliceStop = PolyMinIndexes(0)
+
+    val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
+    val xSliceStop = Math.max(Math.max(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.max(PolyMaxIndexes(3), PolyMinIndexes(3)))
+    val ySliceStart = Math.min(Math.min(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.min(PolyMaxIndexes(2), PolyMinIndexes(2)))
+    val ySliceStop = Math.max(Math.max(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.max(PolyMaxIndexes(2), PolyMinIndexes(2)))
+
+    // val xSliceStart = PolyMaxIndexes(1)
+    // val xSliceStop = PolyMinIndexes(1)
+    // val ySliceStart = PolyMaxIndexes(0)
+    // val ySliceStop = PolyMinIndexes(0)
+
+    println(xSliceStart + "  " + xSliceStop)
+    println(ySliceStart + "  " + ySliceStop)
  
     val extent = Extent( // Probably only works in intersection of Northern and Western hemispheres
       polygonExtent.xmin,
@@ -227,20 +176,18 @@ object Gddp {
     val sparkContext = new SparkContext(sparkConf)
     implicit val sc = sparkContext
 
-    // Get RDD of tiles for entire year
+    // Get RDD of tiles for all days (currently just one day)
     val rdd1 = sc.parallelize(Range(0, 1))
       .mapPartitions({ itr =>
         val ncfile = open(netcdfUri)
-        val tasmin = ncfile
+        val temp = ncfile
           .getVariables.asScala
-          .filter({ v => v.getFullName == "tasmin" || v.getFullName == "LST_LWST_avg_daily" || v.getFullName == "pr" })
+          .filter({ v => v.getFullName == "LST_LWST_avg_daily"})
           .head
 
         itr.map({ t =>
-          // println(s"t: $t xSliceStart: $xSliceStart xSliceStop: $xSliceStop ySliceStart: $ySliceStart ySliceStop: $ySliceStop")
-          val array = tasmin
+          val array = temp
             .read(s"0,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop")
-            // .read()
             .get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
           FloatUserDefinedNoDataArrayTile(array, x, y, FloatUserDefinedNoDataCellType(nodata))
           
@@ -248,11 +195,9 @@ object Gddp {
       })
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
-    rdd1.count
-
     // Save first tile to disk as a PNG
-    dump(rdd1.first().renderPng(ramp).bytes, new File("gddp1.png"))
-    dump(rdd1.first().mask(extent, polygon).renderPng(ramp).bytes, new File("gddp2.png"))
+    // dump(rdd1.first().renderPng(ramp).bytes, new File("gddp2.png"))
+    dump(rdd1.first().mask(extent, polygon).renderPng(ramp).bytes, new File("gddp1.png"))
 
     // Compute means, mins for the given query polygon
     // val polyVals = rdd1.map({ tile => tile.mask(extent, polygon)})
@@ -261,33 +206,30 @@ object Gddp {
     // val maxs = polyVals.map({ tile => MaxDoubleSummary.handleFullTile(tile) }).collect().toList
 
     // Get values for the given query point
-    val values = sc.parallelize(Range(0, 1))
-      .mapPartitions({ itr =>
-        val ncfile = open(netcdfUri)
-        val tasmin = ncfile
-          .getVariables.asScala
-          .filter({ v => v.getFullName == "LST_LWST_avg_daily" || v.getFullName == "tasmin" || v.getFullName == "pr" })
-          .head
+    // val values = sc.parallelize(Range(0, 1))
+    //   .mapPartitions({ itr =>
+    //     val ncfile = open(netcdfUri)
+    //     val temp = ncfile
+    //       .getVariables.asScala
+    //       .filter({ v => v.getFullName == "LST_LWST_avg_daily"})
+    //       .head
 
-        itr.map({ t =>
-          tasmin
-            .read(s"0,$yIndex,$xIndex")
-            // .read()
-            .getFloat(0)
-        })
-      })
-      .collect()
-      .toList
-
-      // println(ySliceStart + " " + ySliceStop)
-      // println(xSliceStart + " " + xSliceStop)
+    //     itr.map({ t =>
+    //       temp
+    //         .read(s"0,$yIndex,$xIndex")
+    //         // .read()
+    //         .getFloat(0)
+    //     })
+    //   })
+    //   .collect()
+    //   .toList
       
-    val polyVals = tasmin.read(s"0,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop") 
-      .get1DJavaArray(ucarType).asInstanceOf[Array[Float]].toList
+    // val polyVals = temp.read(s"0,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop") 
+    //   .get1DJavaArray(ucarType).asInstanceOf[Array[Float]].toList
 
     sparkContext.stop
 
     // println(s"Value of the given point: $values")
-    println(s"Values inside the polygon: $polyVals")
+    // println(s"Values inside the polygon: $polyVals")
   }
 }
