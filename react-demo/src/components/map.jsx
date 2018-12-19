@@ -37,7 +37,6 @@ export default class MapComp extends Component {
                 datasets.push(dataset1);
                 datasets.push(dataset2);
                 this.props.event(datasets);
-                console.log(this.props);
             });
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
@@ -56,7 +55,7 @@ export default class MapComp extends Component {
         e.layers.eachLayer( (layer) => {
             numEdited += 1;
         });
-        console.log(`_onEdited: edited ${numEdited} layers`, e);
+        //console.log(`_onEdited: edited ${numEdited} layers`, e);
 
         this._onChange();
     };
@@ -66,10 +65,10 @@ export default class MapComp extends Component {
         let layer = e.layer;
         if (type === 'marker') {
             // Do marker specific actions
-            console.log("_onCreated: marker created", e);
+           // console.log("_onCreated: marker created", e);
         }
         else {
-            console.log("_onCreated: something else created:", type, e);
+            //console.log("_onCreated: something else created:", type, e);
         }
         // Do whatever else you need to. (save to db; etc)
 
@@ -90,8 +89,9 @@ export default class MapComp extends Component {
         let postSetting = this.props.settings;
         console.log(geojsonData);
         console.log(postSetting);
+        let lastIndex = geojsonData.features.length-1;
         if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[0].geometry, {responseType: 'blob'})
+            axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[lastIndex].geometry, {responseType: 'blob'})
                 .then(function (response) {
                     saveAs(new Blob([response.data], {type:'image/png'}));
                 })

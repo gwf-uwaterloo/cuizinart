@@ -18,7 +18,7 @@ class App extends Component {
     };
 
     updateSetting = (setting) => {
-        console.log(setting);
+        //console.log(setting);
         this.setState({setting: setting});
     };
 
