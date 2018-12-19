@@ -62,7 +62,7 @@ export default class SideBar extends Component {
                                 d.headerAttributes.map( item =>
                                    <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" onChange={(e) => this.handleCheckbox(d.id, e)} value={item}/>{item.replace(/_/g, ' ')}
+                                            <input type="checkbox" className="form-check-input" checked={this.state.setting.headers[d.id][item]} onChange={(e) => this.handleCheckbox(d.id, e)} value={item}/>{item.replace(/_/g, ' ')}
                                         </label>
                                     </div>
                                 )

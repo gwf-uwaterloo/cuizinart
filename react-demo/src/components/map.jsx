@@ -32,8 +32,8 @@ export default class MapComp extends Component {
         axios.get(`http://127.0.0.1:5000/getBoundary`)
             .then(res => {
                 // console.log(res.data);
-                let dataset1 = new Dataset(1, res.data, '#'+Math.floor(Math.random()*16777215).toString(16), "Five Lakes", ["temperature", "humidity"]);
-                let dataset2 = new Dataset(2, [[43.6764444,-80.7178777],[43.862008,-80.272744]], '#'+Math.floor(Math.random()*16777215).toString(16), "Ontario", ["air_pressure", "humidity"]);
+                let dataset1 = new Dataset(0, res.data, '#'+Math.floor(Math.random()*16777215).toString(16), "Five Lakes", ["temperature", "humidity"]);
+                let dataset2 = new Dataset(1, [[43.6764444,-80.7178777],[43.862008,-80.272744]], '#'+Math.floor(Math.random()*16777215).toString(16), "Ontario", ["air_pressure", "humidity"]);
                 datasets.push(dataset1);
                 datasets.push(dataset2);
                 this.props.event(datasets);
