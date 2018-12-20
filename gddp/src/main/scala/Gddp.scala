@@ -98,9 +98,9 @@ object Gddp {
     // Get first tile and NODATA value and arrays of x, y, lat and lon
     val ncfile = open(netcdfUri)
     val vs = ncfile.getVariables()
-    val ucarType = vs.get(1).getDataType()
+    val ucarType = vs.get(1).getDataType() // lat
     val latArray = vs.get(1).read().get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
-    val lonArray = vs.get(3).read().get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
+    val lonArray = vs.get(3).read().get1DJavaArray(ucarType).asInstanceOf[Array[Float]] //long
    
 
     val ucarTypeX = vs.get(2).getDataType()
@@ -112,6 +112,7 @@ object Gddp {
       .filter({ v => v.getFullName == "LST_LWST_avg_daily" })
       .head
 
+    //--
     val nodata = temp
       .getAttributes.asScala
       .filter({ v => v.getFullName == "_FillValue" })
@@ -130,7 +131,7 @@ object Gddp {
     val ramp = ColorRamps.BlueToRed.toColorMap(breaks)
     val png = wholeTile.renderPng(ramp).bytes
     dump(png, new File("gddp.png"))
-
+    //---
     // Get polygon of the bounding box
     val polygon =
       scala.io.Source.fromFile(geojsonUri, "UTF-8")
@@ -138,12 +139,13 @@ object Gddp {
         .mkString
         .extractGeometries[Polygon]
         .head
-    val polygonExtent = polygon.envelope
+    val polygonExtent = polygon.envelope // ymin: lat, xmin: long
 
+    // todo: verify correctness
     var PolyMinIndexes = getIndexes(latArray, lonArray, polygonExtent.ymin, polygonExtent.xmin)
     var PolyMaxIndexes = getIndexes(latArray, lonArray, polygonExtent.ymax, polygonExtent.xmax)
 
-
+    //1,3:x, 0,2: y
     val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
     val xSliceStop = Math.max(Math.max(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.max(PolyMaxIndexes(3), PolyMinIndexes(3)))
     val ySliceStart = Math.min(Math.min(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.min(PolyMaxIndexes(2), PolyMinIndexes(2)))
@@ -187,7 +189,7 @@ object Gddp {
 
         itr.map({ t =>
           val array = temp
-            .read(s"0,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop")
+            .read(s"$t,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop")
             .get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
           FloatUserDefinedNoDataArrayTile(array, x, y, FloatUserDefinedNoDataCellType(nodata))
           
@@ -197,6 +199,7 @@ object Gddp {
 
     // Save first tile to disk as a PNG
     // dump(rdd1.first().renderPng(ramp).bytes, new File("gddp2.png"))
+    //todo: remove first()
     dump(rdd1.first().mask(extent, polygon).renderPng(ramp).bytes, new File("gddp1.png"))
 
     // Compute means, mins for the given query polygon
