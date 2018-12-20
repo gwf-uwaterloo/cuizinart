@@ -31,7 +31,7 @@ object Gddp {
   val earth_radius = 6371
 
   //Find (x and y) indexes for a given point (lat, lon)
-  def getIndexes(latArray:Array[Float], lonArray:Array[Float], lat:Double, lon:Double): Array[Int] = { 
+  def getIndexes(latArray:Array[Float], lonArray:Array[Float], shape: Array[Int], lat:Double, lon:Double): Array[Int] = {
     var diffLonArray = collection.mutable.ArrayBuffer[Double]()
     for(i <- 0 to lonArray.length-1){
       diffLonArray += Math.abs(lonArray(i) - lon)
@@ -56,13 +56,22 @@ object Gddp {
         minIndexLat = i
       }
     }
-    var yIndex = Math.floor(minIndexLat / 1178).toInt
-    var xIndex = (minIndexLat % 1178).toInt
+    /*
+    x = index % width
+    y = index / width
+    or
 
-    var yIndex1 = Math.floor(minIndexLon / 1178 ).toInt
-    var xIndex1 = (minIndexLon % 1178).toInt
+    x = index / height
+    y = index % height
+     */
+    val yIndex = minIndexLat / shape(1) // y,x
+    val xIndex = minIndexLat % shape(1)
 
-    return Array[Int](yIndex, xIndex, yIndex1, xIndex1) 
+    val yIndex1 = minIndexLon / shape(1)
+    val xIndex1 = minIndexLon % shape(1)
+
+
+    return Array[Int](yIndex, xIndex, yIndex1, xIndex1)
   }
 
   /**
@@ -99,8 +108,10 @@ object Gddp {
     val ncfile = open(netcdfUri)
     val vs = ncfile.getVariables()
     val ucarType = vs.get(1).getDataType() // lat
-    val latArray = vs.get(1).read().get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
-    val lonArray = vs.get(3).read().get1DJavaArray(ucarType).asInstanceOf[Array[Float]] //long
+    val latArray2D = vs.get(1).read()
+    val latArray = latArray2D.get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
+    val lonArray2D = vs.get(3).read()
+    val lonArray = lonArray2D.get1DJavaArray(ucarType).asInstanceOf[Array[Float]] //long
    
 
     val ucarTypeX = vs.get(2).getDataType()
@@ -142,8 +153,8 @@ object Gddp {
     val polygonExtent = polygon.envelope // ymin: lat, xmin: long
 
     // todo: verify correctness
-    var PolyMinIndexes = getIndexes(latArray, lonArray, polygonExtent.ymin, polygonExtent.xmin)
-    var PolyMaxIndexes = getIndexes(latArray, lonArray, polygonExtent.ymax, polygonExtent.xmax)
+    var PolyMinIndexes = getIndexes(latArray, lonArray, lonArray2D.getShape, polygonExtent.ymin, polygonExtent.xmin)
+    var PolyMaxIndexes = getIndexes(latArray, lonArray,lonArray2D.getShape, polygonExtent.ymax, polygonExtent.xmax)
 
     //1,3:x, 0,2: y
     val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
