@@ -31,7 +31,20 @@ object Gddp {
   val earth_radius = 6371
 
   //Find (x and y) indexes for a given point (lat, lon)
-  def getIndexes(latArray:Array[Float], lonArray:Array[Float], shape: Array[Int], lat:Double, lon:Double): Array[Int] = {
+  def getIndexes(latArray:Array[Float], lonArray:Array[Float], shape: Array[Int], lat:Double, lon:Double): Tuple2[Integer, Integer] = {
+    var minSquareDis = Double.MaxValue
+    var index = 0
+    for(i <- 0 until latArray.length){
+      val squareDis = Math.sqrt(latArray(i)-lat)+Math.sqrt(lonArray(i)-lon)
+      if(squareDis < minSquareDis){
+        minSquareDis = squareDis
+        index = i
+      }
+    }
+
+    (index/shape(1), index%shape(1)) // y,x
+
+    /*
     var diffLonArray = collection.mutable.ArrayBuffer[Double]()
     for(i <- 0 to lonArray.length-1){
       diffLonArray += Math.abs(lonArray(i) - lon)
@@ -72,6 +85,7 @@ object Gddp {
 
 
     return Array[Int](yIndex, xIndex, yIndex1, xIndex1)
+    */
   }
 
   /**
@@ -153,19 +167,21 @@ object Gddp {
     val polygonExtent = polygon.envelope // ymin: lat, xmin: long
 
     // todo: verify correctness
-    var PolyMinIndexes = getIndexes(latArray, lonArray, lonArray2D.getShape, polygonExtent.ymin, polygonExtent.xmin)
-    var PolyMaxIndexes = getIndexes(latArray, lonArray,lonArray2D.getShape, polygonExtent.ymax, polygonExtent.xmax)
+    val PolyMinIndexes = getIndexes(latArray, lonArray, lonArray2D.getShape, polygonExtent.ymin, polygonExtent.xmin)
+    val PolyMaxIndexes = getIndexes(latArray, lonArray,lonArray2D.getShape, polygonExtent.ymax, polygonExtent.xmax)
+    /*
+        //1,3:x, 0,2: y
+        val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
+        val xSliceStop = Math.max(Math.max(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.max(PolyMaxIndexes(3), PolyMinIndexes(3)))
+        val ySliceStart = Math.min(Math.min(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.min(PolyMaxIndexes(2), PolyMinIndexes(2)))
+        val ySliceStop = Math.max(Math.max(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.max(PolyMaxIndexes(2), PolyMinIndexes(2)))
 
-    //1,3:x, 0,2: y
-    val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
-    val xSliceStop = Math.max(Math.max(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.max(PolyMaxIndexes(3), PolyMinIndexes(3)))
-    val ySliceStart = Math.min(Math.min(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.min(PolyMaxIndexes(2), PolyMinIndexes(2)))
-    val ySliceStop = Math.max(Math.max(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.max(PolyMaxIndexes(2), PolyMinIndexes(2)))
+        */
 
-    // val xSliceStart = PolyMaxIndexes(1)
-    // val xSliceStop = PolyMinIndexes(1)
-    // val ySliceStart = PolyMaxIndexes(0)
-    // val ySliceStop = PolyMinIndexes(0)
+     val xSliceStart = PolyMinIndexes._2
+     val xSliceStop = PolyMaxIndexes._2
+     val ySliceStart = PolyMinIndexes._1
+     val ySliceStop = PolyMaxIndexes._1
 
     println(xSliceStart + "  " + xSliceStop)
     println(ySliceStart + "  " + ySliceStop)
