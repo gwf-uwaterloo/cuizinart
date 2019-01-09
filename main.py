@@ -9,7 +9,7 @@ from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
 
-# from geospark import geopy
+# from geoPy import geopy
 
 
 app = Flask("NetCDF-Server")
@@ -17,6 +17,10 @@ CORS(app)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 def parse_json(obj):
+
+	daterange = "2002-10-01,2002-10-01" #obj["date"]
+	variables = "LST_LWST_avg_daily,LST_LWST_avg_day" #obj["variables"]
+
 	all_coordinates = obj["coordinates"][0]
 	geo_type = obj["type"]
 	top_left = all_coordinates[0]
@@ -80,7 +84,8 @@ def parse_json(obj):
 	with open("geojson.json", 'w') as f:
 		f.write(json.dumps(geojson))
 
-	return [min_lat, max_lat, min_lon, max_lon]
+	return (daterange, variables)
+	#return [min_lat, max_lat, min_lon, max_lon]
 
 
 @app.route('/getBoundary',methods = ['GET'])
@@ -90,17 +95,22 @@ def getBoundary():
 
 @app.route('/fetchResult',methods = ['POST'])
 def fetchResult():
-	data = parse_json(request.get_json())
+	daterange, variables = parse_json(request.get_json())
 	# Calling the Python code is commented out
 	# geopy.process_query(data[0], data[1], data[2], data[3])
 	print(request.get_json())
-	if data:
+	if daterange:
 		proccall(
-			"spark-submit --master 'local[*]' gddp/target/scala-2.11/gddp-assembly-0.22.7.jar data/test.nc geojson.json",
+			"spark-submit.cmd --master local gddp/target/scala-2.11/gddp-assembly-0.22.7.jar data geojson.json "
+				+ daterange + " " + variables,
 			shell = True
 		)
 		# process completed.
-		return send_file('gddp1.png', mimetype='image/png')
+
+		rv = None
+		for v in variables.split(","):
+			rv = send_file('gddp' + v + daterange.replace(',','-') + '.png', mimetype='image/png')
+		return rv
 		# Use the below line if you want to return the result of Python code.
 		# return send_file('result.txt', mimetype='text/csv')
 		pass
