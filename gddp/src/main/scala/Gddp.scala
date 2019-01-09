@@ -5,22 +5,21 @@ import geotrellis.raster._
 import geotrellis.raster.histogram.StreamingHistogram
 import geotrellis.raster.io._
 import geotrellis.raster.render.ColorRamps
-import geotrellis.raster.summary.polygonal.{MaxDoubleSummary, MinDoubleSummary, MeanSummary}
+import geotrellis.raster.summary.polygonal.{MaxDoubleSummary, MeanSummary, MinDoubleSummary}
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.index._
 import geotrellis.vector._
 import geotrellis.vector.io._
-
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
-
 import ucar.nc2._
-
 import java.io._
+import java.time.Duration
+import java.util.{Calendar, Date, GregorianCalendar}
 
 import scala.collection.JavaConverters._
  
@@ -32,60 +31,17 @@ object Gddp {
 
   //Find (x and y) indexes for a given point (lat, lon)
   def getIndexes(latArray:Array[Float], lonArray:Array[Float], shape: Array[Int], lat:Double, lon:Double): Tuple2[Integer, Integer] = {
-    var minSquareDis = Double.MaxValue
+    var minPowDis = Double.MaxValue
     var index = 0
     for(i <- 0 until latArray.length){
-      val squareDis = Math.sqrt(latArray(i)-lat)+Math.sqrt(lonArray(i)-lon)
-      if(squareDis < minSquareDis){
-        minSquareDis = squareDis
+      val powDis = Math.pow(latArray(i)-lat, 2)+Math.pow(lonArray(i)-lon, 2)
+      if(powDis < minPowDis){
+        minPowDis = powDis
         index = i
       }
     }
 
     (index/shape(1), index%shape(1)) // y,x
-
-    /*
-    var diffLonArray = collection.mutable.ArrayBuffer[Double]()
-    for(i <- 0 to lonArray.length-1){
-      diffLonArray += Math.abs(lonArray(i) - lon)
-    }
-    var minDiffLon = Double.MaxValue
-    var minIndexLon = -1
-    for( i <- 0 to lonArray.length-1){
-      if (diffLonArray(i) < minDiffLon){
-        minDiffLon = diffLonArray(i)
-        minIndexLon = i
-      }
-    } 
-    var diffLatArray = collection.mutable.ArrayBuffer[Double]()
-    for(i <- 0 to lonArray.length-1){
-      diffLatArray += Math.abs(latArray(i) - lat)
-    }
-    var minDiffLat = Double.MaxValue
-    var minIndexLat = -1
-    for( i <- 0 to latArray.length-1){
-      if (diffLatArray(i) < minDiffLat){
-        minDiffLat = diffLatArray(i)
-        minIndexLat = i
-      }
-    }
-    /*
-    x = index % width
-    y = index / width
-    or
-
-    x = index / height
-    y = index % height
-     */
-    val yIndex = minIndexLat / shape(1) // y,x
-    val xIndex = minIndexLat % shape(1)
-
-    val yIndex1 = minIndexLon / shape(1)
-    val xIndex1 = minIndexLon % shape(1)
-
-
-    return Array[Int](yIndex, xIndex, yIndex1, xIndex1)
-    */
   }
 
   /**
@@ -94,8 +50,8 @@ object Gddp {
     * 1. https://stackoverflow.com/questions/29978264/how-to-write-the-contents-of-a-scala-stream-to-a-file
     */
   def dump(data: Array[Byte], file: File ) = {
-    val target = new BufferedOutputStream( new FileOutputStream(file) );
-    try data.foreach( target.write(_) ) finally target.close;
+    val target = new BufferedOutputStream( new FileOutputStream(file) )
+    try data.foreach( target.write(_) ) finally target.close
   }
 
   /**
@@ -121,12 +77,14 @@ object Gddp {
     // Get first tile and NODATA value and arrays of x, y, lat and lon
     val ncfile = open(netcdfUri)
     val vs = ncfile.getVariables()
+    val time = vs.get(0).read().get1DJavaArray(vs.get(0).getDataType).asInstanceOf[Array[Int]](0)
+    val startDate = new GregorianCalendar(1990, Calendar.JANUARY, 1, 0, 0).getTime.toInstant.plus(Duration.ofHours(time))
     val ucarType = vs.get(1).getDataType() // lat
     val latArray2D = vs.get(1).read()
     val latArray = latArray2D.get1DJavaArray(ucarType).asInstanceOf[Array[Float]]
     val lonArray2D = vs.get(3).read()
     val lonArray = lonArray2D.get1DJavaArray(ucarType).asInstanceOf[Array[Float]] //long
-   
+
 
     val ucarTypeX = vs.get(2).getDataType()
     val xArray = vs.get(2).read().get1DJavaArray(ucarTypeX).asInstanceOf[Array[Float]]
@@ -169,14 +127,6 @@ object Gddp {
     // todo: verify correctness
     val PolyMinIndexes = getIndexes(latArray, lonArray, lonArray2D.getShape, polygonExtent.ymin, polygonExtent.xmin)
     val PolyMaxIndexes = getIndexes(latArray, lonArray,lonArray2D.getShape, polygonExtent.ymax, polygonExtent.xmax)
-    /*
-        //1,3:x, 0,2: y
-        val xSliceStart = Math.min(Math.min(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.min(PolyMaxIndexes(3), PolyMinIndexes(3)))
-        val xSliceStop = Math.max(Math.max(PolyMaxIndexes(1), PolyMinIndexes(1)), Math.max(PolyMaxIndexes(3), PolyMinIndexes(3)))
-        val ySliceStart = Math.min(Math.min(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.min(PolyMaxIndexes(2), PolyMinIndexes(2)))
-        val ySliceStop = Math.max(Math.max(PolyMaxIndexes(0), PolyMinIndexes(0)), Math.max(PolyMaxIndexes(2), PolyMinIndexes(2)))
-
-        */
 
      val xSliceStart = PolyMinIndexes._2
      val xSliceStop = PolyMaxIndexes._2
@@ -229,37 +179,7 @@ object Gddp {
     //todo: remove first()
     dump(rdd1.first().mask(extent, polygon).renderPng(ramp).bytes, new File("gddp1.png"))
 
-    // Compute means, mins for the given query polygon
-    // val polyVals = rdd1.map({ tile => tile.mask(extent, polygon)})
-    // val mins = polyVals.map({ tile => MinDoubleSummary.handleFullTile(tile) }).collect().toList
-    // val means = polyVals.map({ tile => MeanSummary.handleFullTile(tile).mean }).collect().toList
-    // val maxs = polyVals.map({ tile => MaxDoubleSummary.handleFullTile(tile) }).collect().toList
-
-    // Get values for the given query point
-    // val values = sc.parallelize(Range(0, 1))
-    //   .mapPartitions({ itr =>
-    //     val ncfile = open(netcdfUri)
-    //     val temp = ncfile
-    //       .getVariables.asScala
-    //       .filter({ v => v.getFullName == "LST_LWST_avg_daily"})
-    //       .head
-
-    //     itr.map({ t =>
-    //       temp
-    //         .read(s"0,$yIndex,$xIndex")
-    //         // .read()
-    //         .getFloat(0)
-    //     })
-    //   })
-    //   .collect()
-    //   .toList
-      
-    // val polyVals = temp.read(s"0,$ySliceStart:$ySliceStop,$xSliceStart:$xSliceStop") 
-    //   .get1DJavaArray(ucarType).asInstanceOf[Array[Float]].toList
-
     sparkContext.stop
 
-    // println(s"Value of the given point: $values")
-    // println(s"Values inside the polygon: $polyVals")
   }
 }
