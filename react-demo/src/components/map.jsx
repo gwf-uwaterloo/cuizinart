@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
+import {NotificationContainer, NotificationManager} from 'react-notifications';
 import saveAs from 'file-saver';
 import L from 'leaflet';
 
@@ -106,9 +107,17 @@ export default class MapComp extends Component {
                 }
             });
         }
+        if(variables.length === 0){
+            NotificationManager.error('No variable selected.');
+            return;
+        }
+        if(postSetting.selectDate.length === 0){
+            NotificationManager.error('No date range selected.');
+            return;
+        }
         let passLoad = {
             geoJson: geojsonData.features[lastIndex].geometry,
-            selectDate: postSetting.selectDate? postSetting.selectDate.toString() : "",
+            selectDate: postSetting.selectDate,
             variables: variables.toString()
         };
         if (window.confirm("Do you want to process?")) {
@@ -121,7 +130,7 @@ export default class MapComp extends Component {
                 });
         }
         else{
-
+            // cancel
         }
 
         //onChange(geojsonData);
@@ -147,35 +156,37 @@ export default class MapComp extends Component {
 
     render() {
         return (
-            <Map
-                ref={m => { this.leafletMap = m; }}
-                center={mapCenter}
-                zoom={zoomLevel}
-            >
-                <TileLayer
-                    attribution={stamenTonerAttr}
-                    url={stamenTonerTiles}
-                />
-                {datasets.map(d =>
-                    <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
-                        <Tooltip sticky>{d.description}</Tooltip>
-                    </Rectangle>
-                )}
-
-                <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
-                    <EditControl
-                        position='topright'
-                        onEdited={this._onEdited}
-                        onCreated={this._onCreated}
-                        draw={{
-                            rectangle: {
-                                showArea: false
-                            }
-                        }}
+            <div>
+                <Map
+                    ref={m => { this.leafletMap = m; }}
+                    center={mapCenter}
+                    zoom={zoomLevel}
+                >
+                    <TileLayer
+                        attribution={stamenTonerAttr}
+                        url={stamenTonerTiles}
                     />
-                </FeatureGroup>
-            </Map>
+                    {datasets.map(d =>
+                        <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
+                            <Tooltip sticky>{d.description}</Tooltip>
+                        </Rectangle>
+                    )}
 
+                    <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
+                        <EditControl
+                            position='topright'
+                            onEdited={this._onEdited}
+                            onCreated={this._onCreated}
+                            draw={{
+                                rectangle: {
+                                    showArea: false
+                                }
+                            }}
+                        />
+                    </FeatureGroup>
+                </Map>
+                <NotificationContainer/>
+            </div>
         );
     }
 }
