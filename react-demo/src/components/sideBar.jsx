@@ -10,8 +10,8 @@ class Setting {
         this.headers = datasets.map(d => {
             let header = {};
             header.id = d.id;
-            d.headerAttributes.forEach(att => {
-                header[att] = false;
+            Object.keys(d.headerAttributes).forEach(function(key){
+                header[key] = false;
             });
             return header;
         });
@@ -59,10 +59,10 @@ export default class SideBar extends Component {
                         </div>
                         <div className="card-body">
                             {
-                                d.headerAttributes.map( item =>
-                                   <div key={`div-${shortid.generate()}`} className="form-check">
+                                Object.keys(d.headerAttributes).map( item =>
+                                    <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={this.state.setting.headers[d.id][item]} onChange={(e) => this.handleCheckbox(d.id, e)} value={item}/>{item.replace(/_/g, ' ')}
+                                            <input type="checkbox" className="form-check-input" checked={this.state.setting.headers[d.id][item]} onChange={(e) => this.handleCheckbox(d.id, e)} value={item}/>{d.headerAttributes[item]}
                                         </label>
                                     </div>
                                 )
