@@ -3,12 +3,11 @@ import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
 import saveAs from 'file-saver';
+import L from 'leaflet';
 
-const colors = ["#f2740b", "#2cb42c", "#5d9598", "#ff0000", "#000000", "#8E44AD", "#154360","#F4D03F"];
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const zoomLevel = 8;
-//let rectangle = [[0.0000, 0.0000], [0.0000, 0.0000]];
 let mapCenter = [43.4643, -80.5204];
 let datasets = [];
 
@@ -32,7 +31,18 @@ export default class MapComp extends Component {
         axios.get(`http://127.0.0.1:5000/getBoundary`)
             .then(res => {
                 // console.log(res.data);
-                let dataset1 = new Dataset(0, res.data, '#'+Math.floor(Math.random()*16777215).toString(16), "Five Lakes", ["temperature", "humidity"]);
+                let dataset1 = new Dataset(0, res.data, "#5d9598", "Five Lakes",
+                    {
+                        LST_LWST_avg_daily: "Daily Average Temperature(LST_LWST_avg_daily)",
+                        LST_LWST_avg_day: "Average Daytime Temperature(LST_LWST_avg_day)",
+                        avg_daily_temp: "Daily Average Temperature(avg_daily_temp)",
+                        avg_day_temp: "Average Daytime Temperature(avg_day_temp)",
+                        N_obs_avg_daily: "Average N Observed Daily Temperature(N_obs_avg_daily)",
+                        N_obs_avg_day: "Average N Observed Daytime Temperature(N_obs_avg_day)",
+                        avg_night_temp: "Average Night Temperature(avg_night_temp)",
+                        N_obs_avg_night: "Average N Observed Night Temperature(N_obs_avg_night)"
+                    });
+
                 //let dataset2 = new Dataset(1, [[43.6764444,-80.7178777],[43.862008,-80.272744]], '#'+Math.floor(Math.random()*16777215).toString(16), "Ontario", ["air_pressure", "humidity"]);
                 datasets.push(dataset1);
                 //datasets.push(dataset2);
@@ -87,11 +97,22 @@ export default class MapComp extends Component {
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
         let postSetting = this.props.settings;
-        console.log(geojsonData);
-        console.log(postSetting);
         let lastIndex = geojsonData.features.length-1;
+        let variables = [];
+        if(postSetting.headers && postSetting.headers.length > 0){
+            Object.keys(postSetting.headers[0]).forEach(hkey => {
+                if(postSetting.headers[0][hkey]){
+                    variables.push(hkey);
+                }
+            });
+        }
+        let passLoad = {
+            geoJson: geojsonData.features[lastIndex].geometry,
+            selectDate: postSetting.selectDate? postSetting.selectDate.toString() : "",
+            variables: variables.toString()
+        };
         if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/fetchResult', geojsonData.features[lastIndex].geometry, {responseType: 'blob'})
+            axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
                 .then(function (response) {
                     saveAs(new Blob([response.data], {type:'image/png'}));
                 })
@@ -146,7 +167,11 @@ export default class MapComp extends Component {
                         position='topright'
                         onEdited={this._onEdited}
                         onCreated={this._onCreated}
-                        onDeleted={this._onDeleted}
+                        draw={{
+                            rectangle: {
+                                showArea: false
+                            }
+                        }}
                     />
                 </FeatureGroup>
             </Map>
