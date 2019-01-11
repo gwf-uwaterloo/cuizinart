@@ -1,6 +1,7 @@
 from os import listdir
 from os.path import isfile, join
 import sys
+import numpy as np
 from netCDF4 import Dataset, date2index
 from pyspark import SparkContext
 from dateutil.parser import parse
@@ -15,19 +16,14 @@ def open_file(path):
 def get_indexes(lat_array, lon_array, shape, lat, lon):
     flattened_lat = lat_array[:].flatten()
     flattened_lon = lon_array[:].flatten()
-    min_pow_dis = sys.maxsize
-    index = 0
-    for i in range(0, len(flattened_lat)):
-        pow_dis = pow(flattened_lat[i] - lat, 2) + pow(flattened_lon[i] - lon, 2)
-        if pow_dis < min_pow_dis:
-            min_pow_dis = pow_dis
-            index = i
+
+    index = (np.square(flattened_lat - lat) + np.square(flattened_lon - lon)).argmin()
 
     return int(index / shape[1]), index % shape[1]  # y,x
 
 
-# Transforms a lat/lon-polygon to x/y-coordinates
 def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
+    # Transforms a lat/lon-polygon to x/y-coordinates
     # todo: verify correctness
     y_slice_start, x_slice_start = get_indexes(lat_array, lon_array, shape, polygon_extent.xmin, polygon_extent.ymin)
     y_slice_stop, x_slice_stop = get_indexes(lat_array, lon_array, shape, polygon_extent.xmax, polygon_extent.ymax)
@@ -40,15 +36,6 @@ def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
 
 def read_input(path):
     return open_file(path)
-
-
-def slice(array, xstart, xend, ystart, yend):
-    result = []
-
-    for item in array[xstart:xend]:
-        result.append(item[ystart:yend])
-
-    return result
 
 
 def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variables):
@@ -95,12 +82,11 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
 
     polygon_extent = gps.Extent(lat_min, lon_min, lat_max, lon_max)
 
-    def spark_process(var_name, nc_file_list):
-        st = ("variable: {}, files {}".format(var_name, nc_file_list))
+    def process(var_name, nc_file_list):
+        print("variable: {}, files {}".format(var_name, nc_file_list))
 
         # At some point, we'll want to support partitioned files. For now, just take the first one.
         nc_file = open_file(nc_file_list[0])
-        vs = nc_file.variables
 
         lat_array = nc_file['lat']
         lon_array = nc_file['lon']
@@ -124,14 +110,6 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
 
         # Read the section specified by the request (i.e. specified time and x/y-location)
         array = nc_file[var_name][start_time_index:end_time_index+1, ySliceStart:ySliceStop+1, xSliceStart:xSliceStop+1]
-        print("array 1st 10 entries: {}".format(array[:10]))
-
-        #array.reshape(x, y)
-        #st+=str(type(array))
-        #import numpy as np
-        #with open('gddp{}{}.txt'.format(var_name, date_range.replace(',','-')),'wb') as f:
-        #    for e in array:
-        #        np.savetxt(f, e)
 
         #proj = nc_file['lambert_azimuthal_equal_area'].getncattr('crs_wkt')
         #instant = datetime.combine(request_start_date, time(0, 0))
@@ -141,34 +119,25 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
         #layout_definition = gps.LayoutDefinition(polygon_extent, layout)
         #metadata = gps.Metadata(bounds=bounds, crs='+proj=longlat +datum=WGS84 +no_defs ',
         #                        cell_type='float32ud-1.0', extent=polygon_extent, layout_definition=layout_definition)
+
         tile = gps.Tile.from_numpy_array(array, no_data)
-        ext = gps.ProjectedExtent(extent=polygon_extent, epsg=3007)
-        layer = [(ext, tile)]
-        rdd = sc.parallelize(layer)
-        ral =gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, numpy_rdd=rdd)
-        break_map = {
-            1: 0x00000000,
-            2: 0x00000001,
-            3: 0x00000002
-        }
-        cm = gps.ColorMap.from_break_map(break_map=break_map)
-        png=ral.to_png_rdd(cm)
-        img = png.collect()
-        with open("img.png","wb") as f:
-            f.write(bytearray(img))
+        extent = gps.ProjectedExtent(extent=polygon_extent, epsg=3857)
+        rdd = sc.parallelize([(extent, tile)])
+        raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, numpy_rdd=rdd)
 
-        #layer = [(gps.SpatialKey(row=0, col=0), tile)]
-        #rdd = sc.parallelize(layer)
+        color_ramp = gps.get_colors_from_matplotlib(ramp_name="jet")
+        histogram = raster_layer.get_histogram()
+        color_map = gps.ColorMap.from_histogram(histogram, color_ramp)
 
-        #result_tile = gps.TiledRasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPATIAL,
-        #                                                  numpy_rdd=rdd, metadata=metadata)
+        # Write image to file
+        png = raster_layer.to_png_rdd(color_map).collect()
+        with open('gddp{}{}.png'.format(var_name, date_range.replace(',','-')),'wb') as f:
+            f.write(png[0][1])
 
-        return st
 
-    #rdd = sc.parallelize(
-    #zip(files_to_analyze.keys(), files_to_analyze.values()).map(lambda x: spark_process(x[0],x[1]))
+    #rdd = sc.parallelize(zip(files_to_analyze.keys(), files_to_analyze.values()).map(lambda x: spark_process(x[0],x[1]))
     for var_name in files_to_analyze.keys():
-        print(spark_process(var_name, files_to_analyze[var_name]))
+        process(var_name, files_to_analyze[var_name])
     #rdd.persist()
     #rdd.foreach(lambda s: print(s))
 

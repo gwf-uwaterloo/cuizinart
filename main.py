@@ -62,7 +62,7 @@ def fetchResult():
     if daterange:
         rv = None
         for v in variables.split(","):
-            rv = send_file('gddp' + v + daterange.replace(',', '-') + '.txt', mimetype='text/csv')
+            rv = send_file('gddp' + v + daterange.replace(',', '-') + '.png', mimetype='image/png')
         return rv
     else:
         return '{message: "Server Error"}'
