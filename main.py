@@ -1,14 +1,12 @@
 import os
-import json
-from flask import send_file
-from subprocess import call as proccall
 from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
-import zlib
 import zipfile
+import geopyspark as gps
+from pyspark import SparkContext
 
 from geoPy import geopy
 
@@ -16,6 +14,8 @@ app = Flask("NetCDF-Server")
 CORS(app)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
+sc = SparkContext(conf=conf)
 
 def parse_json(obj):
     date_range = obj["selectDate"]
@@ -58,7 +58,7 @@ def fetchResult():
     print(request.get_json())
 
     min_lat, max_lat, min_lon, max_lon, daterange, variables = parse_json(request.get_json())
-    geopy.process_query(min_lat, max_lat, min_lon, max_lon, daterange, variables)
+    geopy.process_query(min_lat, max_lat, min_lon, max_lon, daterange, variables, sc)
 
     if daterange:
         rv = None

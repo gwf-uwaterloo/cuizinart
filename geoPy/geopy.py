@@ -7,6 +7,7 @@ from pyspark import SparkContext
 from dateutil.parser import parse
 from datetime import time, timedelta, datetime
 import geopyspark as gps
+from shapely.geometry import Polygon
 
 
 def open_file(path):
@@ -38,7 +39,7 @@ def read_input(path):
     return open_file(path)
 
 
-def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variables):
+def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variables, spark_ctx):
     request_vars = request_variables.split(',')
 
     nc_base_path = 'data'
@@ -72,15 +73,20 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
 
     print("Matching files: {}".format(files_to_analyze))
 
-    conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
-    conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    conf.set("spark.kryo.registrator", "geotrellis.spark.io.kryo.KryoRegistrator")
-    conf.set("spark.kryo.unsafe", "true")
-    conf.set("spark.rdd.compress", "true")
-    conf.set("spark.ui.enabled", "false")
-    sc = SparkContext(conf=conf)
+    #conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
+    #conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    #conf.set("spark.kryo.registrator", "geotrellis.spark.io.kryo.KryoRegistrator")
+    #conf.set("spark.kryo.unsafe", "true")
+    #conf.set("spark.rdd.compress", "true")
+    #conf.set("spark.ui.enabled", "false")
+    #sc = SparkContext(conf=conf)
 
-    polygon_extent = gps.Extent(lat_min, lon_min, lat_max, lon_max)
+    #polygon_array = np.array(polygon_coords)
+    #lat_min = polygon_array[:,1].min()
+    #lat_max = polygon_array[:,1].max()
+    #lon_min = polygon_array[:,0].min()
+    #lon_max = polygon_array[:,0].max()
+    bounding_box = gps.Extent(lat_min, lon_min, lat_max, lon_max)
 
     def process(var_name, nc_file_list):
         print("variable: {}, files {}".format(var_name, nc_file_list))
@@ -96,7 +102,7 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
         # Get x/y-range
         (xSliceStart, xSliceStop, ySliceStart, ySliceStop) = get_bounding_box_polygon(lat_array, lon_array,
                                                                                       lon_array.shape,
-                                                                                      polygon_extent)
+                                                                                      bounding_box)
         x = xSliceStop - xSliceStart + 1
         y = ySliceStop - ySliceStart + 1
         print("x: {}, y: {}, {}".format(x, y, (xSliceStart, xSliceStop, ySliceStart, ySliceStop)))
@@ -121,12 +127,15 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
         #                        cell_type='float32ud-1.0', extent=polygon_extent, layout_definition=layout_definition)
 
         tile = gps.Tile.from_numpy_array(array, no_data)
-        extent = gps.ProjectedExtent(extent=polygon_extent, epsg=3857)
-        rdd = sc.parallelize([(extent, tile)])
+        #polygon_shape = Polygon(polygon_array)
+        extent = gps.ProjectedExtent(extent=bounding_box, epsg=3857)
+        rdd = spark_ctx.parallelize([(extent, tile)])
         raster_layer = gps.RasterLayer.from_numpy_rdd(gps.LayerType.SPATIAL, numpy_rdd=rdd)
 
-        color_ramp = gps.get_colors_from_matplotlib(ramp_name="jet")
         histogram = raster_layer.get_histogram()
+        color_ramp = [0x2791C3FF, 0x5DA1CAFF, 0x83B2D1FF, 0xA8C5D8FF,
+                      0xCCDBE0FF, 0xE9D3C1FF, 0xDCAD92FF, 0xD08B6CFF,
+                      0xC66E4BFF, 0xBD4E2EFF]
         color_map = gps.ColorMap.from_histogram(histogram, color_ramp)
 
         # Write image to file
@@ -135,10 +144,10 @@ def process_query(lat_min, lat_max, lon_min, lon_max, date_range, request_variab
             f.write(png[0][1])
 
 
-    #rdd = sc.parallelize(zip(files_to_analyze.keys(), files_to_analyze.values()).map(lambda x: spark_process(x[0],x[1]))
+    #rdd = spark_ctx.parallelize(zip(files_to_analyze.keys(), files_to_analyze.values()).map(lambda x: spark_process(x[0],x[1]))
     for var_name in files_to_analyze.keys():
         process(var_name, files_to_analyze[var_name])
     #rdd.persist()
     #rdd.foreach(lambda s: print(s))
 
-    sc.stop()
+    #spark_ctx.stop()
