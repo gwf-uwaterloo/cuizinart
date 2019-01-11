@@ -7,6 +7,8 @@ from flask import request
 from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
+import zlib
+import zipfile
 
 from geoPy import geopy
 
@@ -43,7 +45,6 @@ def parse_json(obj):
 
     min_lat = min(bottom_right_lat, bottom_left_lat)
     max_lat = max(top_right_lat, top_left_lat)
-
     return min_lat, max_lat, min_lon, max_lon, date_range, request_variables
 
 
@@ -51,7 +52,6 @@ def parse_json(obj):
 def getBoundary():
     boundary = [[41.0270393371582, -93.11832427978516], [49.424442291259766, -75.28765258789062]]
     return jsonify(boundary)
-
 
 @app.route('/fetchResult', methods=['POST'])
 def fetchResult():
@@ -62,12 +62,20 @@ def fetchResult():
 
     if daterange:
         rv = None
-        for v in variables.split(","):
-            rv = send_file('gddp' + v + daterange.replace(',', '-') + '.png', mimetype='image/png')
-        return rv
+        compression = zipfile.ZIP_DEFLATED
+        zf = zipfile.ZipFile("result.zip", mode="w")
+        try:
+            for v in variables.split(","):
+                zf.write('gddp' + v + daterange.replace(',', '-') + '.png', compress_type=compression)
+
+        except FileNotFoundError:
+            print("No files generated")
+        finally:
+            zf.close()
+            rv = send_file("result.zip", mimetype='application/zip')
+            return rv
     else:
         return '{message: "Server Error"}'
-
 
 if __name__ == '__main__':
     app.run()

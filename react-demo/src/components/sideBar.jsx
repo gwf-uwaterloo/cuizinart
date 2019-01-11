@@ -49,7 +49,7 @@ export default class SideBar extends Component {
     render() {
         return (
             <div>
-                <DateRangePicker onApply={(e, picker) => this.handleDateEvent(e, picker)}>
+                <DateRangePicker showDropdowns onApply={(e, picker) => this.handleDateEvent(e, picker)}>
                     <button className="btn btn-info m-2">Select Date</button>
                 </DateRangePicker>
                 {this.state.datasets.map(d =>

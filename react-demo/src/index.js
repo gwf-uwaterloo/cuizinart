@@ -5,6 +5,7 @@ import {render} from "react-dom";
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'bootstrap-daterangepicker/daterangepicker.css'
+import 'react-notifications/lib/notifications.css';
 import SideBar from "./components/sideBar";
 
 class App extends Component {

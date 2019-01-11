@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import axios from 'axios';
+import {NotificationContainer, NotificationManager} from 'react-notifications';
 import saveAs from 'file-saver';
 import L from 'leaflet';
 
@@ -35,11 +36,9 @@ export default class MapComp extends Component {
                     {
                         LST_LWST_avg_daily: "Daily Average Temperature(LST_LWST_avg_daily)",
                         LST_LWST_avg_day: "Average Daytime Temperature(LST_LWST_avg_day)",
-                        avg_daily_temp: "Daily Average Temperature(avg_daily_temp)",
-                        avg_day_temp: "Average Daytime Temperature(avg_day_temp)",
+                        LST_LWST_avg_night: "Average Night Temperature(LST_LWST_avg_night)",
                         N_obs_avg_daily: "Average N Observed Daily Temperature(N_obs_avg_daily)",
                         N_obs_avg_day: "Average N Observed Daytime Temperature(N_obs_avg_day)",
-                        avg_night_temp: "Average Night Temperature(avg_night_temp)",
                         N_obs_avg_night: "Average N Observed Night Temperature(N_obs_avg_night)"
                     });
 
@@ -106,22 +105,30 @@ export default class MapComp extends Component {
                 }
             });
         }
+        if(variables.length === 0){
+            NotificationManager.error('No variable selected.');
+            return;
+        }
+        if(postSetting.selectDate.length === 0){
+            NotificationManager.error('No date range selected.');
+            return;
+        }
         let passLoad = {
             geoJson: geojsonData.features[lastIndex].geometry,
-            selectDate: postSetting.selectDate? postSetting.selectDate.toString() : "",
+            selectDate: postSetting.selectDate.toString(),
             variables: variables.toString()
         };
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
                 .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'image/png'}));
+                    saveAs(new Blob([response.data], {type:'application/zip'}));
                 })
                 .catch(function (error) {
                     console.log(error);
                 });
         }
         else{
-
+            // cancel
         }
 
         //onChange(geojsonData);
@@ -147,35 +154,37 @@ export default class MapComp extends Component {
 
     render() {
         return (
-            <Map
-                ref={m => { this.leafletMap = m; }}
-                center={mapCenter}
-                zoom={zoomLevel}
-            >
-                <TileLayer
-                    attribution={stamenTonerAttr}
-                    url={stamenTonerTiles}
-                />
-                {datasets.map(d =>
-                    <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
-                        <Tooltip sticky>{d.description}</Tooltip>
-                    </Rectangle>
-                )}
-
-                <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
-                    <EditControl
-                        position='topright'
-                        onEdited={this._onEdited}
-                        onCreated={this._onCreated}
-                        draw={{
-                            rectangle: {
-                                showArea: false
-                            }
-                        }}
+            <div>
+                <Map
+                    ref={m => { this.leafletMap = m; }}
+                    center={mapCenter}
+                    zoom={zoomLevel}
+                >
+                    <TileLayer
+                        attribution={stamenTonerAttr}
+                        url={stamenTonerTiles}
                     />
-                </FeatureGroup>
-            </Map>
+                    {datasets.map(d =>
+                        <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
+                            <Tooltip sticky>{d.description}</Tooltip>
+                        </Rectangle>
+                    )}
 
+                    <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
+                        <EditControl
+                            position='topright'
+                            onEdited={this._onEdited}
+                            onCreated={this._onCreated}
+                            draw={{
+                                rectangle: {
+                                    showArea: false
+                                }
+                            }}
+                        />
+                    </FeatureGroup>
+                </Map>
+                <NotificationContainer/>
+            </div>
         );
     }
 }
