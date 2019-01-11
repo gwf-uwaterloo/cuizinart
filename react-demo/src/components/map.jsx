@@ -36,8 +36,7 @@ export default class MapComp extends Component {
                     {
                         LST_LWST_avg_daily: "Daily Average Temperature(LST_LWST_avg_daily)",
                         LST_LWST_avg_day: "Average Daytime Temperature(LST_LWST_avg_day)",
-                        avg_daily_temp: "Daily Average Temperature(avg_daily_temp)",
-                        avg_day_temp: "Average Daytime Temperature(avg_day_temp)",
+                        LST_LWST_avg_night: "Average Night Temperature(LST_LWST_avg_night)",
                         N_obs_avg_daily: "Average N Observed Daily Temperature(N_obs_avg_daily)",
                         N_obs_avg_day: "Average N Observed Daytime Temperature(N_obs_avg_day)",
                         avg_night_temp: "Average Night Temperature(avg_night_temp)",
@@ -117,13 +116,13 @@ export default class MapComp extends Component {
         }
         let passLoad = {
             geoJson: geojsonData.features[lastIndex].geometry,
-            selectDate: postSetting.selectDate,
+            selectDate: postSetting.selectDate.toString(),
             variables: variables.toString()
         };
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
                 .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'image/png'}));
+                    saveAs(new Blob([response.data], {type:'application/zip'}));
                 })
                 .catch(function (error) {
                     console.log(error);
