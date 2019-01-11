@@ -16,10 +16,11 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 def parse_json(obj):
-    date_range = "2002-10-01,2002-10-01"  # obj["date"]
-    request_variables = "LST_LWST_avg_daily"  # obj["variables"]
+    date_range = obj["selectDate"]
+    request_variables = obj["variables"]
+    geo = obj["geoJson"]
 
-    all_coordinates = obj["coordinates"][0]
+    all_coordinates = geo["coordinates"][0]
     top_left = all_coordinates[0]
     top_right = all_coordinates[1]
     bottom_right = all_coordinates[2]
