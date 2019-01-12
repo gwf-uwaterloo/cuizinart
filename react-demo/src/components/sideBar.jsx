@@ -5,45 +5,26 @@ import shortid from 'shortid';
     show date range picker, headers checkbox
  */
 
-class Setting {
-    constructor(datasets){
-        this.headers = datasets.map(d => {
-            let header = {};
-            header.id = d.id;
-            Object.keys(d.headerAttributes).forEach(function(key){
-                header[key] = false;
-            });
-            return header;
-        });
-        this.selectDate = [];
-    }
-}
-
 export default class SideBar extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            datasets: this.props.datasets,
-            setting: new Setting(this.props.datasets)
-        };
-    }
-
-
     handleDateEvent(event, picker) {
-        let newState = Object.assign({}, this.state);
-        newState.setting.selectDate = [picker.startDate.format("YYYY-MM-DD"), picker.endDate.format("YYYY-MM-DD")];
-        this.props.updateEvent(newState.setting);
+        let newSetting = Object.assign({}, this.props.setting);
+        newSetting.select_date = [picker.startDate.format("YYYY-MM-DD"), picker.endDate.format("YYYY-MM-DD")];
+        this.props.updateEvent({setting: newSetting});
 
     }
 
-    handleCheckbox(setID,event){
-        let newState = Object.assign({}, this.state);
-        const target = event.target;
-        let header = newState.setting.headers.find(function (h) {
-           return h.id === setID;
+    handleCheckbox(setId,key,event){
+        let datasets = this.props.datasets.slice();
+        let ds = datasets.find(function (s) {
+            return s.id === setId;
         });
-        header[target.value] = target.checked;
-        this.props.updateEvent(newState.setting);
+        let variable = ds.variables.find(function (v) {
+            return v.key === key;
+        });
+        const target = event.target;
+
+        variable["selected"] = target.checked;
+        this.props.updateEvent({datasets: datasets});
     }
 
     render() {
@@ -52,17 +33,17 @@ export default class SideBar extends Component {
                 <DateRangePicker showDropdowns onApply={(e, picker) => this.handleDateEvent(e, picker)}>
                     <button className="btn btn-info m-2">Select Date</button>
                 </DateRangePicker>
-                {this.state.datasets.map(d =>
+                {this.props.datasets.map(d =>
                     <div key={d.id} className="card m-2">
                         <div className="card-header" style={{backgroundColor: d.color}}>
                             {d.description}
                         </div>
                         <div className="card-body">
                             {
-                                Object.keys(d.headerAttributes).map( item =>
+                                d.variables.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={this.state.setting.headers[d.id][item]} onChange={(e) => this.handleCheckbox(d.id, e)} value={item}/>{d.headerAttributes[item]}
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(d.id, va.key, e)}/>{va["description"]}
                                         </label>
                                     </div>
                                 )
