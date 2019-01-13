@@ -17,6 +17,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
 sc = SparkContext(conf=conf)
 
+
 def parse_json(obj):
     date_range = obj["selectDate"]
     request_variables = obj["variables"]
@@ -53,6 +54,7 @@ def getBoundary():
     boundary = [[41.0270393371582, -93.11832427978516], [49.424442291259766, -75.28765258789062]]
     return jsonify(boundary)
 
+
 @app.route('/fetchResult', methods=['POST'])
 def fetchResult():
     print(request.get_json())
@@ -66,7 +68,7 @@ def fetchResult():
         zf = zipfile.ZipFile("result.zip", mode="w")
         try:
             for v in variables.split(","):
-                zf.write('gddp' + v + daterange.replace(',', '-') + '.png', compress_type=compression)
+                zf.write('gddp' + v + daterange.replace(',', '-') + '.nc', compress_type=compression)
 
         except FileNotFoundError:
             print("No files generated")

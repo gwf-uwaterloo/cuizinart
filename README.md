@@ -2,7 +2,7 @@
 # GWF
 
 ## Dependencies
-(Possibly incomplete list:) `pyspark, geopyspark, numpy, netCDF4, flask`
+(Possibly incomplete list:) `pyspark, geopyspark, numpy, netCDF4, flask, flask_cors`
 
 
 ## Run
