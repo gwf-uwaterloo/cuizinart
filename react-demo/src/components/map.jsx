@@ -1,8 +1,16 @@
 import React, { Component } from 'react';
 import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import L from 'leaflet';
 
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const zoomLevel = 8;
@@ -21,6 +29,16 @@ export default class MapComp extends Component {
             const updatedZoomLevel = leafletMap.getZoom();
             this.handleZoomLevelChange(updatedZoomLevel);
         });
+    }
+
+    renderGeoJson(geojson) {
+        L.geoJSON(geojson, {
+            style: function (feature) {
+                return {color: feature.properties.color};
+            }
+        }).bindPopup(function (layer) {
+            return layer.feature.properties.name;
+        }).addTo(this.leafletMap.leafletElement);
     }
 
     handleZoomLevelChange(newZoomLevel) {

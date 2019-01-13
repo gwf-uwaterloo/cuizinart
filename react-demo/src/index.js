@@ -26,8 +26,14 @@ class App extends Component {
         setting: {
             select_date: [],
             uploadFile: {}
-        }
+        },
+        geoJson: null
     };
+
+    constructor(props) {
+        super(props);
+        this.child = React.createRef();
+    }
 
     componentDidMount() {
         let self = this;
@@ -62,7 +68,7 @@ class App extends Component {
         this.postJsonToServer(geojson);
     };
 
-    uploadFileCallback = (file) => {
+    uploadFileCallback = (geojson) => {
 
     };
 
@@ -118,15 +124,21 @@ class App extends Component {
         }
     };
 
+    renderGeoJSON = (geojson) => {
+        this.child.current.renderGeoJson(geojson);
+    };
+
+
+
     render() {
         return (
             <div className="row">
                 <div className="col col-lg-3">
                     <SideBar datasets={this.state.datasets} setting={this.state.setting}
-                             updateEvent={this.updateState} uploadFileCallback={this.uploadFileCallback}></SideBar>
+                             updateEvent={this.updateState} uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON}></SideBar>
                 </div>
                 <div className="col col-lg-9">
-                    <Map datasets={this.state.datasets} setting={this.state.setting} drawCallback={this.mapDrawCallback}></Map>
+                    <Map ref={this.child} datasets={this.state.datasets} setting={this.state.setting} drawCallback={this.mapDrawCallback}></Map>
                 </div>
                 <NotificationContainer/>
             </div>
