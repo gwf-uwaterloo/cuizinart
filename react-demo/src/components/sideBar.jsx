@@ -13,9 +13,14 @@ const fileTypes = [
     { key: 'geo_json', label: 'GeoJSON' }
 ];
 export default class SideBar extends Component {
+    constructor(props) {
+        super(props);
+        this.fileRef = React.createRef();
+    }
 
     state = {
-        selectedFileType: null
+        selectedFileType: null,
+        geoJson: null
     };
 
     handleDateEvent(event, picker) {
@@ -58,6 +63,7 @@ export default class SideBar extends Component {
                 reader.onload = function(e) {
                     shp(reader.result).then(function(geojson){
                         self.props.renderGeoJSON(geojson);
+                        self.state.geoJson = geojson;
                     });
                 };
                 reader.readAsArrayBuffer(event.target.files[0]);
@@ -67,6 +73,7 @@ export default class SideBar extends Component {
                 reader.onload = function(e) {
                     geoJson = JSON.parse(reader.result);
                     self.props.renderGeoJSON(geoJson);
+                    self.state.geoJson = geoJson;
                 };
                 reader.readAsText(event.target.files[0]);
             }
@@ -77,7 +84,8 @@ export default class SideBar extends Component {
     };
 
     handleProcess = () => {
-
+        this.fileRef.current.value = "";
+        this.props.uploadFileCallback(this.state.geoJson);
     };
 
     render() {
@@ -95,7 +103,7 @@ export default class SideBar extends Component {
                             options={fileTypes}
                         />
                         <div className="mt-2 mb-2">
-                            <input type="file" name="fileUpload" id="fileUpload" onChange={this.handleSelectedFile} />
+                            <input type="file" ref={this.fileRef} name="fileUpload" id="fileUpload" onChange={this.handleSelectedFile} />
                         </div>
                         <button className="btn btn-primary" onClick={this.handleProcess}>Process</button>
                     </div>

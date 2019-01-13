@@ -69,7 +69,7 @@ class App extends Component {
     };
 
     uploadFileCallback = (geojson) => {
-
+        this.postJsonToServer(geojson);
     };
 
     postJsonToServer = (jsonData) => {

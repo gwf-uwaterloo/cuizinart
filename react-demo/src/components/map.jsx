@@ -20,7 +20,10 @@ let mapCenter = [43.4643, -80.5204];
 export default class MapComp extends Component {
     constructor(props) {
         super(props);
-        this.state = { currentZoomLevel: zoomLevel };
+        this.state = {
+            currentZoomLevel: zoomLevel,
+            geojsonLayer: null
+        };
     }
 
     componentDidMount() {
@@ -32,7 +35,10 @@ export default class MapComp extends Component {
     }
 
     renderGeoJson(geojson) {
-        L.geoJSON(geojson, {
+        if(this.state.geojsonLayer){
+            this.leafletMap.leafletElement.removeLayer( this.state.geojsonLayer);
+        }
+        this.state.geojsonLayer = L.geoJSON(geojson, {
             style: function (feature) {
                 return {color: feature.properties.color};
             }
