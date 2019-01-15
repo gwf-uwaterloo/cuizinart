@@ -6,6 +6,7 @@ import numpy as np
 from netCDF4 import Dataset, date2index
 from dateutil.parser import parse
 from datetime import time, timedelta, datetime
+from dateutil.relativedelta import relativedelta
 import geopyspark as gps
 from shapely.geometry import Polygon
 
@@ -126,38 +127,41 @@ def process_query(geojson_shape, date_range, request_vars, spark_ctx):
         lats = nc_file['lat'][y_slice_start:y_slice_stop + 1, x_slice_start:x_slice_stop + 1]
         lons = nc_file['lon'][y_slice_start:y_slice_stop + 1, x_slice_start:x_slice_stop + 1]
         start_instant = datetime.combine(request_start_date, time(0, 0))
-        end_instant = datetime.combine(request_end_date, time(0, 0))
 
         proj_var = nc_file.get_variables_by_attributes(grid_mapping_name=lambda v: v is not None)[0]
         nc_metadata = {attr: nc_file.getncattr(attr) for attr in nc_file.ncattrs()}
 
-        crs = '+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m no_defs'#'+proj=longlat +datum=WGS84 +no_defs ',#'+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs ',
+        crs = '+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m no_defs'
         x_min = float(min(s.bounds[0] for s in mask_shapes_xy))
         y_min = float(min(s.bounds[1] for s in mask_shapes_xy))
         x_max = float(max(s.bounds[2] for s in mask_shapes_xy))
         y_max = float(max(s.bounds[3] for s in mask_shapes_xy))
-        bounding_box = gps.ProjectedExtent(extent=gps.Extent(x_min, y_min, x_max, y_max), proj4=crs)
-        #bounds = gps.Bounds(gps.SpaceTimeKey(col=0, row=0, instant=start_instant),
-        #                    gps.SpaceTimeKey(col=0, row=0, instant=end_instant))
-        #layout = gps.TileLayout(1, 1, x, y)
-        #layout_definition = gps.LayoutDefinition(bbox, layout)
-        #layer_metadata = gps.Metadata(
-        #    bounds=bounds,
-        #    crs=crs,
-        #    cell_type='float32ud-1.0',
-        #    extent=bbox,
-        #    layout_definition=layout_definition)
+        extent = gps.Extent(x_min, y_min, x_max, y_max)
 
-        tile = gps.Tile.from_numpy_array(var_data, no_data_value)
-        rdd = spark_ctx.parallelize([(bounding_box, tile)])#gps.SpaceTimeKey(row=0, col=0, instant=start_instant), tile)])
+        # Push data into geopyspark
+        if var_temp_resolution == 'daily':
+            time_delta = relativedelta(days=1)
+        elif var_temp_resolution == 'monthly':
+            time_delta = relativedelta(months=1)
+        else:
+            raise Exception('Unknown temporal resolution')
+        time_instants = [start_instant]
+        tiles = []
+        for var_data_at_instant in var_data:
+            temporal_projected_extent = gps.TemporalProjectedExtent(extent=extent, proj4=crs, instant=time_instants[-1])
+            tile = gps.Tile.from_numpy_array(var_data_at_instant, no_data_value)
+            tiles.append((temporal_projected_extent, tile))
+            time_instants.append(time_instants[-1] + time_delta)
 
-        raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPATIAL, numpy_rdd=rdd)#, metadata=layer_metadata)
-        tiled_raster_layer = raster_layer.tile_to_layout(gps.LocalLayout(y, x))
+        rdd = spark_ctx.parallelize(tiles)
+        raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME, numpy_rdd=rdd)
+        tiled_raster_layer = raster_layer.tile_to_layout(gps.LocalLayout(y, x))  # todo use smaller tiles
 
         masked_layer = tiled_raster_layer.mask(mask_shapes_xy)
-        masked_var_data = masked_layer.to_numpy_rdd().collect()[0][1].cells
+        masked_var_tiles = masked_layer.to_numpy_rdd().collect()
+        masked_var_data = np.array(list(tile[1].cells for tile in masked_var_tiles))[0]
         generate_output_netcdf('gddp{}{}.nc'.format(var_name, date_range.replace(',', '-')), x_coords, y_coords, lats,
-                               lons, start_instant, end_instant, var_name, var_long_name, var_unit, var_temp_resolution,
+                               lons, time_instants, var_name, var_long_name, var_unit, var_temp_resolution,
                                masked_var_data, no_data_value, nc_metadata, proj_var)
 
         histogram = masked_layer.get_histogram()
@@ -168,8 +172,9 @@ def process_query(geojson_shape, date_range, request_vars, spark_ctx):
 
         # Write image to file
         png = masked_layer.to_png_rdd(color_map).collect()
-        with open('gddp{}{}.png'.format(var_name, date_range.replace(',', '-')), 'wb') as f:
-            f.write(png[0][1])
+        for png_at_instant, instant in zip(png, time_instants):
+            with open('gddp{}{}.png'.format(var_name, instant.strftime('%Y-%M-%d_%H%M')), 'wb') as f:
+                f.write(png_at_instant[1])
 
         nc_file.close()
 
@@ -177,9 +182,9 @@ def process_query(geojson_shape, date_range, request_vars, spark_ctx):
         process(var_name, files_to_analyze[var_name])
 
 
-def generate_output_netcdf(path, x_coords, y_coords, lats, lons, start_datetime, end_datetime, var_name, var_long_name,
+def generate_output_netcdf(path, x_coords, y_coords, lats, lons, time_instants, var_name, var_long_name,
                            var_unit, var_temp_resolution, variable, no_data_value, meta, proj_var,
-                           lat_name='lat', lon_name='lon', dim_x_name = 'x', dim_y_name = 'y'):
+                           lat_name='lat', lon_name='lon', dim_x_name='x', dim_y_name='y'):
 
     out_nc = netCDF4.Dataset(path, 'w')
 
@@ -210,13 +215,13 @@ def generate_output_netcdf(path, x_coords, y_coords, lats, lons, start_datetime,
     lat.units = 'degrees_north'
     lat.standard_name = 'latitude'
     lat.long_name = 'latitude coordinate'
-    lat[:] = lats[:]
+    lat[:] = lats
 
     lon = out_nc.createVariable(lon_name, 'f4', (dim_y_name, dim_x_name, ))
     lon.units = 'degrees_east'
     lon.standard_name = 'longitude'
     lon.long_name = 'longitude coordinate'
-    lon[:] = lons[:]
+    lon[:] = lons
 
     # time variable
     var_time = out_nc.createVariable('time', 'i4', ('time', ))
@@ -226,7 +231,7 @@ def generate_output_netcdf(path, x_coords, y_coords, lats, lons, start_datetime,
     var_time.axis = 'T'
 
     # data for time variable
-    var_time[:] = netCDF4.date2num([start_datetime], units=var_time.units, calendar=var_time.calendar)
+    var_time[:] = netCDF4.date2num(time_instants, units=var_time.units, calendar=var_time.calendar)
 
     # grid mapping variable
     grid_map = out_nc.createVariable(grid_map_name, 'c', )
@@ -242,10 +247,8 @@ def generate_output_netcdf(path, x_coords, y_coords, lats, lons, start_datetime,
     var_data.coordinates = '{} {}'.format(lat_name, lon_name)
     var_data.grid_mapping = grid_map_name
 
-    # assign the masked array to data variable
-    data = np.ma.masked_invalid(variable)
-    data.set_fill_value(no_data_value)
-    var_data[:] = data
+    # assign the array to data variable
+    var_data[:] = variable
 
     # temporal resolution attribute for the data variable
     var_data.setncattr('temporal_resolution', var_temp_resolution)
