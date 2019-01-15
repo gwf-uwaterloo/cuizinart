@@ -21,32 +21,9 @@ sc = SparkContext(conf=conf)
 def parse_json(obj):
     date_range = obj["selectDate"]
     request_variables = obj["variables"]
-    geo = obj["geoJson"]
+    geojson = obj["geoJson"]
 
-    all_coordinates = geo["coordinates"][0]
-    top_left = all_coordinates[0]
-    top_right = all_coordinates[1]
-    bottom_right = all_coordinates[2]
-    bottom_left = all_coordinates[3]
-
-    top_left_lon = top_left[0]
-    bottom_left_lon = bottom_left[0]
-
-    top_right_lon = top_right[0]
-    bottom_right_lon = bottom_right[0]
-
-    min_lon = min(top_left_lon, bottom_left_lon)
-    max_lon = max(top_right_lon, bottom_right_lon)
-
-    top_left_lat = top_left[1]
-    bottom_left_lat = bottom_left[1]
-
-    top_right_lat = top_right[1]
-    bottom_right_lat = bottom_right[1]
-
-    min_lat = min(bottom_right_lat, bottom_left_lat)
-    max_lat = max(top_right_lat, top_left_lat)
-    return min_lat, max_lat, min_lon, max_lon, date_range, request_variables
+    return geojson, date_range, request_variables
 
 
 @app.route('/getBoundary', methods=['GET'])
@@ -59,15 +36,15 @@ def getBoundary():
 def fetchResult():
     print(request.get_json())
 
-    min_lat, max_lat, min_lon, max_lon, daterange, variables = parse_json(request.get_json())
-    geopy.process_query(min_lat, max_lat, min_lon, max_lon, daterange, variables, sc)
+    geojson, daterange, variables = parse_json(request.get_json())
+    geopy.process_query(geojson, daterange, variables, sc)
 
     if daterange:
         rv = None
         compression = zipfile.ZIP_DEFLATED
         zf = zipfile.ZipFile("result.zip", mode="w")
         try:
-            for v in variables.split(","):
+            for v in variables:
                 zf.write('gddp' + v + daterange.replace(',', '-') + '.nc', compress_type=compression)
 
         except FileNotFoundError:
