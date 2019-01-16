@@ -93,7 +93,7 @@ class App extends Component {
         }
         let passLoad = {
             variables: Array.from(variables),
-            bounding_geom: jsonData,
+            bounding_geom: [jsonData["features"]],
             start_time: this.userInputs.start_time,
             end_time: this.userInputs.end_time
         };
@@ -116,7 +116,7 @@ class App extends Component {
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
                 .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'application/zip'}));
+                    saveAs(new Blob([response.data], {type:'application/x-netcdf'}));
                 })
                 .catch(function (error) {
                     console.log(error);

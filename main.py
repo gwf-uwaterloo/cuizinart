@@ -19,11 +19,12 @@ sc = SparkContext(conf=conf)
 
 
 def parse_json(obj):
-    date_range = obj["selectDate"]
+    start_time = obj["start_time"]
+    end_time = obj["end_time"]
     request_variables = obj["variables"]
-    geojson = obj["geoJson"]
+    geojson = obj["bounding_geom"]
 
-    return geojson, date_range, request_variables
+    return geojson, start_time, end_time, request_variables
 
 
 @app.route('/getBoundary', methods=['GET'])
@@ -36,10 +37,10 @@ def getBoundary():
 def fetchResult():
     print(request.get_json())
 
-    geojson, daterange, variables = parse_json(request.get_json())
-    out_file_name = geopy.process_query(geojson, daterange, variables, sc)
+    geojson, start_time, end_time, variables = parse_json(request.get_json())
+    out_file_name = geopy.process_query(geojson, start_time, end_time, variables, sc)
 
-    if daterange:
+    if start_time and end_time:
         try:
             rv = send_file(out_file_name, mimetype='application/x-netcdf')
         except FileNotFoundError:

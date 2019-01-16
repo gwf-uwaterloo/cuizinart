@@ -33,15 +33,14 @@ def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
     return x_slice_start, x_slice_stop, y_slice_start, y_slice_stop
 
 
-def process_query(geojson_shape, date_range, request_vars, spark_ctx):
+def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
 
     nc_base_path = 'data/converted_netcdf'
     nc_files = [nc_base_path + '/' + f for f in listdir(nc_base_path) if
                 isfile(join(nc_base_path, f)) and f.endswith('.nc')]
 
-    request_date_range = date_range.split(',')
-    request_start_date = parse(request_date_range[0]).date()
-    request_end_date = parse(request_date_range[1]).date()
+    request_start_date = parse(start_time).date()
+    request_end_date = parse(end_time).date()
     print('Request time range: {} - {}'.format(request_start_date, request_end_date))
     print('Request variables: {}'.format(request_vars))
 
@@ -87,7 +86,7 @@ def process_query(geojson_shape, date_range, request_vars, spark_ctx):
     y_coords = nc_file['y'][:]
     mask_shapes_indices = []
     mask_shapes_xy = []
-    for feature in geojson_shape['features']:
+    for feature in geojson_shape:
         # Get each vertex's index in the lat- and lon-arrays
         vertex_indices = np.array(list(get_indexes(lat_array, lon_array, lon_array.shape,
                                                    vertex[1], vertex[0])
