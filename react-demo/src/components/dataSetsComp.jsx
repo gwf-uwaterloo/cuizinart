@@ -33,7 +33,7 @@ export default class SideBar extends Component {
                                 d.variables.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(d.id, va.key, e)}/>{va["description"]}
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(d.id, va.key, e)}/>{va["key"]}: {va["description"]}
                                         </label>
                                     </div>
                                 )

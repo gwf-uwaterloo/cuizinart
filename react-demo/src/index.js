@@ -67,14 +67,14 @@ class App extends Component {
 
     mapDrawCallback = (geojson) => {
         //geojson[0].push(geojson[0][0]); // close coordinates
-        this.postJsonToServer(geojson);
+        this.postJsonToServer(geojson.features);
     };
 
     uploadFileCallback = (geojson) => {
         this.postJsonToServer(geojson);
     };
 
-    postJsonToServer = (jsonData) => {
+    postJsonToServer = (features) => {
         let variables = new Set();
         this.state.datasets.forEach(ds => {
             ds.variables.forEach(v => {
@@ -93,20 +93,19 @@ class App extends Component {
         }
         let passLoad = {
             variables: Array.from(variables),
-            bounding_geom: [jsonData["features"]]
+            bounding_geom: features
         };
         passLoad = _.assign(passLoad, this.userInputs);
-        console.log(passLoad);
+        console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
-            /*
-            axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
+            axios.post('http://127.0.0.1:5000/processJson', passLoad)
                 .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'application/x-netcdf'}));
+                    console.log("success");
                 })
                 .catch(function (error) {
                     console.log(error);
                 });
-                */
+
         }
         else{
             // cancel
