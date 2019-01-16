@@ -37,21 +37,15 @@ def fetchResult():
     print(request.get_json())
 
     geojson, daterange, variables = parse_json(request.get_json())
-    geopy.process_query(geojson, daterange, variables, sc)
+    out_file_name = geopy.process_query(geojson, daterange, variables, sc)
 
     if daterange:
-        rv = None
-        compression = zipfile.ZIP_DEFLATED
-        zf = zipfile.ZipFile("result.zip", mode="w")
         try:
-            for v in variables:
-                zf.write('gddp' + v + daterange.replace(',', '-') + '.nc', compress_type=compression)
-
+            rv = send_file(out_file_name, mimetype='application/x-netcdf')
         except FileNotFoundError:
-            print("No files generated")
+            print('No files generated')
+            rv = '{message: "No files generated"}'
         finally:
-            zf.close()
-            rv = send_file("result.zip", mimetype='application/zip')
             return rv
     else:
         return '{message: "Server Error"}'
