@@ -6,10 +6,13 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'bootstrap-daterangepicker/daterangepicker.css'
 import 'react-notifications/lib/notifications.css';
-import SideBar from "./components/sideBar";
+import _ from 'lodash';
 import axios from "axios";
 import {NotificationContainer, NotificationManager} from 'react-notifications';
 import saveAs from 'file-saver';
+import FileComp from './components/fileComp';
+import DataSetComp from './components/dataSetsComp';
+import UserInputComp from "./components/userInputComp";
 
 class Dataset {
     constructor(id, boundary, color, description, variables){
@@ -22,17 +25,13 @@ class Dataset {
 }
 class App extends Component {
     state = {
-        datasets: [],
-        setting: {
-            select_date: [],
-            uploadFile: {}
-        },
-        geoJson: null
+        datasets: []
     };
 
     constructor(props) {
         super(props);
         this.child = React.createRef();
+        this.userInputs= {}
     }
 
     componentDidMount() {
@@ -58,9 +57,12 @@ class App extends Component {
             });
     }
 
-    updateState = (state) => {
-        //console.log(setting);
-        this.setState(state);
+    updateDateSets = (dataSets) => {
+        this.setState(dataSets);
+    };
+
+    updateUserInputs = (userInputs) => {
+        this.userInputs = _.assign(this.userInputs, userInputs);
     };
 
     mapDrawCallback = (geojson) => {
@@ -85,14 +87,15 @@ class App extends Component {
             NotificationManager.error('No variable selected.');
             return;
         }
-        if(this.state.setting && this.state.setting.select_date.length === 0){
+        if(!this.userInputs || !this.userInputs.start_time || !this.userInputs.end_time){
             NotificationManager.error('No date range selected.');
             return;
         }
         let passLoad = {
             variables: Array.from(variables),
-            geoJson: jsonData,
-            selectDate: this.state.setting.select_date.toString()
+            bounding_geom: jsonData,
+            start_time: this.userInputs.start_time,
+            end_time: this.userInputs.end_time
         };
         /*
         let passLoad = {
@@ -134,11 +137,20 @@ class App extends Component {
         return (
             <div className="row">
                 <div className="col col-lg-3">
-                    <SideBar datasets={this.state.datasets} setting={this.state.setting}
-                             updateEvent={this.updateState} uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON}></SideBar>
+                    <div className="card m-2">
+                        <div className="card-body">
+                            <FileComp uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON} />
+                        </div>
+                    </div>
+                    <div className="card m-2">
+                        <div className="card-body">
+                            <UserInputComp updateUserInputs={this.updateUserInputs} />
+                        </div>
+                    </div>
+                    <DataSetComp datasets={this.state.datasets} updateDateSets={this.updateDateSets} />
                 </div>
                 <div className="col col-lg-9">
-                    <Map ref={this.child} datasets={this.state.datasets} setting={this.state.setting} drawCallback={this.mapDrawCallback}></Map>
+                    <Map ref={this.child} datasets={this.state.datasets} drawCallback={this.mapDrawCallback} />
                 </div>
                 <NotificationContainer/>
             </div>
