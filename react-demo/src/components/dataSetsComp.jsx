@@ -24,7 +24,7 @@ export default class SideBar extends Component {
         return (
             <div>
                 {this.props.datasets.map(d =>
-                    <div key={d.id} className="card m-2">
+                    <div key={d.id} className="card mt-2">
                         <div className="card-header" style={{backgroundColor: d.color}}>
                             {d.description}
                         </div>

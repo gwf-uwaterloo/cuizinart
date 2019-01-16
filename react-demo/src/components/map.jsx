@@ -13,7 +13,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const zoomLevel = 8;
+const zoomLevel = 4;
 let mapCenter = [43.4643, -80.5204];
 
 
@@ -125,11 +125,6 @@ export default class MapComp extends Component {
                         attribution={stamenTonerAttr}
                         url={stamenTonerTiles}
                     />
-                    {this.props.datasets.map(d =>
-                        <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
-                            <Tooltip sticky>{d.description}</Tooltip>
-                        </Rectangle>
-                    )}
 
                     <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
                         <EditControl
@@ -139,7 +134,12 @@ export default class MapComp extends Component {
                             draw={{
                                 rectangle: {
                                     showArea: false
-                                }
+                                },
+                                circle: false,
+                                marker: false,
+                                polyline: false,
+                                circlemarker: false
+
                             }}
                         />
                     </FeatureGroup>
