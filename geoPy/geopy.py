@@ -86,7 +86,7 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
     y_coords = nc_file['y'][:]
     mask_shapes_indices = []
     mask_shapes_xy = []
-    for feature in geojson_shape:
+    for feature in geojson_shape[0]:
         # Get each vertex's index in the lat- and lon-arrays
         vertex_indices = np.array(list(get_indexes(lat_array, lon_array, lon_array.shape,
                                                    vertex[1], vertex[0])
@@ -108,8 +108,8 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
     x_slice_stop = int(max(s[:, 1].max() for s in mask_shapes_indices))
 
     # Get indices of the request's time range
-    start_instant = datetime.combine(request_start_date, time(0, 0))
     file_instants = num2date(nc_file['time'][:], nc_file['time'].getncattr('units'), nc_file['time'].getncattr('calendar'))
+    start_instant = file_instants[file_instants <= datetime.combine(request_start_date, time(0, 0))][-1]
     end_instant = file_instants[file_instants >= datetime.combine(request_end_date, time(0, 0))][0]
     start_time_index, end_time_index = date2index([start_instant, end_instant],
                                                   nc_file['time'])
@@ -170,13 +170,15 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
 
     masked_layer = tiled_raster_layer.mask(mask_shapes_xy)
     masked_var_tiles = masked_layer.to_numpy_rdd().collect()
-    masked_var_data = np.array(list(tile[1].cells for tile in masked_var_tiles))
+    masked_var_data = np.array(list(tile.cells for _, tile in masked_var_tiles))
     out_file_name = 'gwf-{}-{}-{}.nc'.format('+'.join(request_vars), start_instant.strftime('%Y%m%d-%H%M'),
                                              end_instant.strftime('%Y%m%d-%H%M'))
     generate_output_netcdf(out_file_name, x_coords, y_coords, lats, lons, time_instants, masked_var_data,
                            variables_metadata, var_temp_resolution, no_data_value, nc_metadata, proj_var)
 
     histograms = masked_layer.get_histogram()
+    if len(request_vars) == 1:
+        histograms = [histograms]
     color_ramp = [0x2791C3FF, 0x5DA1CAFF, 0x83B2D1FF, 0xA8C5D8FF,
                   0xCCDBE0FF, 0xE9D3C1FF, 0xDCAD92FF, 0xD08B6CFF,
                   0xC66E4BFF, 0xBD4E2EFF]
