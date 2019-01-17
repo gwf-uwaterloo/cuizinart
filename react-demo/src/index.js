@@ -88,6 +88,7 @@ class App extends Component {
         }
         let passLoad = {
             variables: Array.from(variables),
+            product: this.state.selectDateSet.value,
             bounding_geom: features
         };
         passLoad = _.assign(passLoad, this.userInputs);
