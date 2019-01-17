@@ -132,7 +132,7 @@ export default class MapComp extends Component {
                         url={stamenTonerTiles}
                     />
                     {
-                        d ?
+                        d && d.bbox ?
                             <Rectangle bounds={d.bbox} color={d.color}>
                                 <Tooltip sticky>{d.label}</Tooltip>
                             </Rectangle>

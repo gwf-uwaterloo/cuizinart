@@ -66,6 +66,10 @@ class App extends Component {
 
     postJsonToServer = (features) => {
         let variables = new Set();
+        if(!this.state.selectDateSet){
+            NotificationManager.error('No product selected.');
+            return;
+        }
         this.state.selectDateSet.vars.forEach(v => {
             if(v.selected){
                 variables.add(v.key);
