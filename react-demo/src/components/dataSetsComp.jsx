@@ -23,7 +23,7 @@ export default class SideBar extends Component {
         return (
             <div>
                 {
-                    d ?
+                    d && d.bbox?
                     <div className="card mt-2">
                         <div className="card-header" style={{backgroundColor: d.color}}>
                             {d.label}
