@@ -119,6 +119,7 @@ export default class MapComp extends Component {
     };
 
     render() {
+        let d = this.props.selectDateSet;
         return (
             <div>
                 <Map
@@ -130,6 +131,15 @@ export default class MapComp extends Component {
                         attribution={stamenTonerAttr}
                         url={stamenTonerTiles}
                     />
+
+                    {
+                        d && d.bbox ?
+                            <Rectangle bounds={d.bbox} color={d.color}>
+                                <Tooltip sticky>{d.label}</Tooltip>
+                            </Rectangle>
+                            : ""
+                    }
+
 
                     <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
                         <EditControl
