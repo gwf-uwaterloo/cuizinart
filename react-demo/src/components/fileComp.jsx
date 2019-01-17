@@ -39,8 +39,9 @@ export default class FileComp extends Component {
                 let reader = new FileReader();
                 reader.onload = function(e) {
                     shp(reader.result).then(function(geojson){
-                        self.props.renderGeoJSON(geojson);
-                        self.geoJson = geojson;
+                        let features = self.parseGeoJson(geojson.features);
+                        self.props.renderGeoJSON(features);
+                        self.geoJson = features;
                     });
                 };
                 reader.readAsArrayBuffer(event.target.files[0]);
@@ -49,8 +50,9 @@ export default class FileComp extends Component {
                 let reader = new FileReader();
                 reader.onload = function(e) {
                     geoJson = JSON.parse(reader.result);
-                    self.props.renderGeoJSON(geoJson);
-                    self.geoJson = geoJson;
+                    let features = self.parseGeoJson(geoJson.features);
+                    self.props.renderGeoJSON(features);
+                    self.geoJson = features;
                 };
                 reader.readAsText(event.target.files[0]);
             }
@@ -59,6 +61,23 @@ export default class FileComp extends Component {
             return NotificationManager.error('Parsing file error');
         }
     };
+
+    parseGeoJson(features){
+        let featureList = [];
+        features.forEach(function (feature) {
+            if(feature["geometry"]["type"] === "Polygon"){
+                feature["geometry"]["coordinates"].forEach(function (coord) {
+                    coord.forEach(function (c) {
+                        if(c[0] > 180){
+                            c[0] -= 360;
+                        }
+                    });
+                });
+                featureList.push(feature);
+            }
+        });
+        return featureList;
+    }
 
     render() {
         const { selectedFileType } = this.state;

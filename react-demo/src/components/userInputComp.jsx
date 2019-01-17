@@ -4,12 +4,7 @@ import Select from 'react-select';
 /*
     show date range picker, headers checkbox
  */
-const products = [
-    { value: 'ctl-wrf-wca', label: 'ctl-wrf-wca' },
-    { value: 'pgw-wrf-wca', label: 'pgw-wrf-wca' },
-    { value: 'ctl-wrf-conus', label: 'ctl-wrf-conus' },
-    { value: 'pgw-wrf-conus', label: 'pgw-wrf-conus' }
-];
+
 export default class UserInputComp extends Component {
     constructor(props) {
         super(props);
@@ -25,7 +20,7 @@ export default class UserInputComp extends Component {
 
     handleSelectProduct = (selectedOption) => {
         this.setState({selectedProduct: selectedOption});
-        this.props.updateUserInputs({product: selectedOption.value});
+        this.props.updateDateSet({selectDateSet: selectedOption});
     };
 
     handleChange = (key, event) => {
@@ -43,7 +38,7 @@ export default class UserInputComp extends Component {
                             value={this.state.selectedProduct}
                             placeholder={"Choose product..."}
                             onChange={this.handleSelectProduct}
-                            options={products}
+                            options={this.props.products}
                         />
                     </div>
                     <div className="form-group col-lg-3">

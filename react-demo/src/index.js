@@ -14,51 +14,44 @@ import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 
-class Dataset {
-    constructor(id, boundary, color, description, variables){
-        this.id = id;
-        this.boundary = boundary; // rect
-        this.color = color;
-        this.description = description;
-        this.variables = variables;
-    }
-}
+let vars = [
+    {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
+    {key: "T2", description: "Temperature", selected: false},
+    {key: "LH", description: "Latent heat flux", selected: false},
+    {key: "HFX", description: "Upward heat flux", selected: false},
+    {key: "QFX", description: "Upward moisture flux", selected:false},
+    {key: "GLW", description: "Downward long wave flux", selected:false},
+    {key: "SWDOWN", description: "Downward short wave flux", selected:false},
+    {key: "PSFC", description: "Surface pressure", selected:false},
+    {key: "Q2", description: "Mixing ratio", selected:false},
+    {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
+    {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
+];
 class App extends Component {
     state = {
-        datasets: []
+        selectDateSet: null,
+        products: []
     };
 
     constructor(props) {
         super(props);
         this.child = React.createRef();
-        this.userInputs= {}
+        this.userInputs= {};
     }
 
     componentDidMount() {
         let self = this;
-        let dataset1 = new Dataset(0, null, "#5d9598", "Variables",
-            [
-                {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
-                {key: "T2", description: "Temperature", selected: false},
-                {key: "LH", description: "Latent heat flux", selected: false},
-                {key: "HFX", description: "Upward heat flux", selected: false},
-                {key: "QFX", description: "Upward moisture flux", selected:false},
-                {key: "GLW", description: "Downward long wave flux", selected:false},
-                {key: "SWDOWN", description: "Downward short wave flux", selected:false},
-                {key: "PSFC", description: "Surface pressure", selected:false},
-                {key: "Q2", description: "Mixing ratio", selected:false},
-                {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
-                {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
-            ]);
-        self.setState({
-            datasets: [...this.state.datasets, dataset1]
-        });
-
-
+        let products = [
+            { value: 'ctl-wrf-wca', label: 'ctl-wrf-wca', vars: vars, color: '#5d9598', bbox: null},
+            { value: 'pgw-wrf-wca', label: 'pgw-wrf-wca', vars: vars, color: '#7142f4', bbox: null },
+            { value: 'ctl-wrf-conus', label: 'ctl-wrf-conus', vars: vars, color: '#f441c1', bbox: null },
+            { value: 'pgw-wrf-conus', label: 'pgw-wrf-conus', vars: vars, color: '#b5f441', bbox: null }
+        ];
+        self.setState({products: products})
     }
 
-    updateDateSets = (dataSets) => {
-        this.setState(dataSets);
+    updateDateSet = (dataSet) => {
+        this.setState(dataSet);
     };
 
     updateUserInputs = (userInputs) => {
@@ -66,23 +59,25 @@ class App extends Component {
     };
 
     mapDrawCallback = (geojson) => {
-        //geojson[0].push(geojson[0][0]); // close coordinates
-        this.postJsonToServer(geojson);
+        this.postJsonToServer(geojson.features);
     };
 
     uploadFileCallback = (geojson) => {
         this.postJsonToServer(geojson);
     };
 
-    postJsonToServer = (jsonData) => {
+    postJsonToServer = (features) => {
         let variables = new Set();
-        this.state.datasets.forEach(ds => {
-            ds.variables.forEach(v => {
-                if(v.selected){
-                    variables.add(v.key);
-                }
-            })
+        if(!this.state.selectDateSet){
+            NotificationManager.error('No product selected.');
+            return;
+        }
+        this.state.selectDateSet.vars.forEach(v => {
+            if(v.selected){
+                variables.add(v.key);
+            }
         });
+
         if(variables.size === 0){
             NotificationManager.error('No variable selected.');
             return;
@@ -93,20 +88,19 @@ class App extends Component {
         }
         let passLoad = {
             variables: Array.from(variables),
-            bounding_geom: [jsonData["features"]]
+            bounding_geom: features
         };
         passLoad = _.assign(passLoad, this.userInputs);
-        console.log(passLoad);
+        console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
-            /*
-            axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
+            axios.post('http://127.0.0.1:5000/processJson', passLoad)
                 .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'application/x-netcdf'}));
+                    console.log("success");
                 })
                 .catch(function (error) {
                     console.log(error);
                 });
-                */
+
         }
         else{
             // cancel
@@ -123,10 +117,10 @@ class App extends Component {
         return (
             <div className="row">
                 <div className="col col-lg-12">
-                    <UserInputComp updateUserInputs={this.updateUserInputs} />
+                    <UserInputComp updateUserInputs={this.updateUserInputs} products={this.state.products} updateDateSet={this.updateDateSet}/>
                 </div>
                 <div className="col col-lg-3">
-                    <DataSetComp datasets={this.state.datasets} updateDateSets={this.updateDateSets} />
+                    <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet} />
                     <div className="card mt-2">
                         <div className="card-body">
                             <FileComp uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON} />
@@ -134,7 +128,7 @@ class App extends Component {
                     </div>
                 </div>
                 <div className="col col-lg-9">
-                    <Map ref={this.child} datasets={this.state.datasets} drawCallback={this.mapDrawCallback} />
+                    <Map ref={this.child} selectDateSet={this.state.selectDateSet} drawCallback={this.mapDrawCallback} />
                 </div>
                 <NotificationContainer/>
             </div>
