@@ -14,51 +14,42 @@ import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 
-class Dataset {
-    constructor(id, boundary, color, description, variables){
-        this.id = id;
-        this.boundary = boundary; // rect
-        this.color = color;
-        this.description = description;
-        this.variables = variables;
-    }
-}
+let vars = [
+    {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
+    {key: "T2", description: "Temperature", selected: false},
+    {key: "LH", description: "Latent heat flux", selected: false},
+    {key: "HFX", description: "Upward heat flux", selected: false},
+    {key: "QFX", description: "Upward moisture flux", selected:false},
+    {key: "GLW", description: "Downward long wave flux", selected:false},
+    {key: "SWDOWN", description: "Downward short wave flux", selected:false},
+    {key: "PSFC", description: "Surface pressure", selected:false},
+    {key: "Q2", description: "Mixing ratio", selected:false},
+    {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
+    {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
+];
+const products = [
+    { value: 'ctl-wrf-wca', label: 'ctl-wrf-wca', vars: vars, color: '#5d9598', bbox: null},
+    { value: 'pgw-wrf-wca', label: 'pgw-wrf-wca', vars: vars, color: '#7142f4', bbox: null },
+    { value: 'ctl-wrf-conus', label: 'ctl-wrf-conus', vars: vars, color: '#f441c1', bbox: null },
+    { value: 'pgw-wrf-conus', label: 'pgw-wrf-conus', vars: vars, color: '#b5f441', bbox: null }
+];
 class App extends Component {
     state = {
-        datasets: []
+        selectDateSet: null
     };
 
     constructor(props) {
         super(props);
         this.child = React.createRef();
-        this.userInputs= {}
+        this.userInputs= {};
     }
 
     componentDidMount() {
         let self = this;
-        let dataset1 = new Dataset(0, null, "#5d9598", "Variables",
-            [
-                {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
-                {key: "T2", description: "Temperature", selected: false},
-                {key: "LH", description: "Latent heat flux", selected: false},
-                {key: "HFX", description: "Upward heat flux", selected: false},
-                {key: "QFX", description: "Upward moisture flux", selected:false},
-                {key: "GLW", description: "Downward long wave flux", selected:false},
-                {key: "SWDOWN", description: "Downward short wave flux", selected:false},
-                {key: "PSFC", description: "Surface pressure", selected:false},
-                {key: "Q2", description: "Mixing ratio", selected:false},
-                {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
-                {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
-            ]);
-        self.setState({
-            datasets: [...this.state.datasets, dataset1]
-        });
-
-
     }
 
-    updateDateSets = (dataSets) => {
-        this.setState(dataSets);
+    updateDateSet = (dataSet) => {
+        this.setState(dataSet);
     };
 
     updateUserInputs = (userInputs) => {
@@ -66,7 +57,6 @@ class App extends Component {
     };
 
     mapDrawCallback = (geojson) => {
-        //geojson[0].push(geojson[0][0]); // close coordinates
         this.postJsonToServer(geojson.features);
     };
 
@@ -76,13 +66,12 @@ class App extends Component {
 
     postJsonToServer = (features) => {
         let variables = new Set();
-        this.state.datasets.forEach(ds => {
-            ds.variables.forEach(v => {
-                if(v.selected){
-                    variables.add(v.key);
-                }
-            })
+        this.state.selectDateSet.vars.forEach(v => {
+            if(v.selected){
+                variables.add(v.key);
+            }
         });
+
         if(variables.size === 0){
             NotificationManager.error('No variable selected.');
             return;
@@ -122,10 +111,10 @@ class App extends Component {
         return (
             <div className="row">
                 <div className="col col-lg-12">
-                    <UserInputComp updateUserInputs={this.updateUserInputs} />
+                    <UserInputComp updateUserInputs={this.updateUserInputs} products={products} updateDateSet={this.updateDateSet}/>
                 </div>
                 <div className="col col-lg-3">
-                    <DataSetComp datasets={this.state.datasets} updateDateSets={this.updateDateSets} />
+                    <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet} />
                     <div className="card mt-2">
                         <div className="card-body">
                             <FileComp uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON} />
@@ -133,7 +122,7 @@ class App extends Component {
                     </div>
                 </div>
                 <div className="col col-lg-9">
-                    <Map ref={this.child} datasets={this.state.datasets} drawCallback={this.mapDrawCallback} />
+                    <Map ref={this.child} drawCallback={this.mapDrawCallback} />
                 </div>
                 <NotificationContainer/>
             </div>
