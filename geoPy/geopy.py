@@ -67,6 +67,8 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
     print('Matched files: {} and period {} - {}'.format(nc_file_list, request_start_date, request_end_date))
 
     # At some point, we might want to support partitioned files. For now, just take the first one.
+    if len(nc_file_list) == 0:
+        raise Exception('No matching files found.')
     nc_file = open_file(nc_file_list[0])
 
     lat_array = nc_file['lat'][:]
@@ -86,7 +88,7 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
     y_coords = nc_file['y'][:]
     mask_shapes_indices = []
     mask_shapes_xy = []
-    for feature in geojson_shape[0]:
+    for feature in geojson_shape:
         # Get each vertex's index in the lat- and lon-arrays
         vertex_indices = np.array(list(get_indexes(lat_array, lon_array, lon_array.shape,
                                                    vertex[1], vertex[0])

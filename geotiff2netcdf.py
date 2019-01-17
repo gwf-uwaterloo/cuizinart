@@ -335,5 +335,10 @@ def convert(in_source, out_dir, out_source_name=None, dim_x_name='x', dim_y_name
 
 if __name__ == '__main__':
     geotiffdir = 'data/geotiff'
-    for f in os.listdir(geotiffdir):
+
+    files = filter((lambda f: f[0] is not False), ((parseFilename(f),f) for f in os.listdir(geotiffdir)))
+    files = list((datetime.strptime(f[0][0] + f[0][1], '%Y.%m.%d%H.%M.%S'), f[1]) for f in files)
+
+    for _, f in sorted(files):
+        print('Next file: {}'.format(f))
         convert(os.path.join(geotiffdir, f), out_dir='data/converted_netcdf')

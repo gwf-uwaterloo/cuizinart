@@ -1,10 +1,12 @@
 import os
+
 from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
 import zipfile
+import netCDF4  # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
 import geopyspark as gps
 from pyspark import SparkContext
 
@@ -38,7 +40,11 @@ def fetchResult():
     print(request.get_json())
 
     geojson, start_time, end_time, variables = parse_json(request.get_json())
-    out_file_name = geopy.process_query(geojson, start_time, end_time, variables, sc)
+    try:
+        out_file_name = geopy.process_query(geojson, start_time, end_time, variables, sc)
+    except Exception as e:
+        print(str(e))
+        return '{message: "' + str(e) + '"}'
 
     if start_time and end_time:
         try:
@@ -50,6 +56,7 @@ def fetchResult():
             return rv
     else:
         return '{message: "Server Error"}'
+
 
 if __name__ == '__main__':
     app.run()
