@@ -20,11 +20,12 @@ let mapCenter = [43.4643, -80.5204];
 export default class MapComp extends Component {
     constructor(props) {
         super(props);
-        this.state = {
-            currentZoomLevel: zoomLevel,
-            geojsonLayer: null
-        };
+        this.geojsonLayers = [];
     }
+
+    state = {
+        currentZoomLevel: zoomLevel
+    };
 
     componentDidMount() {
         const leafletMap = this.leafletMap.leafletElement;
@@ -34,17 +35,21 @@ export default class MapComp extends Component {
         });
     }
 
-    renderGeoJson(geojson) {
-        if(this.state.geojsonLayer){
-            this.leafletMap.leafletElement.removeLayer( this.state.geojsonLayer);
-        }
-        this.state.geojsonLayer = L.geoJSON(geojson, {
-            style: function (feature) {
-                return {color: feature.properties.color};
-            }
-        }).bindPopup(function (layer) {
-            return layer.feature.properties.name;
-        }).addTo(this.leafletMap.leafletElement);
+    renderGeoJson(features) {
+        let self = this;
+        this.geojsonLayers.forEach(function (layer, index) {
+            self.leafletMap.leafletElement.removeLayer(layer);
+        });
+        features.forEach(function (feature) {
+            let layer = L.geoJSON(feature, {
+                style: function (fea) {
+                    return {color: '#3388ff'};
+                }
+            }).bindPopup(function (layer) {
+                return layer.feature.properties.name;
+            }).addTo(self.leafletMap.leafletElement);
+            self.geojsonLayers.push(layer);
+        });
     }
 
     handleZoomLevelChange(newZoomLevel) {
@@ -114,6 +119,7 @@ export default class MapComp extends Component {
     };
 
     render() {
+        let d = this.props.selectDateSet;
         return (
             <div>
                 <Map
@@ -125,11 +131,14 @@ export default class MapComp extends Component {
                         attribution={stamenTonerAttr}
                         url={stamenTonerTiles}
                     />
-                    {this.props.datasets.map(d =>
-                        <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
-                            <Tooltip sticky>{d.description}</Tooltip>
-                        </Rectangle>
-                    )}
+                    {
+                        d ?
+                            <Rectangle bounds={d.bbox} color={d.color}>
+                                <Tooltip sticky>{d.label}</Tooltip>
+                            </Rectangle>
+                            : ""
+                    }
+
 
                     <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
                         <EditControl

@@ -1,39 +1,39 @@
 import shortid from 'shortid';
 import {Component} from "react";
 import React from "react";
+import _ from 'lodash';
 export default class SideBar extends Component {
     constructor(props) {
         super(props);
     }
 
-    handleCheckbox(setId,key,event){
-        let datasets = this.props.datasets.slice();
-        let ds = datasets.find(function (s) {
-            return s.id === setId;
-        });
-        let variable = ds.variables.find(function (v) {
+    handleCheckbox(key,event){
+        let curr = _.assign({}, this.props.selectDateSet);
+        let variable = curr.vars.find(function (v) {
             return v.key === key;
         });
         const target = event.target;
 
         variable["selected"] = target.checked;
-        this.props.updateDateSets({datasets: datasets});
+        this.props.updateDateSet({selectDateSet: curr});
     }
 
     render() {
+        let d = this.props.selectDateSet;
         return (
             <div>
-                {this.props.datasets.map(d =>
-                    <div key={d.id} className="card m-2">
+                {
+                    d ?
+                    <div className="card mt-2">
                         <div className="card-header" style={{backgroundColor: d.color}}>
-                            {d.description}
+                            {d.label}
                         </div>
                         <div className="card-body">
                             {
-                                d.variables.map( va =>
+                                d.vars.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(d.id, va.key, e)}/>{va["description"]}
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(va.key, e)}/>{va["key"]}: {va["description"]}
                                         </label>
                                     </div>
                                 )
@@ -41,7 +41,8 @@ export default class SideBar extends Component {
 
                         </div>
                     </div>
-                )}
+                    : <div></div>
+                }
             </div>
         );
     }
