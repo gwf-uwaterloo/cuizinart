@@ -12,15 +12,19 @@ def processJson():
     json_request = request.get_json()
 
     if json_request['user_email'] != 'juliane.mai@uwaterloo.ca' or json_request['user_id'] != 'julemai':
-        return
+        return '{message: "Invalid user or email"}', 401
 
     request_string = str(json_request)
     print(request_string)
 
-    with open('__cuizinart-graham-request.dat', 'w') as f:
+    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['user_id'],
+                                                              json_request['request_id'])
+    with open(file_name, 'w') as f:
         f.write(request_string)
 
-    os.system("scp -i '~/.ssh/id_rsa_graham' __cuizinart-graham-request.dat mgauch@graham.computecanada.ca:/project/6008034/WRF-REQUEST/INBOX/")
+    os.system("scp -i '~/.ssh/id_rsa_graham' {} mgauch@graham.computecanada.ca:/project/6008034/WRF-REQUEST/INBOX/".format(file_name))
+
+    return '{message: "success"}'
 
 
 if __name__ == '__main__':
