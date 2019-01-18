@@ -14,7 +14,7 @@ def processJson():
     if json_request['user_email'] != 'juliane.mai@uwaterloo.ca' or json_request['user_id'] != 'julemai':
         return '{message: "Invalid user or email"}', 401
 
-    request_string = str(json_request)
+    request_string = str(json_request).replace("'", '"')
     print(request_string)
 
     file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['user_id'],
