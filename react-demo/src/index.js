@@ -33,6 +33,7 @@ class App extends Component {
         super(props);
         this.child = React.createRef();
         this.userInputs= {};
+        this.features=[];
     }
 
     componentDidMount() {
@@ -56,15 +57,11 @@ class App extends Component {
         this.userInputs = _.assign(this.userInputs, userInputs);
     };
 
-    mapDrawCallback = (geojson) => {
-        this.postJsonToServer(geojson.features);
+    updateFeatures = (features) => {
+        this.features = features;
     };
 
-    uploadFileCallback = (geojson) => {
-        this.postJsonToServer(geojson);
-    };
-
-    postJsonToServer = (features) => {
+    postJsonToServer = () => {
         let variables = new Set();
         if(!this.state.selectDateSet){
             NotificationManager.error('No product selected.');
@@ -87,7 +84,7 @@ class App extends Component {
         let passLoad = {
             variables: Array.from(variables),
             product: this.state.selectDateSet.value,
-            bounding_geom: features
+            bounding_geom: this.features
         };
         passLoad = _.assign(passLoad, this.userInputs);
         console.log(JSON.stringify(passLoad));
@@ -122,12 +119,16 @@ class App extends Component {
                     <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet} />
                     <div className="card mt-2">
                         <div className="card-body">
-                            <FileComp uploadFileCallback={this.uploadFileCallback} renderGeoJSON={this.renderGeoJSON} />
+                            <FileComp uploadFileCallback={this.updateFeatures} renderGeoJSON={this.renderGeoJSON} />
                         </div>
                     </div>
+                    <div className="mt-2">
+                        <button className="btn btn-danger" onClick={this.postJsonToServer}>Process</button>
+                    </div>
+
                 </div>
                 <div className="col col-lg-9">
-                    <Map ref={this.child} selectDateSet={this.state.selectDateSet} drawCallback={this.mapDrawCallback} />
+                    <Map ref={this.child} selectDateSet={this.state.selectDateSet} drawCallback={this.updateFeatures} />
                 </div>
                 <NotificationContainer/>
             </div>

@@ -95,7 +95,7 @@ export default class MapComp extends Component {
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
         //let lastIndex = geojsonData.features.length-1;
         //console.log(geojsonData.features[lastIndex]);
-        this.props.drawCallback(geojsonData);
+        this.props.drawCallback(geojsonData.features);
 
         //onChange(geojsonData);
     };
