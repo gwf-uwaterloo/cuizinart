@@ -31,11 +31,11 @@ def processJson():
 
 @app.route('/getBoundaries', methods=['GET'])
 def getBoundaries():
-    files = os.listdir('data/boundaries/graham')
+    files = os.listdir('data/boundaries')
     files_json = []
 
     for file_name in files:
-        with open('data/boundaries/graham/{}'.format(file_name)) as f:
+        with open('data/boundaries/{}'.format(file_name)) as f:
             file_str = f.read()
             if file_str.startswith('\''):
                 file_str = file_str[1:]
