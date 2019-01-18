@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
+import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -133,9 +133,9 @@ export default class MapComp extends Component {
                     />
                     {
                         d && d.bbox ?
-                            <Rectangle bounds={d.bbox} color={d.color}>
+                            <Polygon positions={d.bbox} color={d.color}>
                                 <Tooltip sticky>{d.label}</Tooltip>
-                            </Rectangle>
+                            </Polygon>
                             : ""
                     }
 
