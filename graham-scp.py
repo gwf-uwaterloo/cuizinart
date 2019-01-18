@@ -46,7 +46,7 @@ def getBoundaries():
             js = json.loads(file_str)
             product_name = list(js.keys())[0]
             coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
-            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:,::-1].tolist()
+            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:, :, ::-1].tolist()
             files_json.append(js)
 
     return jsonify(files_json)
