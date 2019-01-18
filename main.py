@@ -1,3 +1,4 @@
+import json
 import os
 
 from flask import Flask
@@ -19,14 +20,16 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
 sc = SparkContext(conf=conf)
 
+product_dict = {}
 
 def parse_json(obj):
+    product = obj["product"]
     start_time = obj["start_time"]
     end_time = obj["end_time"]
     request_variables = obj["variables"]
     geojson = obj["bounding_geom"]
 
-    return geojson, start_time, end_time, request_variables
+    return product, geojson, start_time, end_time, request_variables
 
 
 @app.route('/getBoundary', methods=['GET'])
@@ -41,7 +44,9 @@ def getBoundaries():
     file_json = []
     for file_name in files:
         with open('data/boundaries/{}'.format(file_name)) as f:
-            file_json.append(f.read())
+            file_json.append(json.load(f))
+
+        product_dict[list(file_json[-1].keys())[0]] = file_name.replace('.info', '')
 
     return jsonify(file_json)
 
@@ -50,9 +55,10 @@ def getBoundaries():
 def fetchResult():
     print(request.get_json())
 
-    geojson, start_time, end_time, variables = parse_json(request.get_json())
+    product, geojson, start_time, end_time, variables = parse_json(request.get_json())
+    input_file_name = product_dict[product]
     try:
-        out_file_name = geopy.process_query(geojson, start_time, end_time, variables, sc)
+        out_file_name = geopy.process_query(input_file_name, geojson, start_time, end_time, variables, sc)
     except Exception as e:
         print(str(e))
         return '{message: "' + str(e) + '"}'

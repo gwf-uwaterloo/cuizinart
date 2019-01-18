@@ -33,43 +33,39 @@ def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
     return x_slice_start, x_slice_stop, y_slice_start, y_slice_stop
 
 
-def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
+def process_query(input_file, geojson_shape, start_time, end_time, request_vars, spark_ctx):
 
     nc_base_path = 'data/converted_netcdf'
-    nc_files = [nc_base_path + '/' + f for f in listdir(nc_base_path) if
-                isfile(join(nc_base_path, f)) and f.endswith('.nc')]
+    nc_file_name = nc_base_path + '/' + input_file
+
+    if not nc_file_name.endswith('.nc') or not isfile(nc_file_name):
+        raise Exception('No appropriate product file found.')
 
     request_start_date = parse(start_time).date()
     request_end_date = parse(end_time).date()
     print('Request time range: {} - {}'.format(request_start_date, request_end_date))
     print('Request variables: {}'.format(request_vars))
 
-    nc_file_list = []
-    for f in nc_files:
-        nc_file = open_file(f)
-        file_vars = nc_file.variables.keys()
+    nc_file = open_file(nc_file_name)
+    file_vars = nc_file.variables.keys()
 
-        file_time_range = nc_file['time'][:]
-        file_start_date = (datetime(1990, 1, 1, 0, 0) + timedelta(hours=float(file_time_range.min()))).date()
-        file_end_date = (datetime(1990, 1, 1, 0, 0) + timedelta(hours=float(file_time_range.max()))).date()
+    file_time_range = nc_file['time'][:]
+    file_start_date = (datetime(1990, 1, 1, 0, 0) + timedelta(hours=float(file_time_range.min()))).date()
+    file_end_date = (datetime(1990, 1, 1, 0, 0) + timedelta(hours=float(file_time_range.max()))).date()
 
-        if file_start_date <= request_end_date <= file_end_date \
-                or file_start_date <= request_start_date <= file_end_date:
-            if all(v in file_vars for v in request_vars):
-                nc_file_list.append(f)
+    if file_start_date <= request_end_date <= file_end_date \
+            or file_start_date <= request_start_date <= file_end_date:
+        if all(v in file_vars for v in request_vars):
+            if request_start_date < file_start_date:
+                request_start_date = file_start_date
+            if request_end_date > file_end_date:
+                request_end_date = file_end_date
 
-                if request_start_date < file_start_date:
-                    request_start_date = file_start_date
-                if request_end_date > file_end_date:
-                    request_end_date = file_end_date
-
-        nc_file.close()
-    print('Matched files: {} and period {} - {}'.format(nc_file_list, request_start_date, request_end_date))
-
-    # At some point, we might want to support partitioned files. For now, just take the first one.
-    if len(nc_file_list) == 0:
+        else:
+            raise Exception('Product does not contain all variables.')
+    else:
         raise Exception('No matching files found.')
-    nc_file = open_file(nc_file_list[0])
+    print('Matched file: {} and period {} - {}'.format(nc_file_name, request_start_date, request_end_date))
 
     lat_array = nc_file['lat'][:]
     lon_array = nc_file['lon'][:]
@@ -178,20 +174,20 @@ def process_query(geojson_shape, start_time, end_time, request_vars, spark_ctx):
     generate_output_netcdf(out_file_name, x_coords, y_coords, lats, lons, time_instants, masked_var_data,
                            variables_metadata, var_temp_resolution, no_data_value, nc_metadata, proj_var)
 
-    histograms = masked_layer.get_histogram()
-    if len(request_vars) == 1:
-        histograms = [histograms]
-    color_ramp = [0x2791C3FF, 0x5DA1CAFF, 0x83B2D1FF, 0xA8C5D8FF,
-                  0xCCDBE0FF, 0xE9D3C1FF, 0xDCAD92FF, 0xD08B6CFF,
-                  0xC66E4BFF, 0xBD4E2EFF]
-    color_maps = list(gps.ColorMap.from_histogram(h, color_ramp) for h in histograms)
+    #histograms = masked_layer.get_histogram()
+    #if len(request_vars) == 1:
+    #    histograms = [histograms]
+    #color_ramp = [0x2791C3FF, 0x5DA1CAFF, 0x83B2D1FF, 0xA8C5D8FF,
+    #              0xCCDBE0FF, 0xE9D3C1FF, 0xDCAD92FF, 0xD08B6CFF,
+    #              0xC66E4BFF, 0xBD4E2EFF]
+    #color_maps = list(gps.ColorMap.from_histogram(h, color_ramp) for h in histograms)
 
     # Write image to file
-    for i, (var_name, color_map) in enumerate(zip(request_vars, color_maps)):
-        png = masked_layer.bands(i).to_png_rdd(color_map).collect()
-        for png_at_instant, instant in zip(png, time_instants):
-            with open('gwf-{}-{}.png'.format(var_name, instant.strftime('%Y-%m-%d_%H%M')), 'wb') as f:
-                f.write(png_at_instant[1])
+    #for i, (var_name, color_map) in enumerate(zip(request_vars, color_maps)):
+    #    png = masked_layer.bands(i).to_png_rdd(color_map).collect()
+    #    for png_at_instant, instant in zip(png, time_instants):
+    #        with open('gwf-{}-{}.png'.format(var_name, instant.strftime('%Y-%m-%d_%H%M')), 'wb') as f:
+    #            f.write(png_at_instant[1])
 
     nc_file.close()
 
