@@ -14,6 +14,7 @@ import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 
+/*
 let vars = [
     {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
     {key: "T2", description: "Temperature", selected: false},
@@ -27,6 +28,7 @@ let vars = [
     {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
     {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
 ];
+*/
 class App extends Component {
     state = {
         selectDateSet: null,
@@ -42,13 +44,28 @@ class App extends Component {
 
     componentDidMount() {
         let self = this;
-        let products = [
-            { value: 'ctl-wrf-wca', label: 'ctl-wrf-wca', vars: vars, color: '#5d9598', bbox: null},
-            { value: 'pgw-wrf-wca', label: 'pgw-wrf-wca', vars: vars, color: '#7142f4', bbox: null },
-            { value: 'ctl-wrf-conus', label: 'ctl-wrf-conus', vars: vars, color: '#f441c1', bbox: null },
-            { value: 'pgw-wrf-conus', label: 'pgw-wrf-conus', vars: vars, color: '#b5f441', bbox: null }
-        ];
-        self.setState({products: products})
+        let products = [];
+        axios.get(`http://127.0.0.1:5000/getBoundaries`)
+            .then(res => {
+                if(res.data.length > 0){
+                    res.data.forEach(function (p) {
+                        let pJson = p[Object.keys(p)[0]];
+                        let product = {
+                            value: pJson.product,
+                            label: pJson.product,
+                            vars: _.map(pJson.variables, function(i){
+                                return {key: i.short_name, description: i.long_name, select: false}
+                            }),
+                            color: '#17a2b8',
+                            bbox: pJson.domain[0].geometry.coordinates,
+                            valid_start_time: pJson.time[0],
+                            valid_end_time: pJson.time[pJson.time.length-1]
+                        };
+                        products.push(product);
+                    });
+                }
+                self.setState({products: products});
+            });
     }
 
     updateDateSet = (dataSet) => {
@@ -124,7 +141,7 @@ class App extends Component {
                         </div>
                     </div>
                     <div className="mt-2">
-                        <button className="btn btn-danger" onClick={this.postJsonToServer}>Process</button>
+                        <button className="btn btn-info" onClick={this.postJsonToServer}>Process</button>
                     </div>
                 </div>
                 <div className="col col-lg-9">
