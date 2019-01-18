@@ -53,7 +53,7 @@ def parse_variables(filename, variable):
     """
     shortname = filename.variables[variable]._name         # e.g. GDPS_P_UUC_09950
     try:
-        longname = filename.variables[variable].long_name
+        longname = filename.variables[variable].getncattr('long_name')
     except Exception as e:
         LOGGER.exception('Could not parse long_name from NC file')
         raise e
@@ -126,6 +126,7 @@ def parse_domain(f):
 
     domain[0]['geometry']['coordinates'] = [ np.array(ch_dict['coordinates'])[0,:,0:2].tolist() ]
 
+
     return domain
 
 
@@ -163,7 +164,8 @@ def ncatt2json(filelist):
 
         for v in f.variables:
             # Skip these...may need to add others
-            if not any([v == u'time', v == u'lon', v == u'lat', v == u'rlat', v == u'rlon', v == u'rotated_pole']):
+            if not any([v == u'time', v == u'lon', v == u'lat', v == u'rlat', v == u'rlon', v == u'rotated_pole', 
+                        v == u'x', v == u'y', v == u'lambert_azimuthal_equal_area']):
                 var_list.append(parse_variables(f, v))
 
         # all available time stamps in this file in YYYY-MM-DD HH:MM:SS format
@@ -172,8 +174,7 @@ def ncatt2json(filelist):
         # get domain covered by data
         domain = parse_domain(f)
 
-        # product is a global attribute in NetCDF file
-        product = f.gwf_product
+        product = ''
 
         output_dict[product] = {'product':   product,
                                 'variables': var_list,
