@@ -44,14 +44,15 @@ def getBoundaries():
     files = os.listdir('data/boundaries')
     files_json = []
     for file_name in files:
-        with open('data/boundaries/{}'.format(file_name)) as f:
-            js = json.load(f)
-            product_name = list(js.keys())[0]
-            coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
-            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:,::-1]
-            files_json.append(js)
+        if file_name.endswith('.info'):
+            with open('data/boundaries/{}'.format(file_name)) as f:
+                js = json.load(f)
+                product_name = list(js.keys())[0]
+                coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
+                js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:, :, ::-1]
+                files_json.append(js)
 
-        product_dict[product_name] = file_name.replace('.info', '')
+            product_dict[product_name] = file_name.replace('.info', '')
 
     return jsonify(files_json)
 
