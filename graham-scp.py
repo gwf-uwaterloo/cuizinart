@@ -31,11 +31,11 @@ def processJson():
 
 @app.route('/getBoundaries', methods=['GET'])
 def getBoundaries():
-    files = os.listdir('data/boundaries')
+    files = os.listdir('data/boundaries/graham')
     files_json = []
 
     for file_name in files:
-        with open('data/boundaries/{}'.format(file_name)) as f:
+        with open('data/boundaries/graham/{}'.format(file_name)) as f:
             file_str = f.read()
             if file_str.startswith('\''):
                 file_str = file_str[1:]
@@ -46,7 +46,7 @@ def getBoundaries():
             js = json.loads(file_str)
             product_name = list(js.keys())[0]
             coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
-            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:,::-1]
+            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:,::-1].tolist()
             files_json.append(js)
 
     return jsonify(files_json)
