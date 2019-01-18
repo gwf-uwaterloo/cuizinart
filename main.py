@@ -1,6 +1,7 @@
 import json
 import os
 
+import numpy as np
 from flask import Flask
 from flask import request
 from flask_cors import CORS
@@ -41,14 +42,18 @@ def getBoundary():
 @app.route('/getBoundaries', methods=['GET'])
 def getBoundaries():
     files = os.listdir('data/boundaries')
-    file_json = []
+    files_json = []
     for file_name in files:
         with open('data/boundaries/{}'.format(file_name)) as f:
-            file_json.append(json.load(f))
+            js = json.load(f)
+            product_name = list(js.keys())[0]
+            coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
+            js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:,::-1]
+            files_json.append(js)
 
-        product_dict[list(file_json[-1].keys())[0]] = file_name.replace('.info', '')
+        product_dict[product_name] = file_name.replace('.info', '')
 
-    return jsonify(file_json)
+    return jsonify(files_json)
 
 
 @app.route('/fetchResult', methods=['POST'])
