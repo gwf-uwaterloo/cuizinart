@@ -11,16 +11,10 @@ export default class FileComp extends Component {
     constructor(props) {
         super(props);
         this.fileRef = React.createRef();
-        this.geoJson = null;
     }
 
     state = {
         selectedFileType: null
-    };
-
-    handleProcess = () => {
-        //this.fileRef.current.value = "";
-        this.props.uploadFileCallback(this.geoJson);
     };
 
     handleSelectFileType = (selectedOption) => {
@@ -41,7 +35,7 @@ export default class FileComp extends Component {
                     shp(reader.result).then(function(geojson){
                         let features = self.parseGeoJson(geojson.features);
                         self.props.renderGeoJSON(features);
-                        self.geoJson = features;
+                        self.props.uploadFileCallback(features);
                     });
                 };
                 reader.readAsArrayBuffer(event.target.files[0]);
@@ -52,7 +46,7 @@ export default class FileComp extends Component {
                     geoJson = JSON.parse(reader.result);
                     let features = self.parseGeoJson(geoJson.features);
                     self.props.renderGeoJSON(features);
-                    self.geoJson = features;
+                    self.props.uploadFileCallback(features);
                 };
                 reader.readAsText(event.target.files[0]);
             }
@@ -92,7 +86,6 @@ export default class FileComp extends Component {
                 <div className="mt-2 mb-2">
                     <input type="file" ref={this.fileRef} name="fileUpload" id="fileUpload" onChange={this.handleSelectedFile} />
                 </div>
-                <button className="btn btn-primary" onClick={this.handleProcess}>Process</button>
             </div>
         );
     }
