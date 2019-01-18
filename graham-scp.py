@@ -32,7 +32,7 @@ def getBoundaries():
     files = os.listdir('data/boundaries')
     file_json = []
     for file_name in files:
-        with open(file_name) as f:
+        with open('data/boundaries/{}'.format(file_name)) as f:
             file_json.append(f.read())
 
     return jsonify(file_json)
