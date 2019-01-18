@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask import request
 from flask_cors import CORS
-
+from flask import jsonify
 app = Flask("graham-scp")
 CORS(app)
 
@@ -25,6 +25,17 @@ def processJson():
     os.system("scp -i '~/.ssh/id_rsa_graham' {} mgauch@graham.computecanada.ca:/project/6008034/WRF-REQUEST/INBOX/".format(file_name))
 
     return '{message: "success"}'
+
+
+@app.route('/getBoundaries', methods=['GET'])
+def getBoundaries():
+    files = os.listdir('data/boundaries')
+    file_json = []
+    for file_name in files:
+        with open(file_name) as f:
+            file_json.append(f.read())
+
+    return jsonify(file_json)
 
 
 if __name__ == '__main__':
