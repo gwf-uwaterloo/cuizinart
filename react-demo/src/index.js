@@ -82,12 +82,13 @@ class App extends Component {
     };
 
     postJsonToServer = () => {
+        let self = this;
         let variables = new Set();
-        if(!this.state.selectDateSet){
+        if(!self.state.selectDateSet){
             NotificationManager.error('No product selected.');
             return;
         }
-        this.state.selectDateSet.vars.forEach(v => {
+        self.state.selectDateSet.vars.forEach(v => {
             if(v.selected){
                 variables.add(v.key);
             }
@@ -97,22 +98,32 @@ class App extends Component {
             NotificationManager.error('No variable selected.');
             return;
         }
-        if(!this.userInputs || !this.userInputs.start_time || !this.userInputs.end_time){
+        if(!self.userInputs || !self.userInputs.start_time || !self.userInputs.end_time){
             NotificationManager.error('No date range selected.');
             return;
         }
 
-        if(moment(this.userInputs.start_time).isBefore(this.state.selectDateSet.valid_start_time) || moment(this.userInputs.end_time).isAfter(this.state.selectDateSet.valid_end_time)){
-            NotificationManager.error('Valid time range is: '+this.state.selectDateSet.valid_start_time +' to '+this.state.selectDateSet.valid_end_time);
+        if(moment(self.userInputs.start_time).isBefore(self.state.selectDateSet.valid_start_time) || moment(self.userInputs.end_time).isAfter(self.state.selectDateSet.valid_end_time)){
+            NotificationManager.error('Valid time range is: '+self.state.selectDateSet.valid_start_time +' to '+self.state.selectDateSet.valid_end_time);
+            return;
+        }
+
+        if(!self.validateEmail(self.userInputs.user_email)){
+            NotificationManager.error('Please enter a valid email address.');
+            return;
+        }
+
+        if(self.features.length === 0){
+            NotificationManager.error('No geometry data found.');
             return;
         }
 
         let passLoad = {
             variables: Array.from(variables),
-            product: this.state.selectDateSet.value,
-            bounding_geom: this.features
+            product: self.state.selectDateSet.value,
+            bounding_geom: self.features
         };
-        passLoad = _.assign(passLoad, this.userInputs);
+        passLoad = _.assign(passLoad, self.userInputs);
         console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/processJson', passLoad)
@@ -133,6 +144,10 @@ class App extends Component {
         this.child.current.renderGeoJson(geojson);
     };
 
+    validateEmail(email) {
+        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
 
     render() {
         return (
