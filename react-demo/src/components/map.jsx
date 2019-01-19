@@ -13,7 +13,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const zoomLevel = 8;
+const zoomLevel = 5;
 let mapCenter = [43.4643, -80.5204];
 
 
