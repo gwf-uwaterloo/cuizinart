@@ -51,6 +51,20 @@ class App extends Component {
                 if(res.data.length > 0){
                     res.data.forEach(function (p) {
                         let pJson = p[Object.keys(p)[0]];
+                        let valid_start_time;
+                        let valid_end_time;
+                        if(pJson.product === "ctl-wrf-wca" || pJson.product === "pgw-wrf-wca"){
+                            valid_start_time = "2000-10-01";
+                            valid_end_time = "2015-09-30";
+                        }
+                        else if(pJson.product === "ctl-wrf-conus" || pJson.product === "pgw-wrf-conus"){
+                            valid_start_time = "2000-10-01";
+                            valid_end_time = "2013-09-30";
+                        }
+                        else{
+                            valid_start_time = pJson.time[0];
+                            valid_end_time = pJson.time[pJson.time.length-1];
+                        }
                         let product = {
                             value: pJson.product,
                             label: pJson.product,
@@ -59,8 +73,8 @@ class App extends Component {
                             }),
                             color: '#17a2b8',
                             bbox: pJson.domain[0].geometry.coordinates,
-                            valid_start_time: pJson.time[0],
-                            valid_end_time: pJson.time[pJson.time.length-1]
+                            valid_start_time: valid_start_time,
+                            valid_end_time: valid_end_time
                         };
                         products.push(product);
                     });
