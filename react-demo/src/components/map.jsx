@@ -154,7 +154,6 @@ export default class MapComp extends Component {
                                 marker: false,
                                 polyline: false,
                                 circlemarker: false
-
                             }}
                         />
                     </FeatureGroup>
