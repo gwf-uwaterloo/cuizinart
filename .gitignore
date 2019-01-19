@@ -8,6 +8,5 @@ react-demo/node_modules/*
 react-demo//package-lock.json
 env/*
 index.js
-*.png
 __pycache__/
 geojson.json
