@@ -148,7 +148,11 @@ export default class MapComp extends Component {
                             draw={{
                                 rectangle: {
                                     showArea: false
-                                }
+                                },
+                                circle: false,
+                                marker: false,
+                                polyline: false,
+                                circlemarker: false
                             }}
                         />
                     </FeatureGroup>
