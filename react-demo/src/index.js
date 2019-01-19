@@ -7,6 +7,7 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import 'bootstrap-daterangepicker/daterangepicker.css'
 import 'react-notifications/lib/notifications.css';
 import _ from 'lodash';
+import moment from 'moment';
 import axios from "axios";
 import {NotificationContainer, NotificationManager} from 'react-notifications';
 import saveAs from 'file-saver';
@@ -85,6 +86,12 @@ class App extends Component {
             NotificationManager.error('No date range selected.');
             return;
         }
+
+        if(moment(this.userInputs.start_time).isBefore(this.state.selectDateSet.valid_start_time) || moment(this.userInputs.end_time).isAfter(this.state.selectDateSet.valid_end_time)){
+            NotificationManager.error('Valid time range is: '+this.state.selectDateSet.valid_start_time +' to '+this.state.selectDateSet.valid_end_time);
+            return;
+        }
+
         let passLoad = {
             variables: Array.from(variables),
             product: this.state.selectDateSet.value,
