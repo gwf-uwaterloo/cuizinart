@@ -93,11 +93,6 @@ class App extends Component {
             return;
         }
 
-        if(!self.validateEmail(self.userInputs.user_email)){
-            NotificationManager.error('Please enter a valid email address.');
-            return;
-        }
-
         if(self.features.length === 0){
             NotificationManager.error('No geometry data found.');
             return;
