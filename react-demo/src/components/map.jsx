@@ -1,57 +1,54 @@
 import React, { Component } from 'react';
-import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip} from 'react-leaflet';
+import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
-import axios from 'axios';
-import {NotificationContainer, NotificationManager} from 'react-notifications';
-import saveAs from 'file-saver';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import L from 'leaflet';
 
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const zoomLevel = 8;
+const zoomLevel = 5;
 let mapCenter = [43.4643, -80.5204];
-let datasets = [];
 
-class Dataset {
-    constructor(id, boundary, color, description, headerAttributes){
-        this.id = id;
-        this.boundary = boundary; // rect
-        this.color = color;
-        this.description = description;
-        this.headerAttributes = headerAttributes;
-    }
-}
 
 export default class MapComp extends Component {
     constructor(props) {
         super(props);
-        this.state = { currentZoomLevel: zoomLevel };
+        this.geojsonLayers = [];
     }
 
-    componentDidMount() {
-        axios.get(`http://127.0.0.1:5000/getBoundary`)
-            .then(res => {
-                // console.log(res.data);
-                let dataset1 = new Dataset(0, res.data, "#5d9598", "Five Lakes",
-                    {
-                        LST_LWST_avg_daily: "Daily Average Temperature(LST_LWST_avg_daily)",
-                        LST_LWST_avg_day: "Average Daytime Temperature(LST_LWST_avg_day)",
-                        LST_LWST_avg_night: "Average Night Temperature(LST_LWST_avg_night)",
-                        N_obs_avg_daily: "Average N Observed Daily Temperature(N_obs_avg_daily)",
-                        N_obs_avg_day: "Average N Observed Daytime Temperature(N_obs_avg_day)",
-                        avg_night_temp: "Average Night Temperature(avg_night_temp)",
-                        N_obs_avg_night: "Average N Observed Night Temperature(N_obs_avg_night)"
-                    });
+    state = {
+        currentZoomLevel: zoomLevel
+    };
 
-                //let dataset2 = new Dataset(1, [[43.6764444,-80.7178777],[43.862008,-80.272744]], '#'+Math.floor(Math.random()*16777215).toString(16), "Ontario", ["air_pressure", "humidity"]);
-                datasets.push(dataset1);
-                //datasets.push(dataset2);
-                this.props.event(datasets);
-            });
+    componentDidMount() {
         const leafletMap = this.leafletMap.leafletElement;
         leafletMap.on('zoomend', () => {
             const updatedZoomLevel = leafletMap.getZoom();
             this.handleZoomLevelChange(updatedZoomLevel);
+        });
+    }
+
+    renderGeoJson(features) {
+        let self = this;
+        this.geojsonLayers.forEach(function (layer, index) {
+            self.leafletMap.leafletElement.removeLayer(layer);
+        });
+        features.forEach(function (feature) {
+            let layer = L.geoJSON(feature, {
+                style: function (fea) {
+                    return {color: '#3388ff'};
+                }
+            }).bindPopup(function (layer) {
+                return layer.feature.properties.name;
+            }).addTo(self.leafletMap.leafletElement);
+            self.geojsonLayers.push(layer);
         });
     }
 
@@ -96,41 +93,9 @@ export default class MapComp extends Component {
         // }
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
-        let postSetting = this.props.settings;
-        let lastIndex = geojsonData.features.length-1;
-        let variables = [];
-        if(postSetting.headers && postSetting.headers.length > 0){
-            Object.keys(postSetting.headers[0]).forEach(hkey => {
-                if(postSetting.headers[0][hkey]){
-                    variables.push(hkey);
-                }
-            });
-        }
-        if(variables.length === 0){
-            NotificationManager.error('No variable selected.');
-            return;
-        }
-        if(postSetting.selectDate.length === 0){
-            NotificationManager.error('No date range selected.');
-            return;
-        }
-        let passLoad = {
-            geoJson: geojsonData.features[lastIndex].geometry,
-            selectDate: postSetting.selectDate.toString(),
-            variables: variables.toString()
-        };
-        if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/fetchResult', passLoad, {responseType: 'blob'})
-                .then(function (response) {
-                    saveAs(new Blob([response.data], {type:'application/zip'}));
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
-        }
-        else{
-            // cancel
-        }
+        //let lastIndex = geojsonData.features.length-1;
+        //console.log(geojsonData.features[lastIndex]);
+        this.props.drawCallback(geojsonData.features);
 
         //onChange(geojsonData);
     };
@@ -154,6 +119,7 @@ export default class MapComp extends Component {
     };
 
     render() {
+        let d = this.props.selectDateSet;
         return (
             <div>
                 <Map
@@ -165,11 +131,14 @@ export default class MapComp extends Component {
                         attribution={stamenTonerAttr}
                         url={stamenTonerTiles}
                     />
-                    {datasets.map(d =>
-                        <Rectangle key={d.id} bounds={d.boundary} color={d.color}>
-                            <Tooltip sticky>{d.description}</Tooltip>
-                        </Rectangle>
-                    )}
+                    {
+                        d && d.bbox ?
+                            <Polygon positions={d.bbox} color={d.color}>
+                                <Tooltip sticky>{d.label}</Tooltip>
+                            </Polygon>
+                            : ""
+                    }
+
 
                     <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
                         <EditControl
@@ -179,12 +148,15 @@ export default class MapComp extends Component {
                             draw={{
                                 rectangle: {
                                     showArea: false
-                                }
+                                },
+                                circle: false,
+                                marker: false,
+                                polyline: false,
+                                circlemarker: false
                             }}
                         />
                     </FeatureGroup>
                 </Map>
-                <NotificationContainer/>
             </div>
         );
     }

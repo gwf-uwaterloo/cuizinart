@@ -1,93 +1,36 @@
-import os
-import pdb
 import json
-from flask import send_file
-from subprocess import call as proccall
+import os
+
+import numpy as np
 from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
-import zlib
 import zipfile
+import netCDF4  # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
+import geopyspark as gps
+from pyspark import SparkContext
 
-# from geoPy import geopy
-
+from geoPy import geopy
 
 app = Flask("NetCDF-Server")
 CORS(app)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+conf = gps.geopyspark_conf(appName="gwf", master="local[*]")
+sc = SparkContext(conf=conf)
+
+product_dict = {}
+
 def parse_json(obj):
-    daterange = obj["selectDate"]
-    variables = obj["variables"]
-    geo = obj["geoJson"]
+    product = obj["product"]
+    start_time = obj["start_time"]
+    end_time = obj["end_time"]
+    request_variables = obj["variables"]
+    geojson = obj["bounding_geom"]
 
-    all_coordinates = geo["coordinates"][0]
-    geo_type = geo["type"]
-    top_left = all_coordinates[0]
-    top_right = all_coordinates[1]
-    bottom_right = all_coordinates[2]
-    bottom_left = all_coordinates[3]
-    center = all_coordinates[4]
-
-    top_left_lon = top_left[0]
-    bottom_left_lon = bottom_left[0]
-
-    top_right_lon = top_right[0]
-    bottom_right_lon = bottom_right[0]
-
-    min_lon = min(top_left_lon, bottom_left_lon)
-    max_lon = max(top_right_lon, bottom_right_lon)
-
-    top_left_lat = top_left[1]
-    bottom_left_lat = bottom_left[1]
-
-    top_right_lat = top_right[1]
-    bottom_right_lat = bottom_right[1]
-
-    min_lat = min(bottom_right_lat, bottom_left_lat)
-    max_lat = max(top_right_lat, top_left_lat)
-    geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "geometry": {
-                    "type": geo_type,
-                    "coordinates": [
-                        [
-                            [
-                                top_left_lon,
-                                top_left_lat
-                            ],
-                            [
-                                top_right_lon,
-                                top_right_lat
-                            ],
-                            [
-                                bottom_right_lon,
-                                bottom_right_lat
-                            ],
-                            [
-                                bottom_left_lon,
-                                bottom_left_lat
-                            ],
-                            [
-                                center[0],
-                                center[1]
-                            ]
-                        ]
-                    ]
-                }
-            }
-        ]
-    }
-    with open("geojson.json", 'w') as f:
-        f.write(json.dumps(geojson))
-
-    return (daterange, variables)
-    # return [min_lat, max_lat, min_lon, max_lon]
+    return product, geojson, start_time, end_time, request_variables
 
 
 @app.route('/getBoundary', methods=['GET'])
@@ -96,40 +39,54 @@ def getBoundary():
     return jsonify(boundary)
 
 
+@app.route('/getBoundaries', methods=['GET'])
+def getBoundaries():
+    files = os.listdir('data/boundaries')
+    files_json = []
+    for file_name in files:
+        if file_name.endswith('.info'):
+            with open('data/boundaries/{}'.format(file_name)) as f:
+                file_str = f.read()
+                if file_str.startswith('\''):
+                    file_str = file_str[1:]
+                if file_str.endswith('\'\n'):
+                    file_str = file_str[:-2]
+                elif file_str.endswith('\''):
+                    file_str = file_str[:-1]
+                js = json.loads(file_str)
+                product_name = list(js.keys())[0]
+                coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
+                js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:, :, ::-1].tolist()
+                files_json.append(js)
+
+            product_dict[product_name] = file_name.replace('.info', '')
+
+    return jsonify(files_json)
+
+
 @app.route('/fetchResult', methods=['POST'])
 def fetchResult():
-    daterange, variables = parse_json(request.get_json())
-    # Calling the Python code is commented out
-    # geopy.process_query(data[0], data[1], data[2], data[3])
     print(request.get_json())
-    if daterange:
-        proccall(
-            "spark-submit --master 'local[*]' gddp/target/scala-2.11/gddp-assembly-0.22.7.jar data geojson.json "
-            + daterange + " " + variables,
-            shell=True
-        )
-        # process completed.
 
-        rv = None
-        compression = zipfile.ZIP_DEFLATED
-        zf = zipfile.ZipFile("result.zip", mode="w")
+    product, geojson, start_time, end_time, variables = parse_json(request.get_json())
+    input_file_name = product_dict[product]
+    try:
+        out_file_name = geopy.process_query(input_file_name, geojson, start_time, end_time, variables, sc)
+    except Exception as e:
+        print(str(e))
+        return '{message: "' + str(e) + '"}'
+
+    if start_time and end_time:
         try:
-            for v in variables.split(","):
-                zf.write('gddp' + v + daterange.replace(',', '-') + '.png', compress_type=compression)
-
-
+            rv = send_file(out_file_name, mimetype='application/x-netcdf')
         except FileNotFoundError:
-            print("No files generated")
+            print('No files generated')
+            rv = '{message: "No files generated"}'
         finally:
-            # Don't forget to close the file!
-            zf.close()
-            rv = send_file("result.zip", mimetype='application/zip')
             return rv
-            # Use the below line if you want to return the result of Python code.
-            # return send_file('result.txt', mimetype='text/csv')
-
     else:
         return '{message: "Server Error"}'
+
 
 if __name__ == '__main__':
     app.run()
