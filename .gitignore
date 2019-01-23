@@ -1,12 +1,8 @@
-target/
-project/project
 *.pdf
 data/
 *.iml
 .idea
-react-demo/node_modules/*
-react-demo//package-lock.json
 env/*
-index.js
 __pycache__/
+node_modules/
 geojson.json
