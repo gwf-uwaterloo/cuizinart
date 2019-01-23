@@ -1,15 +1,19 @@
 
-# GWF
+# GWF Cuizinart
 
 ## Dependencies
-(Possibly incomplete list:) `pyspark, geopyspark, numpy, netCDF4, flask, flask_cors`
-
+- PySpark backend: (Possibly incomplete list:) `pyspark, geopyspark, numpy, netCDF4, flask, flask_cors`
+- Frontend: Run `npm install` in `frontend/backend-{pyspark | slurm}`
 
 ## Run
 
-To run the application:
+### PySpark Backend
 - start the backend server: run `python main.py` in the project's root directory
-- start the frontend server: run `npm start` in the `react-demo` directory
+- start the frontend server: run `npm start` in the `frontend/backend-pyspark` directory
+
+### SLURM Backend
+- start the backend server: run `python graham-scp.py` in the project's root directory
+- start the frontend server: run `npm start` in the `frontend/backend-slurm` directory
 
 The frontend server will serve on port 3000.
 
