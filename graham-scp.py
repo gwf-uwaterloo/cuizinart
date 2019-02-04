@@ -24,7 +24,7 @@ def processJson():
     with open(file_name, 'w') as f:
         f.write(request_string)
 
-    os.system("scp -i '~/.ssh/id_rsa_graham' {} mgauch@graham.computecanada.ca:/project/6008034/WRF-REQUEST/INBOX/".format(file_name))
+    os.system("scp -i '~/.ssh/id_rsa_graham' {} mgauch@graham.computecanada.ca:/project/6008034/cuizinart/INBOX/".format(file_name))
 
     return '{message: "success"}'
 
