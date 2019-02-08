@@ -110,9 +110,8 @@ def process_slurm(json_request):
     scp the request json to Graham, where it will be processed.
     """
     request_string = str(json_request).replace("'", '"')
-    print(request_string)
 
-    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['user_id'],
+    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
     with open(file_name, 'w') as f:
         f.write(request_string)
