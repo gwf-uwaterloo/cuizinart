@@ -9,6 +9,7 @@ import 'react-notifications/lib/notifications.css';
 import _ from 'lodash';
 import moment from 'moment';
 import axios from "axios";
+import Select from 'react-select';
 import {NotificationContainer, NotificationManager} from 'react-notifications';
 import saveAs from 'file-saver';
 import FileComp from './components/fileComp';
@@ -30,10 +31,15 @@ let vars = [
     {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
 ];
 */
+const backends = [
+    { value: 'slurm', label: 'Graham' },
+    { value: 'pyspark', label: 'Pyspark' }
+];
 class App extends Component {
     state = {
         selectDateSet: null,
-        products: []
+        products: [],
+        selectedBackend: null
     };
 
     constructor(props) {
@@ -117,14 +123,21 @@ class App extends Component {
             return;
         }
 
+        if(!self.state.selectedBackend){
+            NotificationManager.error('No backend processor selected.');
+            return;
+        }
+
         if(moment(self.userInputs.start_time).isBefore(self.state.selectDateSet.valid_start_time) || moment(self.userInputs.end_time).isAfter(self.state.selectDateSet.valid_end_time)){
             NotificationManager.error('Valid time range is: '+self.state.selectDateSet.valid_start_time +' to '+self.state.selectDateSet.valid_end_time);
             return;
         }
 
-        if(!self.validateEmail(self.userInputs.user_email)){
-            NotificationManager.error('Please enter a valid email address.');
-            return;
+        if(self.state.selectedBackend.value === "slurm"){
+            if(!self.validateEmail(self.userInputs.user_email)){
+                NotificationManager.error('Please enter a valid email address.');
+                return;
+            }
         }
 
         if(self.features.length === 0){
@@ -135,12 +148,13 @@ class App extends Component {
         let passLoad = {
             variables: Array.from(variables),
             product: self.state.selectDateSet.value,
+            backend: self.state.selectedBackend.value,
             bounding_geom: self.features
         };
         passLoad = _.assign(passLoad, self.userInputs);
         console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/processJson', passLoad)
+            axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
                 .then(function (response) {
                     console.log("success");
                 })
@@ -152,6 +166,10 @@ class App extends Component {
         else{
             // cancel
         }
+    };
+
+    handleSelectBackend = (selectedOption) => {
+        this.setState({selectedBackend: selectedOption});
     };
 
     renderGeoJSON = (geojson) => {
@@ -175,6 +193,16 @@ class App extends Component {
                         <div className="card-body">
                             <FileComp uploadFileCallback={this.updateFeatures} renderGeoJSON={this.renderGeoJSON} />
                         </div>
+                    </div>
+                    <div className="mt-2">
+                        <label htmlFor="backend">Process on...</label>
+                        <Select
+                            id="backend"
+                            value={this.state.selectedBackend}
+                            placeholder={"Choose Backend..."}
+                            onChange={this.handleSelectBackend}
+                            options={backends}
+                        />
                     </div>
                     <div className="mt-2">
                         <button className="btn btn-info" onClick={this.postJsonToServer}>Process</button>

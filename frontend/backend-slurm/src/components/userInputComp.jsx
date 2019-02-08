@@ -57,9 +57,9 @@ export default class UserInputComp extends Component {
                                placeholder="Enter email"  onChange={this.handleChange.bind(this, "user_email")}/>
                     </div>
                     <div className="form-group col-lg-3">
-                        <label htmlFor="userId">User ID</label>
+                        <label htmlFor="userId">Globus ID</label>
                         <input type="text" className="form-control" id="userId"
-                               placeholder="Enter User ID"  onChange={this.handleChange.bind(this, "user_id")}/>
+                               placeholder="Enter Globus ID"  onChange={this.handleChange.bind(this, "globus_id")}/>
                     </div>
                     <div className="form-group col-lg-3">
                         <label htmlFor="requestId">Request ID</label>
