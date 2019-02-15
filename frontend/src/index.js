@@ -152,14 +152,19 @@ class App extends Component {
             bounding_geom: self.features
         };
         passLoad = _.assign(passLoad, self.userInputs);
-        console.log(JSON.stringify(passLoad));
+        //console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
                 .then(function (response) {
-                    console.log("success");
+                    if(self.state.selectedBackend.value === "pyspark" ){
+                        saveAs(new Blob([response.data], {type:'application/x-netcdf'}));
+                    }
+                    else{
+                        NotificationManager.success("success");
+                    }
                 })
                 .catch(function (error) {
-                    console.log(error);
+                    NotificationManager.error(error.message);
                 });
 
         }
