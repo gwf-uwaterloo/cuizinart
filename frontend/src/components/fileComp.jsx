@@ -19,7 +19,7 @@ export default class FileComp extends Component {
 
     handleSelectFileType = (selectedOption) => {
         this.setState({selectedFileType: selectedOption});
-        console.log(`Option selected:`, selectedOption);
+        //console.log(`Option selected:`, selectedOption);
     };
 
     handleSelectedFile = (event) =>{

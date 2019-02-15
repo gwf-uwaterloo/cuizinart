@@ -6,3 +6,4 @@ env/*
 __pycache__/
 node_modules/
 geojson.json
+npm-debug.log

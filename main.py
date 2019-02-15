@@ -91,7 +91,7 @@ def process_pyspark(product, geojson, start_time, end_time, variables):
         out_file_name = geopy.process_query(input_file_name, geojson, start_time, end_time, variables, sc)
     except Exception as e:
         print(str(e))
-        return '{message: "' + str(e) + '"}'
+        return '{message: "' + str(e) + '"}', 400
 
     if start_time and end_time:
         try:
