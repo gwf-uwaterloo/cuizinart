@@ -10,15 +10,23 @@ from flask import send_file
 import netCDF4  # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
 import geopyspark as gps
 from pyspark import SparkContext
+from dotenv import load_dotenv
 
 from geoPy import geopy
 
-
+load_dotenv()
 BACKEND_SLURM = 'slurm'
 BACKEND_PYSPARK = 'pyspark'
+BACKEND = os.getenv('BACKEND')
+if BACKEND == BACKEND_SLURM:
+    SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
+    SSH_USER_NAME = os.getenv('SSH_USER_NAME')
 
-app = Flask('Cuizinart')
+app = Flask('cuizinart')
 CORS(app)
+from metadata_schema import Product, Variable, Domain, Horizon, Issue
+
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 conf = gps.geopyspark_conf(appName='gwf', master='local[*]')
@@ -117,8 +125,8 @@ def process_slurm(json_request):
         f.write(request_string)
 
     os.system(
-        'scp -i "~/.ssh/id_rsa_graham" {} mgauch@graham.computecanada.ca:/project/6008034/cuizinart/INBOX/'.format(
-            file_name))
+        'scp -i "{}" {} {}@graham.computecanada.ca:/project/6008034/cuizinart/INBOX/'.format(
+            SSH_KEYFILE_PATH, file_name, SSH_USER_NAME))
 
     os.remove(file_name)
 
