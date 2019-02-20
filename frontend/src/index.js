@@ -55,32 +55,25 @@ class App extends Component {
         axios.get(`http://127.0.0.1:5000/getBoundaries`)
             .then(res => {
                 if(res.data.length > 0){
+                    //console.log(res.data);
                     res.data.forEach(function (p) {
-                        let pJson = p[Object.keys(p)[0]];
-                        let valid_start_time;
-                        let valid_end_time;
-                        if(pJson.product === "ctl-wrf-wca" || pJson.product === "pgw-wrf-wca"){
-                            valid_start_time = "2000-10-01";
-                            valid_end_time = "2015-09-30";
-                        }
-                        else if(pJson.product === "ctl-wrf-conus" || pJson.product === "pgw-wrf-conus"){
-                            valid_start_time = "2000-10-01";
-                            valid_end_time = "2013-09-30";
-                        }
-                        else{
-                            valid_start_time = pJson.time[0];
-                            valid_end_time = pJson.time[pJson.time.length-1];
-                        }
+                        /*
+                            swap (lon, lat) to (lat, lon)
+                         */
+                        let coord = p.domain.extent.coordinates[0].map(function (arr) {
+                            return [arr[1],arr[0]];
+                        });
+                        //console.log(coord);
                         let product = {
-                            value: pJson.product,
-                            label: pJson.product,
-                            vars: _.map(pJson.variables, function(i){
-                                return {key: i.short_name, description: i.long_name, select: false}
+                            value: p.key,
+                            label: p.name,
+                            vars: _.map(p.variables, function(i){
+                                return {key: i.key, description: i.name, select: false}
                             }),
                             color: '#17a2b8',
-                            bbox: pJson.domain[0].geometry.coordinates,
-                            valid_start_time: valid_start_time,
-                            valid_end_time: valid_end_time
+                            bbox: coord,
+                            valid_start_time: p.start_date,
+                            valid_end_time: p.end_date
                         };
                         products.push(product);
                     });

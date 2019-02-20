@@ -47,7 +47,7 @@ def get_boundaries():
     products = Product.query.all()
     product_schema = ProductSchema(many=True)
     output = product_schema.dump(products).data
-    return jsonify({'products': output})
+    return jsonify(output)
 
 
 @app.route('/fetchResult', methods=['POST'])

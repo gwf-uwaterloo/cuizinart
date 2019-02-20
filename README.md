@@ -6,7 +6,7 @@
 ### Dependencies
 - PySpark backend: 
   - Make sure `$SPARK_HOME` is set
-  - Install packages: `pyspark, geopyspark, numpy, netCDF4, Flask, Flask-Cors, Flask-SQLAlchemy, Flask-Migrate, python-dotenv`
+  - Install packages: `pyspark, geopyspark, numpy, netCDF4, Flask, Flask-Cors, Flask-SQLAlchemy, Flask-Migrate, python-dotenv, flask-marshmallow, marshmallow-sqlalchemy`
   - Run `geopyspark install-jar`
 - Frontend: Run `npm install` in `frontend`
 
