@@ -1,29 +1,33 @@
 import os
-
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
+from marshmallow import fields
+from flask_marshmallow import Marshmallow
+from settings import *
 
-from main import app
 
-DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=os.getenv('POSTGRES_USER'), pw=os.getenv('POSTGRES_PW'),
-                                                      url=os.getenv('POSTGRES_URL'), db=os.getenv('POSTGRES_DB'))
+app = Flask('cuizinart')
+DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=postgres_pw,
+                                                      url=postgres_url, db=postgres_db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+ma = Marshmallow(app)
 
 
 class Product(db.Model):
     product_id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String, unique=True, nullable=False)
     name = db.Column(db.String, nullable=False)
-    domain = db.Column(db.Integer, db.ForeignKey('domain.domain_id'), nullable=False)
     temporal_resolution = db.Column(db.Interval, nullable=False)
     doi = db.Column(db.String)
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
 
+    domain = db.relationship("Domain", uselist=False, backref="product", lazy=True)
     variables = db.relationship('Variable', backref='product', lazy=True)
     horizons = db.relationship('Horizon', backref='product', lazy=True)
     issues = db.relationship('Issue', backref='product', lazy=True)
@@ -54,8 +58,7 @@ class Domain(db.Model):
     extent = db.Column(db.JSON, nullable=False)
     bounding_box = db.Column(db.JSON, nullable=False)
     grid_mapping = db.Column(db.JSON, nullable=False)
-
-    products = db.relationship('Product', backref='domain', lazy=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
 
     def __repr__(self):
         return '<Domain {!r}>'.format(self.domain_id)
@@ -77,3 +80,32 @@ class Issue(db.Model):
 
     def __repr__(self):
         return '<Issue {!r}>'.format(self.issue_id)
+
+
+class ProductSchema(ma.ModelSchema):
+    variables = fields.Nested('VariableSchema', default=None, many=True)
+    domain = fields.Nested('DomainSchema', default=None)
+
+    class Meta:
+        model = Product
+
+
+class VariableSchema(ma.ModelSchema):
+    class Meta:
+        model = Variable
+
+
+class DomainSchema(ma.ModelSchema):
+    class Meta:
+        model = Domain
+
+
+class HorizonSchema(ma.ModelSchema):
+    class Meta:
+        model = Horizon
+
+
+class IssueSchema(ma.ModelSchema):
+    class Meta:
+        model = Issue
+

@@ -1,6 +1,5 @@
 import json
 import os
-
 import numpy as np
 from flask import Flask
 from flask import request
@@ -10,21 +9,11 @@ from flask import send_file
 import netCDF4  # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
 import geopyspark as gps
 from pyspark import SparkContext
-from dotenv import load_dotenv
-
+from metadata_schema import *
 from geoPy import geopy
+from settings import *
 
-load_dotenv()
-BACKEND_SLURM = 'slurm'
-BACKEND_PYSPARK = 'pyspark'
-BACKEND = os.getenv('BACKEND')
-if BACKEND == BACKEND_SLURM:
-    SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
-    SSH_USER_NAME = os.getenv('SSH_USER_NAME')
-
-app = Flask('cuizinart')
 CORS(app)
-from metadata_schema import Product, Variable, Domain, Horizon, Issue
 
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -48,27 +37,10 @@ def parse_json(obj):
 
 @app.route('/getBoundaries', methods=['GET'])
 def get_boundaries():
-    files = os.listdir('data/boundaries')
-    files_json = []
-    for file_name in files:
-        if file_name.endswith('.info'):
-            with open('data/boundaries/{}'.format(file_name)) as f:
-                file_str = f.read()
-                if file_str.startswith('\''):
-                    file_str = file_str[1:]
-                if file_str.endswith('\'\n'):
-                    file_str = file_str[:-2]
-                elif file_str.endswith('\''):
-                    file_str = file_str[:-1]
-                js = json.loads(file_str)
-                product_name = list(js.keys())[0]
-                coords = np.array(js[product_name]['domain'][0]['geometry']['coordinates'])
-                js[product_name]['domain'][0]['geometry']['coordinates'] = coords[:, :, ::-1].tolist()
-                files_json.append(js)
-
-            product_dict[product_name] = file_name.replace('.info', '')
-
-    return jsonify(files_json)
+    products = Product.query.all()
+    product_schema = ProductSchema(many=True)
+    output = product_schema.dump(products).data
+    return jsonify(output)
 
 
 @app.route('/fetchResult', methods=['POST'])
