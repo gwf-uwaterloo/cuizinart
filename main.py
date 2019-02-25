@@ -11,14 +11,7 @@ import geopyspark as gps
 from pyspark import SparkContext
 from metadata_schema import *
 from geoPy import geopy
-
-
-BACKEND_SLURM = 'slurm'
-BACKEND_PYSPARK = 'pyspark'
-BACKEND = os.getenv('BACKEND')
-if BACKEND == BACKEND_SLURM:
-    SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
-    SSH_USER_NAME = os.getenv('SSH_USER_NAME')
+from settings import *
 
 CORS(app)
 

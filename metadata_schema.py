@@ -2,14 +2,14 @@ import os
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
-from dotenv import load_dotenv
 from marshmallow import fields
 from flask_marshmallow import Marshmallow
+from settings import *
 
-load_dotenv()
+
 app = Flask('cuizinart')
-DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=os.getenv('POSTGRES_USER'), pw=os.getenv('POSTGRES_PW'),
-                                                      url=os.getenv('POSTGRES_URL'), db=os.getenv('POSTGRES_DB'))
+DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=postgres_pw,
+                                                      url=postgres_url, db=postgres_db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 
