@@ -1,27 +1,15 @@
-import json
-import os
-import numpy as np
+import requests
 from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
 from flask import send_file
-import netCDF4  # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
-import geopyspark as gps
-from pyspark import SparkContext
 from metadata_schema import *
-from geoPy import geopy
 from settings import *
 
 CORS(app)
 
-
 basedir = os.path.abspath(os.path.dirname(__file__))
-
-conf = gps.geopyspark_conf(appName='gwf', master='local[*]')
-sc = SparkContext(conf=conf)
-
-product_dict = {}
 
 
 def parse_json(obj):
@@ -66,23 +54,23 @@ def process_pyspark(product, geojson, start_time, end_time, variables):
     """
     Process request using PySpark.
     """
-    input_file_name = product_dict[product]
-    try:
-        out_file_name = geopy.process_query(input_file_name, geojson, start_time, end_time, variables, sc)
-    except Exception as e:
-        print(str(e))
-        return '{message: "' + str(e) + '"}', 400
+    payload = {'product': product, 'geojson_shape': geojson, 'start_time': start_time, 'end_time': end_time,
+               'request_vars': variables}
 
-    if start_time and end_time:
-        try:
-            rv = send_file(out_file_name, mimetype='application/x-netcdf')
-        except FileNotFoundError:
-            print('No files generated')
-            rv = '{message: "No files generated"}'
-        finally:
-            return rv
-    else:
-        return '{message: "Server Error"}', 500
+    r = requests.post('http://localhost:5001/process_query', json=payload)
+
+    if r.status_code != requests.codes.ok:
+        print(r.status_code, r.reason)
+        return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
+
+    out_file_path = r.json()['out_file_path']
+    try:
+        rv = send_file(out_file_path, mimetype='application/x-netcdf')
+    except FileNotFoundError:
+        print('No files generated')
+        rv = '{message: "No files generated"}'
+    finally:
+        return rv
 
 
 def process_slurm(json_request):
@@ -106,4 +94,4 @@ def process_slurm(json_request):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=5000)
