@@ -1,4 +1,3 @@
-from os import listdir
 from os.path import isfile, join
 
 import netCDF4
@@ -9,6 +8,8 @@ from datetime import time, timedelta, datetime
 from dateutil.relativedelta import relativedelta
 import geopyspark as gps
 from shapely.geometry import Polygon
+
+from pyspark_settings import NC_INPUT_PATH, NC_OUTPUT_PATH
 
 
 def open_file(path):
@@ -33,13 +34,12 @@ def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
     return x_slice_start, x_slice_stop, y_slice_start, y_slice_stop
 
 
-def process_query(input_file, geojson_shape, start_time, end_time, request_vars, spark_ctx):
+def slice(product, geojson_shape, start_time, end_time, request_vars, spark_ctx):
 
-    nc_base_path = 'data/converted_netcdf'
-    nc_file_name = nc_base_path + '/' + input_file
+    nc_file_name = join(NC_INPUT_PATH, product + '.nc')
 
-    if not nc_file_name.endswith('.nc') or not isfile(nc_file_name):
-        raise Exception('No appropriate product file found.')
+    if not isfile(nc_file_name):
+        raise Exception('Product file not found.')
 
     request_start_date = parse(start_time).date()
     request_end_date = parse(end_time).date()
@@ -80,8 +80,8 @@ def process_query(input_file, geojson_shape, start_time, end_time, request_vars,
     # Transform the geojson into shapes. We need the shapes represented both as
     # indices in the lat-/lon-arrays (to read only the required slices from netcdf)
     # and as x-/y-values (to mask the constructed layout).
-    x_coords = nc_file['x'][:]
-    y_coords = nc_file['y'][:]
+    x_coords = nc_file['rlon'][:]
+    y_coords = nc_file['rlat'][:]
     mask_shapes_indices = []
     mask_shapes_xy = []
     for feature in geojson_shape:
@@ -120,8 +120,8 @@ def process_query(input_file, geojson_shape, start_time, end_time, request_vars,
                                                                             y_slice_start, y_slice_stop)))
 
     # Read the section specified by the request (i.e. specified time and x/y-section)
-    x_coords = nc_file['x'][x_slice_start:x_slice_stop + 1]
-    y_coords = nc_file['y'][y_slice_start:y_slice_stop + 1]
+    x_coords = nc_file['rlon'][x_slice_start:x_slice_stop + 1]
+    y_coords = nc_file['rlat'][y_slice_start:y_slice_stop + 1]
     lats = nc_file['lat'][y_slice_start:y_slice_stop + 1, x_slice_start:x_slice_stop + 1]
     lons = nc_file['lon'][y_slice_start:y_slice_stop + 1, x_slice_start:x_slice_stop + 1]
     var_temp_resolution = nc_file[request_vars[0]].getncattr('temporal_resolution')
@@ -171,34 +171,20 @@ def process_query(input_file, geojson_shape, start_time, end_time, request_vars,
     masked_var_data = np.array(list(tile.cells for _, tile in masked_var_tiles))
     out_file_name = 'gwf-{}-{}-{}.nc'.format('+'.join(request_vars), start_instant.strftime('%Y%m%d-%H%M'),
                                              end_instant.strftime('%Y%m%d-%H%M'))
-    generate_output_netcdf(out_file_name, x_coords, y_coords, lats, lons, time_instants, masked_var_data,
+    out_file_path = join(NC_OUTPUT_PATH, out_file_name)
+    generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, time_instants, masked_var_data,
                            variables_metadata, var_temp_resolution, no_data_value, nc_metadata, proj_var)
-
-    #histograms = masked_layer.get_histogram()
-    #if len(request_vars) == 1:
-    #    histograms = [histograms]
-    #color_ramp = [0x2791C3FF, 0x5DA1CAFF, 0x83B2D1FF, 0xA8C5D8FF,
-    #              0xCCDBE0FF, 0xE9D3C1FF, 0xDCAD92FF, 0xD08B6CFF,
-    #              0xC66E4BFF, 0xBD4E2EFF]
-    #color_maps = list(gps.ColorMap.from_histogram(h, color_ramp) for h in histograms)
-
-    # Write image to file
-    #for i, (var_name, color_map) in enumerate(zip(request_vars, color_maps)):
-    #    png = masked_layer.bands(i).to_png_rdd(color_map).collect()
-    #    for png_at_instant, instant in zip(png, time_instants):
-    #        with open('gwf-{}-{}.png'.format(var_name, instant.strftime('%Y-%m-%d_%H%M')), 'wb') as f:
-    #            f.write(png_at_instant[1])
 
     nc_file.close()
 
-    return out_file_name
+    return out_file_path
 
 
-def generate_output_netcdf(path, x_coords, y_coords, lats, lons, time_instants, variables_data, variables_metadata,
-                           var_temp_resolution, no_data_value, meta, proj_var,
-                           lat_name='lat', lon_name='lon', dim_x_name='x', dim_y_name='y'):
+def generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, time_instants, variables_data,
+                           variables_metadata, var_temp_resolution, no_data_value, meta, proj_var,
+                           lat_name='lat', lon_name='lon', dim_x_name='rlon', dim_y_name='rlat'):
 
-    out_nc = netCDF4.Dataset(path, 'w')
+    out_nc = netCDF4.Dataset(out_file_path, 'w')
 
     # define dimensions
     out_nc.createDimension(dim_x_name, variables_data.shape[3])
