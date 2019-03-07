@@ -20,17 +20,17 @@ def open_file(path):
 
 def parse_file_name(file_name):
     """ Get a file's product name and start date based on its file name """
-    name_components = re.search(r'(.*)_(\d{8}).nc', file_name)
+    name_components = re.search(r'(.*)_(\d{12}).nc', file_name)
     if name_components:
         product_name = name_components.group(1)
         try:
-            product_start_date = datetime.strptime(name_components.group(2), '%Y%m%d')
+            product_start_time = datetime.strptime(name_components.group(2), '%Y%m%d%H%M')
         except ValueError:
             raise Exception('Invalid product file name: ', file_name)
     else:
         raise Exception('Could not parse product file name: ', file_name)
 
-    return file_name, product_name, product_start_date
+    return file_name, product_name, product_start_time
 
 
 def get_indexes(lat_array, lon_array, shape, lat, lon):
