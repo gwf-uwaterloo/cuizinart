@@ -11,7 +11,7 @@
 - Frontend: Run `npm install` in `frontend`
 
 ### Backend and Database
-- Create a file `cuizinart/.env`, containing:
+- Create a file `.env` in the base folder, containing:
 ```
 FLASK_APP=main.py
 
