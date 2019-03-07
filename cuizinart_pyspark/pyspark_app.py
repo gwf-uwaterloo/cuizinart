@@ -1,3 +1,5 @@
+import traceback
+
 from flask import Flask, request, jsonify
 # for strange reasons, one has to import netCDF4 before geopyspark on some systems, otherwise reading nc-files fails.
 import netCDF4
@@ -25,8 +27,8 @@ def process_query():
     try:
         out_file_path = slice(product, geojson_shape, start_time, end_time, request_vars, sc)
         return jsonify(out_file_path=out_file_path)
-    except Exception as e:
-        print(e)
+    except:
+        print(traceback.format_exc())
         return '{message: "Server Error"}', 500
 
 
