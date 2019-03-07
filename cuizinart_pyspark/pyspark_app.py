@@ -21,9 +21,11 @@ def process_query():
     start_time = request_json['start_time']
     end_time = request_json['end_time']
     request_vars = request_json['request_vars']
+    horizons = request_json['horizons']
+    issues = request_json['issues']
 
     try:
-        out_file_path = slice(product, geojson_shape, start_time, end_time, request_vars, sc)
+        out_file_path = slice(product, geojson_shape, start_time, end_time, request_vars, horizons, issues, sc)
         return jsonify(out_file_path=out_file_path)
     except Exception as e:
         print(e)

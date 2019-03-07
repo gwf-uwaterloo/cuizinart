@@ -19,8 +19,10 @@ def parse_json(obj):
     end_time = obj['end_time']
     request_variables = obj['variables']
     geojson = obj['bounding_geom']
+    horizons = obj['window']
+    issues = obj['release']
 
-    return backend, product, geojson, start_time, end_time, request_variables
+    return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
 
 @app.route('/getBoundaries', methods=['GET'])
@@ -40,22 +42,22 @@ def fetch_result():
     json_request = request.get_json()
     print(json_request)
 
-    backend, product, geojson, start_time, end_time, variables = parse_json(json_request)
+    backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     if backend == BACKEND_SLURM:
         return process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
-        return process_pyspark(product, geojson, start_time, end_time, variables)
+        return process_pyspark(product, geojson, start_time, end_time, variables, horizons, issues)
     else:
         return '{message: "Unknown Backend {}"}'.format(backend), 400
 
 
-def process_pyspark(product, geojson, start_time, end_time, variables):
+def process_pyspark(product, geojson, start_time, end_time, variables, horizons, issues):
     """
     Process request using PySpark.
     """
     payload = {'product': product, 'geojson_shape': geojson, 'start_time': start_time, 'end_time': end_time,
-               'request_vars': variables}
+               'request_vars': variables, 'horizons': horizons, 'issues': issues}
 
     r = requests.post('http://localhost:5001/process_query', json=payload)
 

@@ -34,7 +34,7 @@ def get_bounding_box_polygon(lat_array, lon_array, shape, polygon_extent):
     return x_slice_start, x_slice_stop, y_slice_start, y_slice_stop
 
 
-def slice(product, geojson_shape, start_time, end_time, request_vars, spark_ctx):
+def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, issues, spark_ctx):
 
     nc_file_name = join(NC_INPUT_PATH, product + '.nc')
 

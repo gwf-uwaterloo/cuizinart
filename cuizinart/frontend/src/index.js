@@ -16,21 +16,6 @@ import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 
-/*
-let vars = [
-    {key: "PREC", description: "Grid-scale precipitation (accumulated over 1 hour)", selected: false},
-    {key: "T2", description: "Temperature", selected: false},
-    {key: "LH", description: "Latent heat flux", selected: false},
-    {key: "HFX", description: "Upward heat flux", selected: false},
-    {key: "QFX", description: "Upward moisture flux", selected:false},
-    {key: "GLW", description: "Downward long wave flux", selected:false},
-    {key: "SWDOWN", description: "Downward short wave flux", selected:false},
-    {key: "PSFC", description: "Surface pressure", selected:false},
-    {key: "Q2", description: "Mixing ratio", selected:false},
-    {key: "U10", description: "U-component of the wind (along grid X axis)", selected:false},
-    {key: "V10", description: "V-component of the wind (along grid Y axis)", selected:false}
-];
-*/
 const backends = [
     { value: 'slurm', label: 'Graham' },
     { value: 'pyspark', label: 'Pyspark' }
@@ -68,7 +53,13 @@ class App extends Component {
                             value: p.key,
                             label: p.name,
                             vars: _.map(p.variables, function(i){
-                                return {key: i.key, description: i.name, select: false}
+                                return {key: i.key, description: i.name, selected: false}
+                            }),
+                            horizons:  _.map(p.horizons, function(i){
+                                return {key: i.horizon, selected: false}
+                            }),
+                            issues:  _.map(p.issues, function(i){
+                                return {key: i.issue, selected: false}
                             }),
                             color: '#17a2b8',
                             bbox: coord,
@@ -97,6 +88,9 @@ class App extends Component {
     postJsonToServer = () => {
         let self = this;
         let variables = new Set();
+        let horizons = new Set();
+        let issues = new Set();
+
         if(!self.state.selectDateSet){
             NotificationManager.error('No product selected.');
             return;
@@ -111,6 +105,20 @@ class App extends Component {
             NotificationManager.error('No variable selected.');
             return;
         }
+        // add selected horizons(forecast windows)
+        self.state.selectDateSet.horizons.forEach(v => {
+            if(v.selected){
+                horizons.add(v.key);
+            }
+        });
+
+        // add selected issues(forecast issues)
+        self.state.selectDateSet.issues.forEach(v => {
+            if(v.selected){
+                issues.add(v.key);
+            }
+        });
+
         if(!self.userInputs || !self.userInputs.start_time || !self.userInputs.end_time){
             NotificationManager.error('No date range selected.');
             return;
@@ -140,10 +148,13 @@ class App extends Component {
 
         let passLoad = {
             variables: Array.from(variables),
+            window: Array.from(horizons),
+            release: Array.from(issues),
             product: self.state.selectDateSet.value,
             backend: self.state.selectedBackend.value,
             bounding_geom: self.features
         };
+        console.log(passLoad);
         passLoad = _.assign(passLoad, self.userInputs);
         //console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
