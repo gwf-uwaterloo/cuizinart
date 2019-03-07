@@ -7,6 +7,8 @@ postgres_pw = os.getenv('POSTGRES_PW')
 postgres_url = os.getenv('POSTGRES_URL')
 postgres_db = os.getenv('POSTGRES_DB')
 
+PYSPARK_URL = os.getenv('PYSPARK_URL')
+
 BACKEND_SLURM = 'slurm'
 BACKEND_PYSPARK = 'pyspark'
 BACKEND = os.getenv('BACKEND')
