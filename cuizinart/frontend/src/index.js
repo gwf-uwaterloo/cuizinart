@@ -154,7 +154,6 @@ class App extends Component {
             backend: self.state.selectedBackend.value,
             bounding_geom: self.features
         };
-        console.log(passLoad);
         passLoad = _.assign(passLoad, self.userInputs);
         //console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {

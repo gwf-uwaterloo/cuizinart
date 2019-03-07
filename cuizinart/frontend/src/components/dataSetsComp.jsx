@@ -29,7 +29,7 @@ export default class SideBar extends Component {
                             {d.value}
                         </div>
                         <div className="card-body">
-                            <h5><span className="label label-default">Variables</span></h5>
+                            <h5><span className="label label-default">Variables: </span></h5>
                             {
                                 d.vars.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check">
@@ -39,7 +39,7 @@ export default class SideBar extends Component {
                                     </div>
                                 )
                             }
-                            <h5><span className="label label-default">Forecast Windows</span></h5>
+                            <h5 className="mt-3"><span className="label label-default">Forecast Windows: </span></h5>
                             {
                                 d.horizons.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
@@ -50,7 +50,7 @@ export default class SideBar extends Component {
                                     </div>
                                 )
                             }
-                            <h5><span className="label label-default">Forecast Issues</span></h5>
+                            <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
                             {
                                 d.issues.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
