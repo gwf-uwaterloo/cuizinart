@@ -56,10 +56,10 @@ class App extends Component {
                                 return {key: i.key, description: i.name, selected: false}
                             }),
                             horizons:  _.map(p.horizons, function(i){
-                                return {key: i.horizon, selected: false}
+                                return {key: i.horizon_id, description: i.horizon, selected: false}
                             }),
                             issues:  _.map(p.issues, function(i){
-                                return {key: i.issue, selected: false}
+                                return {key: i.issue_id, description: i.issue.slice(0, 5), selected: false}
                             }),
                             color: '#17a2b8',
                             bbox: coord,
@@ -108,14 +108,14 @@ class App extends Component {
         // add selected horizons(forecast windows)
         self.state.selectDateSet.horizons.forEach(v => {
             if(v.selected){
-                horizons.add(v.key);
+                horizons.add(v.description);
             }
         });
 
         // add selected issues(forecast issues)
         self.state.selectDateSet.issues.forEach(v => {
             if(v.selected){
-                issues.add(v.key);
+                issues.add(v.description);
             }
         });
 
@@ -155,7 +155,7 @@ class App extends Component {
             bounding_geom: self.features
         };
         passLoad = _.assign(passLoad, self.userInputs);
-        //console.log(JSON.stringify(passLoad));
+        //console.log(passLoad);
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
                 .then(function (response) {

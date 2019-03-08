@@ -45,7 +45,7 @@ export default class SideBar extends Component {
                                     <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
                                         <label className="form-check-label">
                                             <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
-                                            <label className="form-check-label" >{va["key"]}</label>
+                                            <label className="form-check-label" >{va["description"]}</label>
                                         </label>
                                     </div>
                                 )
@@ -56,7 +56,7 @@ export default class SideBar extends Component {
                                     <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
                                         <label className="form-check-label">
                                             <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
-                                            <label className="form-check-label">{va["key"]}</label>
+                                            <label className="form-check-label">{va["description"]}</label>
                                         </label>
                                     </div>
                                 )
