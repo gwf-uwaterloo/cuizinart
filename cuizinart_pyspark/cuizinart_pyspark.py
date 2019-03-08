@@ -131,7 +131,7 @@ def read_metadata(nc_file, request_vars):
     return file_metadata, proj_var, temp_resolution, no_data_value, variables_metadata
 
 
-def slice(product, geojson_shape, start_time, end_time, request_vars, spark_ctx):
+def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, issues, spark_ctx):
     """
     Slices the given product into specified shape.
     :param product: Product name
@@ -140,6 +140,8 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, spark_ctx)
     :param end_time: Requested end time
     :param request_vars: Requested variables
     :param spark_ctx: Spark context
+    :param horizons: Requested horizons
+    :param issues: Requested issues
     :return: Output file name
     """
     request_start_time = parse(start_time)

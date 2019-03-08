@@ -7,9 +7,9 @@ export default class SideBar extends Component {
         super(props);
     }
 
-    handleCheckbox(key,event){
+    handleCheckbox(property, key,event){
         let curr = _.assign({}, this.props.selectDateSet);
-        let variable = curr.vars.find(function (v) {
+        let variable = curr[property].find(function (v) {
             return v.key === key;
         });
         const target = event.target;
@@ -29,11 +29,34 @@ export default class SideBar extends Component {
                             {d.value}
                         </div>
                         <div className="card-body">
+                            <h5><span className="label label-default">Variables: </span></h5>
                             {
                                 d.vars.map( va =>
                                     <div key={`div-${shortid.generate()}`} className="form-check">
                                         <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox(va.key, e)}/>{va["key"]}: {va["description"]}
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('vars', va.key, e)}/>{va["key"]}: {va["description"]}
+                                        </label>
+                                    </div>
+                                )
+                            }
+                            <h5 className="mt-3"><span className="label label-default">Forecast Windows: </span></h5>
+                            {
+                                d.horizons.map( va =>
+                                    <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
+                                        <label className="form-check-label">
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
+                                            <label className="form-check-label" >{va["description"]}</label>
+                                        </label>
+                                    </div>
+                                )
+                            }
+                            <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
+                            {
+                                d.issues.map( va =>
+                                    <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
+                                        <label className="form-check-label">
+                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
+                                            <label className="form-check-label">{va["description"]}</label>
                                         </label>
                                     </div>
                                 )

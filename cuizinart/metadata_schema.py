@@ -85,6 +85,8 @@ class Issue(db.Model):
 class ProductSchema(ma.ModelSchema):
     variables = fields.Nested('VariableSchema', default=None, many=True)
     domain = fields.Nested('DomainSchema', default=None)
+    horizons = fields.Nested('HorizonSchema', default=None, many=True)
+    issues = fields.Nested('IssueSchema', default=None, many=True)
 
     class Meta:
         model = Product
