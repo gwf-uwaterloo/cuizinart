@@ -59,7 +59,7 @@ def process_pyspark(product, geojson, start_time, end_time, variables, horizons,
     payload = {'product': product, 'geojson_shape': geojson, 'start_time': start_time, 'end_time': end_time,
                'request_vars': variables, 'horizons': horizons, 'issues': issues}
 
-    r = requests.post('http://localhost:5001/process_query', json=payload)
+    r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
 
     if r.status_code != requests.codes.ok:
         print(r.status_code, r.reason)
@@ -97,3 +97,4 @@ def process_slurm(json_request):
 
 if __name__ == '__main__':
     app.run(port=5000)
+
