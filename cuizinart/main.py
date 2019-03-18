@@ -11,7 +11,6 @@ CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-
 def parse_json(obj):
     backend = obj['backend']
     product = obj['product']

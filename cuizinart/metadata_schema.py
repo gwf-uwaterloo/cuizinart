@@ -36,12 +36,16 @@ class Product(db.Model):
     variables = db.relationship('Variable', backref='product', lazy=True)
     horizons = db.relationship('Horizon', backref='product', lazy=True)
     issues = db.relationship('Issue', backref='product', lazy=True)
+    ncFiles = db.relationship('NCFile', backref='product', lazy=True)
 
     def __repr__(self):
         return '<Product {!r}>'.format(self.key)
 
 
 class Variable(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('key', 'product_id', name='variable_uc'),
+    )
     variable_id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=False)
@@ -52,7 +56,6 @@ class Variable(db.Model):
     level = db.Column(db.String)
     unit = db.Column(db.String)
 
-    db.UniqueConstraint('key', 'product_id', name='variable_uc')
 
     def __repr__(self):
         return '<Variable {!r} (product: {!r})>'.format(self.key, self.product_id)
@@ -61,8 +64,8 @@ class Variable(db.Model):
 class Domain(db.Model):
     domain_id = db.Column(db.Integer, primary_key=True)
     extent = db.Column(db.JSON, nullable=False)
-    bounding_box = db.Column(db.JSON, nullable=False)
-    grid_mapping = db.Column(db.JSON, nullable=False)
+    bounding_box = db.Column(db.JSON)
+    grid_mapping = db.Column(db.JSON)
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
 
     def __repr__(self):
@@ -70,21 +73,39 @@ class Domain(db.Model):
 
 
 class Horizon(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('horizon', 'product_id', name='horizon_uc'),
+    )
     horizon_id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
     horizon = db.Column(db.Integer, nullable=False)
+
 
     def __repr__(self):
         return '<Horizon {!r}>'.format(self.horizon_id)
 
 
 class Issue(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('issue', 'product_id', name='issue_uc'),
+    )
     issue_id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
     issue = db.Column(db.Time, nullable=False)
 
     def __repr__(self):
         return '<Issue {!r}>'.format(self.issue_id)
+
+
+class NCFile(db.Model):
+    file_id = db.Column(db.Integer, primary_key=True)
+    file_name = db.Column(db.String, nullable=False)
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
+
+    def __repr__(self):
+        return '<NCFile {!r}>'.format(self.file_id)
 
 
 class ProductSchema(ma.ModelSchema):
