@@ -1,10 +1,12 @@
 import os
-from flask_migrate import Migrate
+#from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 from marshmallow import fields
 from flask_marshmallow import Marshmallow
 from settings import *
+from flask_script import Manager
+from flask_migrate import Migrate, MigrateCommand
 
 
 app = Flask('cuizinart')
@@ -12,6 +14,9 @@ DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=pos
                                                       url=postgres_url, db=postgres_db)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+
+manager = Manager(app)
+manager.add_command('db', MigrateCommand)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -111,3 +116,6 @@ class IssueSchema(ma.ModelSchema):
     class Meta:
         model = Issue
 
+
+if __name__ == '__main__':
+    manager.run()
