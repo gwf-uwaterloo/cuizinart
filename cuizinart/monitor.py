@@ -14,10 +14,10 @@ def parse_str_time(strs):
 def add_metadata(src_path):
     product_name = src_path.split('/')[-2]
     file_name = src_path.split('/')[-1]
-    is_forecast = True
+    is_forecast = False
     if product_name.startswith("forecast_"): # Folder name starts with forecast is forecast files
         product_name = product_name[9:]
-        is_forecast = False
+        is_forecast = True
 
     product = Product.query.filter_by(key=product_name).first()
     if product is None:
