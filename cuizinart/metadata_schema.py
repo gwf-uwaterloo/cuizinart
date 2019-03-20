@@ -1,5 +1,4 @@
 import os
-#from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 from marshmallow import fields
@@ -98,6 +97,9 @@ class Issue(db.Model):
 
 
 class NCFile(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('file_name', 'product_id', name='nc_file_uc'),
+    )
     file_id = db.Column(db.Integer, primary_key=True)
     file_name = db.Column(db.String, nullable=False)
     start_date = db.Column(db.DateTime)

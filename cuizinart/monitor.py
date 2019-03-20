@@ -14,6 +14,11 @@ def parse_str_time(strs):
 def add_metadata(src_path):
     product_name = src_path.split('/')[-2]
     file_name = src_path.split('/')[-1]
+    is_forecast = True
+    if product_name.startswith("forecast_"): # Folder name starts with forecast is forecast files
+        product_name = product_name[9:]
+        is_forecast = False
+
     product = Product.query.filter_by(key=product_name).first()
     if product is None:
         print("Only support existing products")
@@ -21,7 +26,7 @@ def add_metadata(src_path):
         try:
             f = Dataset(src_path,'r')
         except Exception as e:
-            LOGGER.exception('Missing File {}'.format(src_path))
+            print('Missing File {}'.format(src_path))
             raise e
 
         times = parse_time(f)
@@ -31,7 +36,7 @@ def add_metadata(src_path):
             product.end_date = times[-1]
         new_file = NCFile(file_name=file_name, start_date=times[0], end_date=times[-1], product=product)
         db.session.add(new_file)
-        if product_name.startswith("forecast"): # Folder name starts with forecast is forecast files
+        if is_forecast:
             issue = file_name[-7:-3]
             if Issue.query.filter_by(issue=issue).first() is None:
                 new_issue = Issue(issue=issue, product=product)
@@ -51,12 +56,12 @@ class MonitorHandler(PatternMatchingEventHandler):
         db.session.remove()
         add_metadata(event.src_path)
 
-        print(f"event path: {event.src_path} , event type: {event.event_type}, is Dir: {event.is_directory}!")
+        print("event path: {} , event type: {}, is Dir: {}!".format(event.src_path, event.event_type, event.is_directory))
 
 
     def on_deleted(self, event):
         # This function is called when a file is deleted
-        print(f"Someone deleted {event.src_path}!")
+        print("Someone deleted {}!".format(event.src_path))
 
 
 def update_existing_file_changes(prod_path):
@@ -70,7 +75,7 @@ def update_existing_file_changes(prod_path):
             for name in added_files:
                 add_metadata(os.path.join(path, name))
             for name in deleted_files:
-                print(f"Deleted {os.path.join(path, name)}")
+                print("Deleted {}".format(os.path.join(path, name)))
 
 
 if __name__ == "__main__":
@@ -81,7 +86,7 @@ if __name__ == "__main__":
         LOGGER.error('Invalid argument')
         sys.exit(1)
 
-    print(f"path: {products_path}")
+    print("path: {}".format(products_path))
 
     update_existing_file_changes(products_path)
 
