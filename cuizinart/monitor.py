@@ -73,6 +73,7 @@ def update_existing_file_changes(prod_path):
             f_names = list(filter(lambda n: n.endswith('.nc'), files))
             added_files, deleted_files = list(set(f_names) - set(file_names)), list(set(file_names) - set(f_names))
             for name in added_files:
+                print("New added file {}".format(os.path.join(path, name)))
                 add_metadata(os.path.join(path, name))
             for name in deleted_files:
                 print("Deleted {}".format(os.path.join(path, name)))
