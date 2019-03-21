@@ -18,19 +18,42 @@ def open_file(path):
     return Dataset(path, 'r', format='NETCDF4')
 
 
-def parse_file_name(file_name):
-    """ Get a file's product name and start date based on its file name """
-    name_components = re.search(r'(.*)_(\d{12}).nc', file_name)
-    if name_components:
-        product_name = name_components.group(1)
-        try:
-            product_start_time = datetime.strptime(name_components.group(2), '%Y%m%d%H%M')
-        except ValueError:
-            raise Exception('Invalid product file name: ', file_name)
-    else:
-        raise Exception('Could not parse product file name: ', file_name)
+def filter_files(file_list, start_time, end_time, issues, is_forecast_product):
+    """
+    Filter files in file_list for matching time range and issues. If is_forecast_product is False,
+    treats product as non-forecast. This means it will match files only based on start and end time.
+    :param file_list: List of file names
+    :param start_time: Request start time
+    :param end_time: Request end time
+    :param issues: Issues to match or empty list or None
+    :param is_forecast_product: True iff the product is to be treated as forecast product, with issues and horizons
+    :return: List of matched file names, sorted by start date
+    """
+    parsed_files = []
+    for file_name in file_list:
+        name_components = re.search(r'(.*)_(\d{12}).nc', file_name)
+        if name_components:
+            try:
+                file_start_datetime = datetime.strptime(name_components.group(2), '%Y%m%d%H%M')
+                parsed_files.append((file_name, file_start_datetime))
+            except ValueError:
+                raise Exception('Invalid product file name: ', file_name)
+        else:
+            raise Exception('Could not parse product file name: ', file_name)
 
-    return file_name, product_name, product_start_time
+    matched_files = []
+    for file_name, file_start_datetime in sorted(parsed_files, key=lambda f: f[1]):
+        if not is_forecast_product:
+            if file_start_datetime <= start_time and len(matched_files) > 0:
+                matched_files.pop()  # the previous file contains data that is too early. Remove it.
+            if file_start_datetime <= end_time:
+                matched_files.append(file_name)
+        elif file_start_datetime.time() in issues \
+                and (start_time.date() <= file_start_datetime.date() <= end_time.date()):
+            # Forecast product
+            matched_files.append(file_name)
+
+    return matched_files
 
 
 def get_indexes(lat_array, lon_array, shape, lat, lon):
@@ -113,22 +136,24 @@ def read_metadata(nc_file, request_vars):
     Reads metadata given NetCDF file's metadata
     :param nc_file: NetCDF file
     :param request_vars: Request variables
-    :return: file metadata, projection variable, file's temporal resolution, file's no-data value, metadata per variable
+    :return: file metadata, projection variable, metadata per variable, variables' fillvalues, variables' dtypes
     """
     file_metadata = {attr: nc_file.getncattr(attr) for attr in nc_file.ncattrs()}
     proj_var = nc_file.get_variables_by_attributes(grid_mapping_name=lambda v: v is not None)[0]
 
-    temp_resolution = nc_file[request_vars[0]].getncattr('temporal_resolution')
-    no_data_value = nc_file[request_vars[0]].getncattr('_FillValue')
     variables_metadata = {}
+    variables_fillvals = {}
+    variables_dtypes = {}
     for var_name in request_vars:
         variable = nc_file[var_name]
-        var_long_name = variable.getncattr('long_name')
-        var_unit = variable.getncattr('units')
-        variables_metadata[var_name] = {'long_name': var_long_name, 'units': var_unit,
-                                        'dtype': variable.datatype}
+        variables_metadata[var_name] = {attr: variable.getncattr(attr) for attr in variable.ncattrs()}
+        variables_dtypes[var_name] = variable.datatype
+        if '_FillValue' in variables_metadata[var_name]:
+            variables_fillvals[var_name] = variables_metadata[var_name]['_FillValue']
+        else:
+            variables_fillvals[var_name] = netCDF4.default_fillvals[variable.dtype.str[1:]]
 
-    return file_metadata, proj_var, temp_resolution, no_data_value, variables_metadata
+    return file_metadata, proj_var, variables_metadata, variables_fillvals, variables_dtypes
 
 
 def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, issues, spark_ctx):
@@ -146,7 +171,22 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
     """
     request_start_time = parse(start_time)
     request_end_time = parse(end_time)
-    print('Request time range: {} - {}'.format(request_start_time, request_end_time))
+
+    # If requested range is empty or user requests issues but no horizon or vice versa, raise exception.
+    # If both issues and horizons are empty, we try processing the product as a non-forecast product
+    # and return a single file.
+    if request_end_time < request_start_time or (len(horizons) == 0 and len(issues) > 0) \
+            or (len(horizons) > 0 and len(issues) == 0):
+        raise Exception('Request inconsistent.')
+
+    is_forecast_product = True
+    if len(horizons) == len(issues) == 0:
+        is_forecast_product = False
+        print('Treating as non-forecast product.')
+
+    request_issues = list(map(lambda i: parse(i).time(), issues))
+    print('Request time range: {} - {}, issues {}, horizons {}'.format(request_start_time, request_end_time,
+                                                                       request_issues, horizons))
     print('Request variables: {}'.format(request_vars))
 
     product_path = path.join(NC_INPUT_PATH, product)
@@ -154,18 +194,13 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
         raise Exception('Product directory not found.')
 
     # Get product files, ignore files that are out of request date range
-    product_files = sorted(map(parse_file_name, os.listdir(product_path)), key=lambda f: f[2])
-    matching_files = []
-    for i in range(len(product_files) - 1):
-        if product_files[i][2] <= request_end_time and product_files[i+1][2] > request_start_time:
-            matching_files.append(product_files[i])
-    if product_files[-1][2] <= request_end_time:
-        matching_files.append(product_files[-1])
-    if len(matching_files) == 0:
+    product_files = filter_files(os.listdir(product_path), request_start_time, request_end_time, request_issues,
+                                 is_forecast_product)
+    if len(product_files) == 0:
         raise Exception('No matching NetCDF files in product directory.')
 
     # Get x/y slice indexes based on first nc file, so we don't need to calculate this for every file.
-    nc_file = open_file(path.join(product_path, matching_files[0][0]))
+    nc_file = open_file(path.join(product_path, product_files[0]))
     x_slice_start, x_slice_stop, y_slice_start, y_slice_stop, extent, xy_polygons = \
         get_slice_indexes_and_extent(nc_file, geojson_shape)
     x = x_slice_stop - x_slice_start + 1
@@ -180,13 +215,8 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
     lons = nc_file['lon'][y_slice_start:y_slice_stop + 1, x_slice_start:x_slice_stop + 1]
 
     # Get the file and variable metadata
-    file_metadata, proj_var, temp_resolution, no_data_value, variables_metadata = read_metadata(nc_file, request_vars)
-    if temp_resolution == 'daily':
-        time_delta = relativedelta(days=1)
-    elif temp_resolution == 'monthly':
-        time_delta = relativedelta(months=1)
-    else:
-        raise Exception('Unknown temporal resolution')
+    file_metadata, proj_var, variables_metadata, var_fillvals, var_dtypes = read_metadata(nc_file, request_vars)
+
     if proj_var.name == 'lambert_azimuthal_equal_area':
         crs = '+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m no_defs'
     elif proj_var.name == 'latitude_longitude':
@@ -194,17 +224,33 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
     else:
         raise Exception('Unsupported projection:', proj_var)
 
-    # Create the output NetCDF file scaffold (i.e., the dimensions and metadata but no variable data so far)
-    out_file_name = '{}_{}_{}_{}.nc'.format(product, '+'.join(request_vars), request_start_time.strftime('%Y%m%d-%H%M'),
-                                            request_end_time.strftime('%Y%m%d-%H%M'))
-    out_file_path = path.join(NC_OUTPUT_PATH, out_file_name)
-    out_file = generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata,
-                                      temp_resolution, no_data_value, file_metadata, proj_var)
-
+    # Create the output NetCDF files' scaffolds (i.e., the dimensions and metadata but no variable data so far)
+    # For forecast products, we create one output file per requested date and issue.
+    # For non-forecast products, we create only one output file.
+    out_files = []
+    date = request_start_time
+    if is_forecast_product:
+        while date <= request_end_time:
+            for issue in request_issues:
+                out_file_name = '{}_{}_{}{}.nc'.format(product, '+'.join(request_vars), date.strftime('%Y%m%d'),
+                                                       issue.strftime('%H%M'))
+                out_file_path = path.join(NC_OUTPUT_PATH, out_file_name)
+                out_files.append(generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons,
+                                                        variables_metadata, var_fillvals, var_dtypes, file_metadata,
+                                                        proj_var, nc_file['rlon'], nc_file['rlat']))
+            date += relativedelta(days=1)
+    else:
+        out_file_name = '{}_{}_{}_{}.nc'.format(product, '+'.join(request_vars),
+                                                request_start_time.strftime('%Y%m%d%H%M'),
+                                                request_end_time.strftime('%Y%m%d%H%M'))
+        out_file_path = path.join(NC_OUTPUT_PATH, out_file_name)
+        out_files.append(generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata,
+                                                var_fillvals, var_dtypes, file_metadata, proj_var,
+                                                nc_file['rlon'], nc_file['rlat']))
     nc_file.close()
 
     # Go though input files and add the content of their time slices to the output file
-    for nc_file_name, _, _ in matching_files:
+    for k, nc_file_name in enumerate(product_files):
         nc_file = open_file(path.join(product_path, nc_file_name))
         file_vars = nc_file.variables.keys()
         if any(v not in file_vars for v in request_vars):
@@ -213,91 +259,90 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
         # Calculate start and end time for this file in this request
         file_instants = num2date(nc_file['time'][:], nc_file['time'].getncattr('units'),
                                  nc_file['time'].getncattr('calendar'))
-        current_start_date = max(file_instants.min(), request_start_time)
-        current_end_date = min(file_instants.max(), request_end_time)
-        print('Matched file: {} and period {} - {}'.format(nc_file_name, current_start_date, current_end_date))
+        if not is_forecast_product:
+            current_start_date = max(file_instants.min(), request_start_time)
+            current_end_date = min(file_instants.max(), request_end_time)
+            print('Matched file: {} and period {} - {}'.format(nc_file_name, current_start_date, current_end_date))
 
-        # Get indices of the request's time range
-        start_instant = file_instants[file_instants <= current_start_date][-1]
-        end_instant = file_instants[file_instants >= current_end_date][0]
-        start_time_index, end_time_index = date2index([start_instant, end_instant], nc_file['time'])
-        time_slices = end_time_index - start_time_index + 1
-        print('time slice indices: {} - {}'.format(start_time_index, end_time_index))
+            # Get indices of the request's time range
+            start_instant = file_instants[file_instants <= current_start_date][-1]
+            end_instant = file_instants[file_instants >= current_end_date][0]
+            start_time_index, end_time_index = date2index([start_instant, end_instant], nc_file['time'])
+            time_slices = range(start_time_index, end_time_index + 1)
+        else:
+            time_slices = date2index([file_instants[0] + relativedelta(hours=h) for h in horizons], nc_file['time'])
+            if len(horizons) == 1:
+                time_slices = [time_slices]
+        print('time slice indices: {}'.format(time_slices))
 
-        variables_data = np.ndarray(shape=(time_slices, len(request_vars), y, x))
+        variables_data = np.ndarray(shape=(len(time_slices), len(request_vars), y, x))
         for i, var_name in enumerate(request_vars):
             variable = nc_file[var_name]
 
-            if variable.getncattr('temporal_resolution') != temp_resolution or \
-                    variable.getncattr('long_name') != variables_metadata[var_name]['long_name'] or \
-                    variable.getncattr('units') != variables_metadata[var_name]['units'] or \
-                    variable.getncattr('_FillValue') != no_data_value:
+            if any(variable.getncattr(meta_key) != variables_metadata[var_name][meta_key]
+                   for meta_key in variables_metadata[var_name].keys()) or variable.datatype != var_dtypes[var_name]:
                 raise Exception('Inconsistent variable metadata.')
 
-            variables_data[:, i] = variable[start_time_index:end_time_index + 1, y_slice_start:y_slice_stop + 1,
+            variables_data[:, i] = variable[time_slices, y_slice_start:y_slice_stop + 1,
                                             x_slice_start:x_slice_stop + 1]
 
-            # Load data into geopyspark
-            time_instants = list(start_instant + i * time_delta for i in range(time_slices))
-            tiles = []
-            for var_data_at_instant, instant in zip(variables_data, time_instants):
-                temporal_projected_extent = gps.TemporalProjectedExtent(extent=extent, proj4=crs,
-                                                                        instant=instant)
-                tile = gps.Tile.from_numpy_array(var_data_at_instant, no_data_value)
-                tiles.append((temporal_projected_extent, tile))
+        # Load data into geopyspark
+        time_instants = file_instants[time_slices]
+        tiles = []
+        for var_data_at_instant, instant in zip(variables_data, time_instants):
+            temporal_projected_extent = gps.TemporalProjectedExtent(extent=extent, proj4=crs,
+                                                                    instant=instant)
+            tile = gps.Tile.from_numpy_array(var_data_at_instant, var_fillvals[request_vars[0]])
+            tiles.append((temporal_projected_extent, tile))
 
-            rdd = spark_ctx.parallelize(tiles)
-            raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME, numpy_rdd=rdd)
-            tiled_raster_layer = raster_layer.tile_to_layout(gps.LocalLayout(y, x))  # todo use smaller tiles
+        rdd = spark_ctx.parallelize(tiles)
+        raster_layer = gps.RasterLayer.from_numpy_rdd(layer_type=gps.LayerType.SPACETIME, numpy_rdd=rdd)
+        tiled_raster_layer = raster_layer.tile_to_layout(gps.LocalLayout(y, x))  # todo use smaller tiles
 
-            masked_layer = tiled_raster_layer.mask(xy_polygons)
-            masked_var_tiles = masked_layer.to_numpy_rdd().collect()
-            masked_var_data = np.array(list(tile.cells for _, tile in masked_var_tiles))
+        masked_layer = tiled_raster_layer.mask(xy_polygons)
+        masked_var_tiles = masked_layer.to_numpy_rdd().collect()
+        masked_var_data = np.array(list(tile.cells for _, tile in masked_var_tiles))
 
-            append_output_netcdf(out_file, time_instants, variables_metadata, masked_var_data)
+        out_file = out_files[k] if is_forecast_product else out_files[0]
+        append_output_netcdf(out_file, time_instants, variables_metadata, masked_var_data)
 
         nc_file.close()
 
-    out_file.close()
+    for f in out_files:
+        f.close()
     return out_file_path
 
 
-def generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata, var_temp_resolution,
-                           no_data_value, meta, proj_var, lat_name='lat', lon_name='lon', dim_x_name='rlon',
-                           dim_y_name='rlat'):
+def generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata, var_fillvals, var_dtypes,
+                           file_meta, proj_var, x_var, y_var, lat_name='lat', lon_name='lon'):
     """ Creates scaffolding of output NetCDF file, without actual variable data """
     out_nc = netCDF4.Dataset(out_file_path, 'w')
 
     # define dimensions
-    out_nc.createDimension(dim_x_name, len(x_coords))
-    out_nc.createDimension(dim_y_name, len(y_coords))
+    out_nc.createDimension(x_var.name, len(x_coords))
+    out_nc.createDimension(y_var.name, len(y_coords))
     out_nc.createDimension('time', None)
-
-    grid_map_name = proj_var.getncattr('grid_mapping_name')
-    proj_units = proj_var.getncattr('units')
 
     # create variables
     # original coordinate variables
-    proj_x = out_nc.createVariable(dim_x_name, x_coords.dtype, (dim_x_name,))
-    proj_x.units = proj_units
-    proj_x.standard_name = 'projection_x_coordinate'
-    proj_x.long_name = 'x coordinate of projection'
+    proj_x = out_nc.createVariable(x_var.name, x_coords.dtype, (x_var.name,))
+    for attr in x_var.ncattrs():
+        proj_x.setncattr(attr, x_var.getncattr(attr))
     proj_x[:] = x_coords
 
-    proj_y = out_nc.createVariable(dim_y_name, x_coords.dtype, (dim_y_name,))
-    proj_y.units = proj_units
-    proj_y.standard_name = 'projection_y_coordinate'
-    proj_y.long_name = 'y coordinate of projection'
+    proj_y = out_nc.createVariable(y_var.name, x_coords.dtype, (y_var.name,))
+    for attr in y_var.ncattrs():
+        proj_y.setncattr(attr, y_var.getncattr(attr))
     proj_y[:] = y_coords
 
     # auxiliary coordinate variables lat and lon
-    lat = out_nc.createVariable(lat_name, 'f4', (dim_y_name, dim_x_name,))
+    lat = out_nc.createVariable(lat_name, 'f4', (y_var.name, x_var.name,))
     lat.units = 'degrees_north'
     lat.standard_name = 'latitude'
     lat.long_name = 'latitude coordinate'
     lat[:] = lats
 
-    lon = out_nc.createVariable(lon_name, 'f4', (dim_y_name, dim_x_name,))
+    lon = out_nc.createVariable(lon_name, 'f4', (y_var.name, x_var.name,))
     lon.units = 'degrees_east'
     lon.standard_name = 'longitude'
     lon.long_name = 'longitude coordinate'
@@ -311,26 +356,19 @@ def generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variab
     var_time.axis = 'T'
 
     # grid mapping variable
-    grid_map = out_nc.createVariable(grid_map_name, 'c', )
+    grid_map = out_nc.createVariable(proj_var.name, 'c', )
     for attr in proj_var.ncattrs():
         grid_map.setncattr(attr, proj_var.getncattr(attr))
 
     # create data variables
     for i, (var_name, var_metadata) in enumerate(variables_metadata.items()):
-        var_data = out_nc.createVariable(var_name, var_metadata['dtype'], ('time', dim_y_name, dim_x_name,),
-                                         fill_value=no_data_value)
+        var_data = out_nc.createVariable(var_name, var_dtypes[var_name], ('time', y_var.name, x_var.name,),
+                                         fill_value=var_fillvals[var_name])
+        var_data.setncatts(var_metadata)
 
-        var_data.units = var_metadata['units']
-        var_data.long_name = var_metadata['long_name']
-        var_data.coordinates = '{} {}'.format(lat_name, lon_name)
-        var_data.grid_mapping = grid_map_name
-
-        # temporal resolution attribute for the data variable
-        var_data.setncattr('temporal_resolution', var_temp_resolution)
-
-    meta.pop('DATETIME', None)
-    meta.pop('DOCUMENTNAME', None)
-    out_nc.setncatts(meta)
+    file_meta.pop('DATETIME', None)
+    file_meta.pop('DOCUMENTNAME', None)
+    out_nc.setncatts(file_meta)
 
     return out_nc
 
@@ -344,6 +382,6 @@ def append_output_netcdf(out_file, time_instants, variables_metadata, variables_
                                                           calendar=var_time.calendar))
 
     # append actual variable data
-    for i, (var_name, var_metadata) in enumerate(variables_metadata.items()):
+    for i, var_name in enumerate(variables_metadata.keys()):
         var_data = out_file[var_name]
         var_data[previous_num_slices:previous_num_slices + len(time_instants)] = variables_data[:, i]
