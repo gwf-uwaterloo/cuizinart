@@ -44,7 +44,7 @@ NC_OUTPUT_PATH=<path to store output NetCDF files>
 
 - If not using Docker: Create the metadata database:
   - In a `psql` shell, type: `create database cuizinart`
-  - In `cuizinart/`, run `flask db init`, `flask db migrate`, `flask db upgrade` to create the tables.
+  - In the base directory, run `flask db init`, `flask db migrate`, `flask db upgrade` to create the tables.
 
 ## Run
 
