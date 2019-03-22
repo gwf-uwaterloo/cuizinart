@@ -13,7 +13,7 @@
 ### Backend and Database
 - Create a file `.env` in the base folder, containing:
 ```
-FLASK_APP=main.py
+FLASK_APP=cuizinart/main.py
 
 BACKEND=pyspark
 PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001
@@ -25,10 +25,17 @@ POSTGRES_USER=<user>
 POSTGRES_PW=<pwd>
 POSTGRES_URL=postgres:5432  # if not using Docker, use localhost:5432
 POSTGRES_DB=cuizinart
+
+EMAIL_SMTP_SERVER=<server>
+EMAIL_SMTP_PORT=465
+EMAIL_SMTP_USERNAME=<user>
+EMAIL_ADDRESS=<address>
+EMAIL_PASSWORD=<pwd>
 ```
 
 - Create a file `cuizinart_pyspark/.env`, containing:
 ```
+CUIZINART_URL=backend:5000  # if not using Docker, use localhost:5000
 SPARK_MASTER=local[*]
 
 NC_INPUT_PATH=<path to NetCDF files>

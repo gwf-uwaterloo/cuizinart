@@ -1,9 +1,13 @@
+import smtplib
+import ssl
+import traceback
+from email.message import EmailMessage
+
 import requests
 from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
-from flask import send_file
 from metadata_schema import *
 from settings import *
 
@@ -11,7 +15,9 @@ CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 def parse_json(obj):
+    request_id = obj['request_id']
     backend = obj['backend']
     product = obj['product']
     start_time = obj['start_time']
@@ -21,7 +27,7 @@ def parse_json(obj):
     horizons = obj['window']
     issues = obj['release']
 
-    return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
+    return request_id, backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
 
 @app.route('/getBoundaries', methods=['GET'])
@@ -41,22 +47,52 @@ def fetch_result():
     json_request = request.get_json()
     print(json_request)
 
-    backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
+    request_id, backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     if backend == BACKEND_SLURM:
         return process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
-        return process_pyspark(product, geojson, start_time, end_time, variables, horizons, issues)
+        return process_pyspark(request_id, product, geojson, start_time, end_time, variables, horizons, issues)
     else:
         return '{message: "Unknown Backend {}"}'.format(backend), 400
 
 
-def process_pyspark(product, geojson, start_time, end_time, variables, horizons, issues):
+@app.route('/reportJobResult', methods=['POST'])
+def report_job_result():
+    """
+    REST endpoint to report success or failure of a job.
+    """
+    job_result = request.get_json()
+    request_id = job_result['request_id']
+    request_status = job_result['request_status']
+    request_files = job_result['file_location']
+    num_files = job_result['n_files']
+    processing_time = job_result['processing_time_s']
+
+    # TODO fetch actual user mail address via request_id from database once users are implemented
+    request_user_email = 'gwf.cuizinart@uwaterloo.ca'
+
+    subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
+    message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
+              + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
+                                                                       processing_time) \
+              + 'You can now locate your files under the following path: {}'.format(request_files)
+
+    try:
+        send_notification_email(request_user_email, subject, message)
+    except:
+        print(traceback.format_exc())
+        return '{message: "Error when sending notification email"}', 500
+
+    return '{message: "Success"}'
+
+
+def process_pyspark(request_id, product, geojson, start_time, end_time, variables, horizons, issues):
     """
     Process request using PySpark.
     """
-    payload = {'product': product, 'geojson_shape': geojson, 'start_time': start_time, 'end_time': end_time,
-               'request_vars': variables, 'horizons': horizons, 'issues': issues}
+    payload = {'request_id': request_id, 'product': product, 'geojson_shape': geojson, 'start_time': start_time,
+               'end_time': end_time, 'request_vars': variables, 'horizons': horizons, 'issues': issues}
 
     r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
 
@@ -64,14 +100,7 @@ def process_pyspark(product, geojson, start_time, end_time, variables, horizons,
         print(r.status_code, r.reason)
         return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
 
-    out_file_path = r.json()['out_file_path']
-    try:
-        rv = send_file(out_file_path, mimetype='application/x-netcdf')
-    except FileNotFoundError:
-        print('No files generated')
-        rv = '{message: "No files generated"}'
-    finally:
-        return rv
+    return 'Job submitted successfully.'
 
 
 def process_slurm(json_request):
@@ -91,9 +120,32 @@ def process_slurm(json_request):
 
     os.remove(file_name)
 
-    return '{message: "success"}'
+    return 'Job submitted successfully.'
+
+
+def send_notification_email(recipient_address, subject, content):
+    """
+    Sends an email with the passed content to the passed address
+    """
+    context = ssl.create_default_context()
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = EMAIL_ADDRESS
+    msg['To'] = recipient_address
+    msg.set_content(content)
+
+    try:
+        with smtplib.SMTP_SSL(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, context=context) as server:
+            server.login(EMAIL_SMTP_USERNAME, EMAIL_PASSWORD)
+            server.send_message(msg)
+    except smtplib.SMTPConnectError:
+        print('Error while connecting to SMTP server.')
+    except smtplib.SMTPAuthenticationError:
+        print('Error while authenticating to SMTP server.')
+    except smtplib.SMTPException:
+        print('Error while trying to send notification email.')
 
 
 if __name__ == '__main__':
     app.run(port=5000)
-

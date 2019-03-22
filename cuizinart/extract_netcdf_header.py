@@ -55,8 +55,8 @@ def parse_variables(filename, variable):
     try:
         longname = filename.variables[variable].getncattr('long_name')
     except Exception as e:
-        LOGGER.exception('Could not parse long_name from NC file')
-        raise e
+        LOGGER.exception('Could not parse long_name from NC file. Using short name.')
+        longname = shortname
 
     vbl_dict = {'short_name': shortname,
                 'long_name':  longname,
