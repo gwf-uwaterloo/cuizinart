@@ -1,10 +1,18 @@
 FROM python:3.6
-ADD . /code
-WORKDIR /code
+ADD . /cuizinart
 
-RUN chmod +x /code/docker-entrypoint.sh
-RUN pip install -r requirements.txt
+# We need to run the flask commands from the project base folders,
+# so we execute the app from there
+RUN mv /cuizinart/docker-entrypoint.sh /
 
-COPY init.sql /docker-entrypoint-initdb.d/10-init.sql
+WORKDIR .
 
-CMD ["/bin/bash", "/code/docker-entrypoint.sh"]
+RUN chmod +x docker-entrypoint.sh
+
+RUN apt-get update && apt-get -y install libgdal-dev
+RUN wget http://download.osgeo.org/gdal/2.1.2/gdal212.zip; unzip gdal212.zip; rm gdal212.zip
+RUN cd gdal-2.1.2; ./configure --with-python; make -j 32; make install -j 32; cd ..
+
+RUN pip install -r /cuizinart/requirements.txt
+
+CMD ["/bin/bash", "docker-entrypoint.sh", "/tuna1/scratch/mgauch/data/cuizinart"]
