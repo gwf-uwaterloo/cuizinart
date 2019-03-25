@@ -23,6 +23,7 @@ sc = SparkContext(conf=conf)
 def process_query():
     request_json = request.get_json()
     request_id = request_json['request_id']
+    user_email = request_json['user_email']
     product = request_json['product']
     geojson_shape = request_json['geojson_shape']
     start_time = request_json['start_time']
@@ -31,14 +32,15 @@ def process_query():
     horizons = request_json['horizons']
     issues = request_json['issues']
 
-    thread = Thread(target=execute_query,
-                    args=(request_id, product, geojson_shape, start_time, end_time, request_vars, horizons, issues, sc))
+    thread = Thread(target=execute_query, args=(request_id, user_email, product, geojson_shape, start_time, end_time,
+                                                request_vars, horizons, issues, sc))
     thread.start()
 
     return '{message: "Job started"}'
 
 
-def execute_query(request_id, product, geojson_shape, start_time, end_time, request_vars, horizons, issues, sc):
+def execute_query(request_id, user_email, product, geojson_shape, start_time, end_time, request_vars, horizons,
+                  issues, sc):
     """
     Wrapper to execute the slicing job and report results back to the Cuizinart main backend.
     """
@@ -58,8 +60,8 @@ def execute_query(request_id, product, geojson_shape, start_time, end_time, requ
     finally:
         elapsed_time = time.time() - wall_time
 
-    response_json = {'request_id': request_id, 'request_status': status, 'file_location': out_file_path,
-                     'n_files': num_out_files, 'processing_time_s': elapsed_time}
+    response_json = {'request_id': request_id, 'user_email': user_email, 'request_status': status,
+                     'file_location': out_file_path, 'n_files': num_out_files, 'processing_time_s': elapsed_time}
     r = requests.post('http://{}/reportJobResult'.format(CUIZINART_URL), json=response_json)
 
     if r.status_code != requests.codes.ok:

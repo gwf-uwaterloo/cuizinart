@@ -1,5 +1,6 @@
 import smtplib
 import ssl
+import time
 import traceback
 from email.message import EmailMessage
 
@@ -17,7 +18,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 def parse_json(obj):
-    request_id = obj['request_id']
+    email = obj['user_email']
     backend = obj['backend']
     product = obj['product']
     start_time = obj['start_time']
@@ -27,7 +28,7 @@ def parse_json(obj):
     horizons = obj['window']
     issues = obj['release']
 
-    return request_id, backend, product, geojson, start_time, end_time, request_variables, horizons, issues
+    return email, backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
 
 @app.route('/getBoundaries', methods=['GET'])
@@ -47,12 +48,15 @@ def fetch_result():
     json_request = request.get_json()
     print(json_request)
 
-    request_id, backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
+    email, backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
+    # TODO check for uniqueness once we track requests, append counter if not unique.
+    request_id = '{}_{}'.format(email, int(time.time()))
     if backend == BACKEND_SLURM:
+        json_request['request_id'] = request_id
         return process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
-        return process_pyspark(request_id, product, geojson, start_time, end_time, variables, horizons, issues)
+        return process_pyspark(request_id, email, product, geojson, start_time, end_time, variables, horizons, issues)
     else:
         return '{message: "Unknown Backend {}"}'.format(backend), 400
 
@@ -64,13 +68,11 @@ def report_job_result():
     """
     job_result = request.get_json()
     request_id = job_result['request_id']
+    request_user_email = job_result['user_email']
     request_status = job_result['request_status']
     request_files = job_result['file_location']
     num_files = job_result['n_files']
     processing_time = job_result['processing_time_s']
-
-    # TODO fetch actual user mail address via request_id from database once users are implemented
-    request_user_email = 'gwf.cuizinart@uwaterloo.ca'
 
     subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
     message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
@@ -87,12 +89,13 @@ def report_job_result():
     return '{message: "Success"}'
 
 
-def process_pyspark(request_id, product, geojson, start_time, end_time, variables, horizons, issues):
+def process_pyspark(request_id, user_email, product, geojson, start_time, end_time, variables, horizons, issues):
     """
     Process request using PySpark.
     """
-    payload = {'request_id': request_id, 'product': product, 'geojson_shape': geojson, 'start_time': start_time,
-               'end_time': end_time, 'request_vars': variables, 'horizons': horizons, 'issues': issues}
+    payload = {'request_id': request_id, 'user_email': user_email, 'product': product, 'geojson_shape': geojson,
+               'start_time': start_time, 'end_time': end_time, 'request_vars': variables, 'horizons': horizons,
+               'issues': issues}
 
     r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
 
@@ -100,7 +103,7 @@ def process_pyspark(request_id, product, geojson, start_time, end_time, variable
         print(r.status_code, r.reason)
         return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
 
-    return 'Job submitted successfully.'
+    return 'Request with id {} submitted successfully.'.format(request_id)
 
 
 def process_slurm(json_request):
@@ -120,7 +123,7 @@ def process_slurm(json_request):
 
     os.remove(file_name)
 
-    return 'Job submitted successfully.'
+    return 'Request with id {} submitted successfully.'.format(json_request['request_id'])
 
 
 def send_notification_email(recipient_address, subject, content):
@@ -135,6 +138,7 @@ def send_notification_email(recipient_address, subject, content):
     msg['To'] = recipient_address
     msg.set_content(content)
 
+    print('Sending email "{}"'.format(subject))
     try:
         with smtplib.SMTP_SSL(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, context=context) as server:
             server.login(EMAIL_SMTP_USERNAME, EMAIL_PASSWORD)

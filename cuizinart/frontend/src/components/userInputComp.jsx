@@ -41,7 +41,7 @@ export default class UserInputComp extends Component {
         return (
             <div>
                 <form className="row">
-                    <div className="form-group col-lg-3">
+                    <div className="form-group col-lg-4">
                         <label htmlFor="product">Select a Product</label>
                         <Select
                             id="product"
@@ -51,20 +51,15 @@ export default class UserInputComp extends Component {
                             options={this.props.products}
                         />
                     </div>
-                    <div className="form-group col-lg-3">
+                    <div className="form-group col-lg-4">
                         <label htmlFor="userEmail">Email</label>
                         <input type="email" className="form-control" id="userEmail" aria-describedby="emailHelp"
                                placeholder="Enter email"  onChange={this.handleChange.bind(this, "user_email")}/>
                     </div>
-                    <div className="form-group col-lg-3">
+                    <div className="form-group col-lg-4">
                         <label htmlFor="userId">Globus ID</label>
                         <input type="text" className="form-control" id="userId"
                                placeholder="Enter Globus ID"  onChange={this.handleChange.bind(this, "globus_id")}/>
-                    </div>
-                    <div className="form-group col-lg-3">
-                        <label htmlFor="requestId">Request ID</label>
-                        <input type="text" className="form-control" id="requestId"
-                               placeholder="Enter Request ID"  onChange={this.handleChange.bind(this, "request_id")}/>
                     </div>
                 </form>
                 <DateRangePicker  startDate={this.state.selectedProduct? moment(this.state.selectedProduct.valid_start_time).format("MM/DD/YYYY") : moment().format("MM/DD/YYYY")}
