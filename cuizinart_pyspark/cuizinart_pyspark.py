@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 import geopyspark as gps
 from shapely.geometry import Polygon
 
-from pyspark_settings import NC_INPUT_PATH, NC_OUTPUT_PATH
+from pyspark_settings import NC_INPUT_PATH
 
 
 def open_file(path):
@@ -156,10 +156,11 @@ def read_metadata(nc_file, request_vars):
     return file_metadata, proj_var, variables_metadata, variables_fillvals, variables_dtypes
 
 
-def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, issues, spark_ctx):
+def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, horizons, issues, spark_ctx):
     """
     Slices the given product into specified shape.
     :param product: Product name
+    :param out_dir: Directory to save output files in
     :param geojson_shape: Shape to be extracted
     :param start_time: Requested start time
     :param end_time: Requested end time
@@ -167,7 +168,7 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
     :param spark_ctx: Spark context
     :param horizons: Requested horizons
     :param issues: Requested issues
-    :return: Output file name
+    :return: Number of generated output files
     """
     request_start_time = parse(start_time)
     request_end_time = parse(end_time)
@@ -189,9 +190,12 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
                                                                        request_issues, horizons))
     print('Request variables: {}'.format(request_vars))
 
-    product_path = path.join(NC_INPUT_PATH, product)
+    # Look for a forecast_productName folder first. If it doesn't exist, check if there's a productName folder.
+    product_path = path.join(NC_INPUT_PATH, 'forecast_' + product)
     if not path.isdir(product_path):
-        raise Exception('Product directory not found.')
+        product_path = path.join(NC_INPUT_PATH, product)
+        if not path.isdir(product_path):
+            raise Exception('Directory for product not found (neither forecast_{p} nor {p} exist).'.format(p=product))
 
     # Get product files, ignore files that are out of request date range
     product_files = filter_files(os.listdir(product_path), request_start_time, request_end_time, request_issues,
@@ -234,7 +238,7 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
             for issue in request_issues:
                 out_file_name = '{}_{}_{}{}.nc'.format(product, '+'.join(request_vars), date.strftime('%Y%m%d'),
                                                        issue.strftime('%H%M'))
-                out_file_path = path.join(NC_OUTPUT_PATH, out_file_name)
+                out_file_path = path.join(out_dir, out_file_name)
                 out_files.append(generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons,
                                                         variables_metadata, var_fillvals, var_dtypes, file_metadata,
                                                         proj_var, nc_file['rlon'], nc_file['rlat']))
@@ -243,7 +247,7 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
         out_file_name = '{}_{}_{}_{}.nc'.format(product, '+'.join(request_vars),
                                                 request_start_time.strftime('%Y%m%d%H%M'),
                                                 request_end_time.strftime('%Y%m%d%H%M'))
-        out_file_path = path.join(NC_OUTPUT_PATH, out_file_name)
+        out_file_path = path.join(out_dir, out_file_name)
         out_files.append(generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata,
                                                 var_fillvals, var_dtypes, file_metadata, proj_var,
                                                 nc_file['rlon'], nc_file['rlat']))
@@ -310,7 +314,9 @@ def slice(product, geojson_shape, start_time, end_time, request_vars, horizons, 
 
     for f in out_files:
         f.close()
-    return out_file_path
+
+    print('Slicing completed.')
+    return len(out_files)
 
 
 def generate_output_netcdf(out_file_path, x_coords, y_coords, lats, lons, variables_metadata, var_fillvals, var_dtypes,

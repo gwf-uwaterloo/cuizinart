@@ -159,12 +159,7 @@ class App extends Component {
         if (window.confirm("Do you want to process?")) {
             axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
                 .then(function (response) {
-                    if(self.state.selectedBackend.value === "pyspark" ){
-                        saveAs(new Blob([response.data], {type:'application/x-netcdf'}));
-                    }
-                    else{
-                        NotificationManager.success("success");
-                    }
+                    NotificationManager.success(response.data);
                 })
                 .catch(function (error) {
                     NotificationManager.error(error.message);
