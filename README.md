@@ -42,11 +42,14 @@ SPARK_MASTER=local[*]
 
 NC_INPUT_PATH=<path to NetCDF files>
 NC_OUTPUT_PATH=<path to store output NetCDF files>
+
+CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in Cuizinart
 ```
 
 - If not using Docker: Create the metadata database:
   - In a `psql` shell, type: `create database cuizinart`
   - In the base directory, run `flask db init`, `flask db migrate`, `flask db upgrade` to create the tables.
+  - Run `flask pyspark-init <pwd>` to create a user for the PySpark slicer.
 
 ## Run
 
