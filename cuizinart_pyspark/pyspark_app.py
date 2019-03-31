@@ -11,7 +11,7 @@ import geopyspark as gps
 from pyspark import SparkContext
 
 from cuizinart_pyspark import slice
-from pyspark_settings import SPARK_MASTER, CUIZINART_URL, NC_OUTPUT_PATH
+from pyspark_settings import SPARK_MASTER, CUIZINART_URL, NC_OUTPUT_PATH, CUIZINART_PYSPARK_PASSWORD
 
 app = Flask('cuizinart_pyspark')
 
@@ -60,8 +60,18 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
     finally:
         elapsed_time = time.time() - wall_time
 
+    login_request = requests.post('http://{}/login'.format(CUIZINART_URL), json={'email': 'pyspark',
+                                                                         'password': CUIZINART_PYSPARK_PASSWORD})
+    if login_request.status_code != requests.codes.ok or \
+            'user' not in login_request.json()['response'] or \
+            'authentication_token' not in login_request.json()['response']['user']:
+        print('Error authenticating on Cuizinart')
+        return
+
+    auth_token = login_request.json()['response']['user']['authentication_token']
     response_json = {'request_id': request_id, 'user_email': user_email, 'request_status': status,
-                     'file_location': out_file_path, 'n_files': num_out_files, 'processing_time_s': elapsed_time}
+                     'file_location': out_file_path, 'n_files': num_out_files, 'processing_time_s': elapsed_time,
+                     'auth_token': auth_token}
     r = requests.post('http://{}/reportJobResult'.format(CUIZINART_URL), json=response_json)
 
     if r.status_code != requests.codes.ok:

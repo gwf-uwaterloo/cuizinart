@@ -1,17 +1,10 @@
-import os
+import click
 from flask_sqlalchemy import SQLAlchemy
-from flask import Flask
 from marshmallow import fields
 from flask_marshmallow import Marshmallow
-from settings import *
-from flask_migrate import Migrate, MigrateCommand
-
-
-app = Flask('cuizinart')
-DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=postgres_pw,
-                                                      url=postgres_url, db=postgres_db)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+from settings import app
+from flask_migrate import Migrate
+from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -106,6 +99,51 @@ class NCFile(db.Model):
         return '<NCFile {!r}>'.format(self.file_id)
 
 
+roles_users = db.Table('roles_users',
+                       db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+                       db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+    def __repr__(self):
+        return '<Role {!r}>'.format(self.id)
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
+
+    def __repr__(self):
+        return '<User {!r}>'.format(self.id)
+
+
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+
+@app.cli.command()
+@click.argument('password')
+def pyspark_init(password):
+    db.create_all()
+    pyspark_role = Role.query.filter_by(name='pyspark').first()
+    if pyspark_role is None:
+        click.echo('Creating role "pyspark"')
+        pyspark_role = user_datastore.create_role(name='pyspark')
+    if User.query.filter(User.roles.any(Role.name=='pyspark')).first() is None:
+        click.echo('Creating user "pyspark"')
+        user_datastore.create_user(email='pyspark', password=password, active=True, confirmed_at='2019-01-01 00:00:00',
+                                   roles=[pyspark_role])
+    db.session.commit()
+
+
 class ProductSchema(ma.ModelSchema):
     variables = fields.Nested('VariableSchema', default=None, many=True)
     domain = fields.Nested('DomainSchema', default=None)
@@ -134,4 +172,3 @@ class HorizonSchema(ma.ModelSchema):
 class IssueSchema(ma.ModelSchema):
     class Meta:
         model = Issue
-

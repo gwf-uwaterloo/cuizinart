@@ -14,6 +14,8 @@
 - Create a file `.env` in the base folder, containing:
 ```
 FLASK_APP=cuizinart/main.py
+APP_SECRET_KEY=<secret-key>
+PASSWORD_SALT=<salt>
 
 BACKEND=pyspark
 PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001

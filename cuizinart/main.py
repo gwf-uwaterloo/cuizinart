@@ -4,21 +4,24 @@ import time
 import traceback
 from email.message import EmailMessage
 
+import flask_login
 import requests
-from flask import Flask
 from flask import request
 from flask_cors import CORS
 from flask import jsonify
+from flask_principal import RoleNeed, Permission
+from flask_security import auth_token_required
+
 from metadata_schema import *
 from settings import *
 
 CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+pyspark_permission = Permission(RoleNeed('pyspark'))
 
 
 def parse_json(obj):
-    email = obj['user_email']
     backend = obj['backend']
     product = obj['product']
     start_time = obj['start_time']
@@ -28,7 +31,12 @@ def parse_json(obj):
     horizons = obj['window']
     issues = obj['release']
 
-    return email, backend, product, geojson, start_time, end_time, request_variables, horizons, issues
+    return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
+
+
+@app.route('/', methods=['GET'])
+def get_dummy():
+    return '{message: "Success"}'
 
 
 @app.route('/getBoundaries', methods=['GET'])
@@ -40,6 +48,7 @@ def get_boundaries():
 
 
 @app.route('/fetchResult', methods=['POST'])
+@auth_token_required
 def fetch_result():
     """
     This is the main REST endpoint. It receives the processing request as a JSON string.
@@ -48,20 +57,27 @@ def fetch_result():
     json_request = request.get_json()
     print(json_request)
 
-    email, backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
+    user = flask_login.current_user
+    print('User', user)
+
+    backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     # TODO check for uniqueness once we track requests, append counter if not unique.
-    request_id = '{}_{}'.format(email, int(time.time()))
+    request_id = '{}_{}'.format(user.email, int(time.time()))
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
+        json_request['user_email'] = user.email
         return process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
-        return process_pyspark(request_id, email, product, geojson, start_time, end_time, variables, horizons, issues)
+        return process_pyspark(request_id, user.email, product, geojson, start_time, end_time, variables, horizons,
+                               issues)
     else:
         return '{message: "Unknown Backend {}"}'.format(backend), 400
 
 
 @app.route('/reportJobResult', methods=['POST'])
+@auth_token_required
+@pyspark_permission.require()
 def report_job_result():
     """
     REST endpoint to report success or failure of a job.

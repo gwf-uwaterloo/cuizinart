@@ -1,5 +1,8 @@
 import os
 from dotenv import load_dotenv
+from flask import Flask
+from flask_mail import Mail
+from flask_wtf import CSRFProtect
 
 load_dotenv()
 postgres_user = os.getenv('POSTGRES_USER')
@@ -21,3 +24,27 @@ EMAIL_SMTP_PORT = os.getenv('EMAIL_SMTP_PORT')
 EMAIL_SMTP_USERNAME = os.getenv('EMAIL_SMTP_USERNAME')
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+
+
+app = Flask('cuizinart')
+CSRFProtect(app)
+DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=postgres_pw,
+                                                      url=postgres_url, db=postgres_db)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+app.secret_key = os.getenv('APP_SECRET_KEY')
+app.config['SECURITY_PASSWORD_SALT'] = os.getenv('PASSWORD_SALT')
+app.config['SECURITY_CONFIRMABLE'] = True
+app.config['SECURITY_REGISTERABLE'] = True
+app.config['SECURITY_RECOVERABLE'] = True
+app.config['SECURITY_CHANGEABLE'] = True
+app.config['SECURITY_EMAIL_SENDER'] = EMAIL_ADDRESS
+app.config['SECURITY_EMAIL_SUBJECT_REGISTER'] = 'Welcome to Cuizinart'
+app.config['WTF_CSRF_ENABLED'] = False
+
+app.config['MAIL_SERVER'] = EMAIL_SMTP_SERVER
+app.config['MAIL_PORT'] = EMAIL_SMTP_PORT
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = EMAIL_SMTP_USERNAME
+app.config['MAIL_PASSWORD'] = EMAIL_PASSWORD
+mail = Mail(app)
