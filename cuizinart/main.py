@@ -6,7 +6,7 @@ from email.message import EmailMessage
 
 import flask_login
 import requests
-from flask import request
+from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask import jsonify
 from flask_principal import RoleNeed, Permission
@@ -35,8 +35,8 @@ def parse_json(obj):
 
 
 @app.route('/', methods=['GET'])
-def get_dummy():
-    return '{message: "Success"}'
+def get_main_page():
+    return render_template('index.html')
 
 
 @app.route('/getBoundaries', methods=['GET'])
@@ -165,6 +165,12 @@ def send_notification_email(recipient_address, subject, content):
         print('Error while authenticating to SMTP server.')
     except smtplib.SMTPException:
         print('Error while trying to send notification email.')
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'favicon.ico',
+                               mimetype='image/vnd.microsoft.icon')
 
 
 if __name__ == '__main__':

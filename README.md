@@ -57,9 +57,13 @@ CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in C
 - Run `docker-compose up` or start containers `frontend`, `backend`, `postgres`, `pyspark` as needed.
 
 ### Without Docker
-- Run `python cuizinart/main.py` to start the backend facade.
+- Serving the frontend:
+  - For development and debugging, run `npm start` in `cuizinart/frontend/` to start the frontend server on port 3000.
+  - To deploy for production, run `npm run build` in `cuininart/frontend/`
+
+- Run `python cuizinart/main.py` to start the backend facade. 
+In case you chose `npm run build` in the previous step, this Flask app will serve the webpage.
 
 - Run `python cuizinart_pyspark/pyspark_app.py` to start the PySpark cuizinart.
 
-- Run `npm start` in `frontend/` to start the frontend server on port 3000.
 

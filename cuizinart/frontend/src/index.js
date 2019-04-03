@@ -11,7 +11,6 @@ import moment from 'moment';
 import axios from "axios";
 import Select from 'react-select';
 import {NotificationContainer, NotificationManager} from 'react-notifications';
-import saveAs from 'file-saver';
 import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
@@ -19,6 +18,9 @@ import Login from "./components/Login";
 import {Navbar, Nav, Button} from "react-bootstrap";
 import Signup from "./components/Signup";
 import Settings from "./components/Settings";
+import GWF_logo from "./GWF_logo.png";
+import logo_usask from "./logo_usask.png";
+import logo_uw_horizontal from "./logo_uw_horizontal.png";
 
 const backends = [
     { value: 'slurm', label: 'Graham' },
@@ -45,7 +47,7 @@ class App extends Component {
     componentDidMount() {
         let self = this;
         let products = [];
-        axios.get(`http://127.0.0.1:5000/getBoundaries`)
+        axios.get('/getBoundaries')
             .then(res => {
                 if(res.data.length > 0){
                     //console.log(res.data);
@@ -98,6 +100,12 @@ class App extends Component {
         let variables = new Set();
         let horizons = new Set();
         let issues = new Set();
+
+        if(!self.state.auth_token){
+            NotificationManager.error('Please log in before processing.');
+            this.toggleSignupModal();
+            return;
+        }
 
         if(!self.state.selectDateSet){
             NotificationManager.error('No product selected.');
@@ -157,9 +165,8 @@ class App extends Component {
             auth_token: self.state.auth_token
         };
         passLoad = _.assign(passLoad, self.userInputs);
-        //console.log(passLoad);
         if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
+            axios.post('/fetchResult', passLoad)
                 .then(function (response) {
                     NotificationManager.success(response.data);
                 })
@@ -195,9 +202,10 @@ class App extends Component {
 
     login = (email, password) => {
         let self = this;
-        axios.post('http://127.0.0.1:5000/login', {'email': email, 'password': password})
-            .then(function (response) {
-                if (response.data.response.user.authentication_token) {
+        axios.post('/login', {'email': email, 'password': password})
+            .then(response => {
+                if (response.data && response.data.response && response.data.response.user
+                    && response.data.response.user.authentication_token) {
                     self.setState({auth_token: response.data.response.user.authentication_token});
                     self.toggleLoginModal();
                 } else {
@@ -211,7 +219,7 @@ class App extends Component {
 
     logout = () => {
         let self = this;
-        axios.get('http://127.0.0.1:5000/logout')
+        axios.get('/logout')
             .then(function (response) {
                 self.setState({auth_token: null});
             })
@@ -222,9 +230,10 @@ class App extends Component {
 
     signup = (email, password) => {
         let self = this;
-        axios.post('http://127.0.0.1:5000/register', {'email': email, 'password': password})
+        axios.post('/register', {'email': email, 'password': password})
             .then(function (response) {
-                if (response.data.response.user.authentication_token) {
+                if (response.data && response.data.response && response.data.response.user
+                    && response.data.response.user.authentication_token) {
                     self.setState({auth_token: response.data.response.user.authentication_token});
                     self.toggleSignupModal();
                 } else {
@@ -232,8 +241,11 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                let message = JSON.stringify(error.response.data.response.errors);
-                if (message === "") {
+                let message = ''
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors)
+                    message = JSON.stringify(error.response.data.response.errors);
+                else {
                     message = error.message;
                 }
                 NotificationManager.error(message);
@@ -242,7 +254,7 @@ class App extends Component {
 
     changePassword = (email, oldPassword, password) => {
         let self = this;
-        axios.post('http://127.0.0.1:5000/change', {
+        axios.post('/change', {
             'password': oldPassword,
             'new_password': password, 'new_password_confirm': password, 'auth_token': self.state.auth_token
         })
@@ -261,7 +273,7 @@ class App extends Component {
 
     resetPassword = (email) => {
         let self = this;
-        axios.post('http://127.0.0.1:5000/reset', {'email': email})
+        axios.post('/reset', {'email': email})
             .then(function (response) {
                 NotificationManager.success("Password reset request sent. Check your email.");
             })
@@ -282,9 +294,9 @@ class App extends Component {
                     <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ml-auto">
-                            <img className="img-right" src="GWF_logo.png"/>
-                            <img className="img-right" src="logo_uw_horizontal.png"/>
-                            <img className="img-right mr-sm-4" src="logo_usask.png"/>
+                            <img className="img-right" src={GWF_logo}/>
+                            <img className="img-right" src={logo_uw_horizontal}/>
+                            <img className="img-right mr-sm-4" src={logo_usask}/>
                         </Nav>
                             {this.state.auth_token == null &&
                             <Button variant="outline-light" className="mr-sm-2" onClick={this.toggleSignupModal}>Sign

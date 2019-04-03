@@ -9,3 +9,4 @@ node_modules/
 geojson.json
 npm-debug.log
 migrations/
+build/
