@@ -12,7 +12,7 @@ services:
     networks:
        - backend
 
-  backend:
+  cuizinart:
      build: ./cuizinart
      depends_on:
        - postgres
@@ -24,13 +24,6 @@ services:
        - backend
      volumes:
        - /tuna1/scratch/mgauch/data/cuizinart:/tuna1/scratch/mgauch/data/cuizinart
-
-  frontend:
-    build: ./cuizinart/frontend
-    depends_on:
-      - backend
-    ports:
-      - '3000:3000'
 
   pyspark:
     build: ./cuizinart_pyspark

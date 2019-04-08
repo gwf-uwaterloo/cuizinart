@@ -19,7 +19,7 @@ PASSWORD_SALT=<salt>
 
 BACKEND=pyspark
 PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001
-
+CUIZINART_PYSPARK_PASSWORD=<pwd>  # used to create a user for the pyspark slicer
 SSH_USER_NAME=<graham_user>
 SSH_KEYFILE_PATH=<path_to_keyfile>
 
@@ -37,7 +37,7 @@ EMAIL_PASSWORD=<pwd>
 
 - Create a file `cuizinart_pyspark/.env`, containing:
 ```
-CUIZINART_URL=backend:5000  # if not using Docker, use localhost:5000
+CUIZINART_URL=cuizinart:5000  # if not using Docker, use localhost:5000
 SPARK_MASTER=local[*]
 
 NC_INPUT_PATH=<path to NetCDF files>
@@ -54,7 +54,7 @@ CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in C
 ## Run
 
 ### Docker
-- Run `docker-compose up` or start containers `frontend`, `backend`, `postgres`, `pyspark` as needed.
+- Run `docker-compose up` or start containers `cuizinart`, `postgres`, `pyspark` as needed. The UI will be served on port 5000
 
 ### Without Docker
 - Serving the frontend:

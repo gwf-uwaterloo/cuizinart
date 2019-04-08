@@ -26,7 +26,8 @@ EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
 
-app = Flask('cuizinart', static_folder='frontend/build/static', template_folder='frontend/build')
+app = Flask('cuizinart', static_folder=os.path.join(os.path.dirname(__file__), 'frontend', 'build', 'static'), 
+            template_folder=os.path.join(os.path.dirname(__file__), 'frontend', 'build'))
 CSRFProtect(app)
 DB_URL = 'postgresql://{user}:{pw}@{url}/{db}'.format(user=postgres_user, pw=postgres_pw,
                                                       url=postgres_url, db=postgres_db)
