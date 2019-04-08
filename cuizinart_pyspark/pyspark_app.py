@@ -1,6 +1,6 @@
+import logging
 import os
 import time
-import traceback
 from threading import Thread
 
 import requests
@@ -13,6 +13,7 @@ from pyspark import SparkContext
 from cuizinart_pyspark import slice
 from pyspark_settings import SPARK_MASTER, CUIZINART_URL, NC_OUTPUT_PATH, CUIZINART_PYSPARK_PASSWORD
 
+logger = logging.getLogger('pyspark')
 app = Flask('cuizinart_pyspark')
 
 conf = gps.geopyspark_conf(appName='gwf', master=SPARK_MASTER)
@@ -55,7 +56,7 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
                               issues, sc)
         status = 'COMPLETED-CHECKED'
     except:
-        print(traceback.format_exc())
+        logger.exception('Slicing failed with exception')
         status = 'FAILED-UNCHECKED'
     finally:
         elapsed_time = time.time() - wall_time
@@ -65,7 +66,7 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
     if login_request.status_code != requests.codes.ok or \
             'user' not in login_request.json()['response'] or \
             'authentication_token' not in login_request.json()['response']['user']:
-        print('Error authenticating on Cuizinart')
+        logger.error('Error authenticating on Cuizinart')
         return
 
     auth_token = login_request.json()['response']['user']['authentication_token']
@@ -75,7 +76,7 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
     r = requests.post('http://{}/reportJobResult'.format(CUIZINART_URL), json=response_json)
 
     if r.status_code != requests.codes.ok:
-        print('Error reporting job results. Status code: {}, reason: {}'.format(r.status_code, r.reason))
+        logger.error('Error reporting job results. Status code: {}, reason: {}'.format(r.status_code, r.reason))
 
 
 if __name__ == '__main__':

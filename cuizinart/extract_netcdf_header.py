@@ -17,10 +17,7 @@ import numpy as np
 from netCDF4 import Dataset, num2date
 from osgeo import ogr
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s][%(name)s][%(levelname)s][%(message)s]')
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger('extract_netcdf_header')
 
 
 def fromgrid(y, x):

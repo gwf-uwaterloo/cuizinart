@@ -1,3 +1,5 @@
+import logging
+import os
 import smtplib
 import ssl
 import time
@@ -6,15 +8,17 @@ from email.message import EmailMessage
 
 import flask_login
 import requests
+from flask import jsonify
 from flask import request, render_template, send_from_directory
 from flask_cors import CORS
-from flask import jsonify
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
 
-from metadata_schema import *
-from settings import *
+from metadata_schema import ProductSchema, Product
+from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_KEYFILE_PATH, SSH_USER_NAME, EMAIL_ADDRESS, \
+    EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
+logger = logging.getLogger('cuizinart')
 CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -55,11 +59,9 @@ def fetch_result():
     Depending on the specified backend, it passes the request on to be processed by Slurm or PySpark.
     """
     json_request = request.get_json()
-    print(json_request)
+    logger.info(json_request)
 
     user = flask_login.current_user
-    print('User', user)
-
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     # TODO check for uniqueness once we track requests, append counter if not unique.
@@ -99,7 +101,7 @@ def report_job_result():
     try:
         send_notification_email(request_user_email, subject, message)
     except:
-        print(traceback.format_exc())
+        logger.info(traceback.format_exc())
         return '{message: "Error when sending notification email"}', 500
 
     return '{message: "Success"}'
@@ -116,7 +118,7 @@ def process_pyspark(request_id, user_email, product, geojson, start_time, end_ti
     r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
 
     if r.status_code != requests.codes.ok:
-        print(r.status_code, r.reason)
+        logger.error(r.status_code, r.text)
         return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
 
     return 'Request with id {} submitted successfully.'.format(request_id)
@@ -154,17 +156,17 @@ def send_notification_email(recipient_address, subject, content):
     msg['To'] = recipient_address
     msg.set_content(content)
 
-    print('Sending email "{}"'.format(subject))
+    logger.debug('Sending email "{}"'.format(subject))
     try:
         with smtplib.SMTP_SSL(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, context=context) as server:
             server.login(EMAIL_SMTP_USERNAME, EMAIL_PASSWORD)
             server.send_message(msg)
     except smtplib.SMTPConnectError:
-        print('Error while connecting to SMTP server.')
+        logger.error('Error while connecting to SMTP server.')
     except smtplib.SMTPAuthenticationError:
-        print('Error while authenticating to SMTP server.')
+        logger.error('Error while authenticating to SMTP server.')
     except smtplib.SMTPException:
-        print('Error while trying to send notification email.')
+        logger.error('Error while trying to send notification email.')
 
 
 @app.route('/favicon.ico')

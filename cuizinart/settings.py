@@ -1,8 +1,12 @@
+import logging
 import os
+
 from dotenv import load_dotenv
 from flask import Flask
 from flask_mail import Mail
 from flask_wtf import CSRFProtect
+
+import logging_config
 
 load_dotenv()
 postgres_user = os.getenv('POSTGRES_USER')
@@ -15,9 +19,8 @@ PYSPARK_URL = os.getenv('PYSPARK_URL')
 BACKEND_SLURM = 'slurm'
 BACKEND_PYSPARK = 'pyspark'
 BACKEND = os.getenv('BACKEND')
-if BACKEND == BACKEND_SLURM:
-    SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
-    SSH_USER_NAME = os.getenv('SSH_USER_NAME')
+SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
+SSH_USER_NAME = os.getenv('SSH_USER_NAME')
 
 EMAIL_SMTP_SERVER = os.getenv('EMAIL_SMTP_SERVER')
 EMAIL_SMTP_PORT = os.getenv('EMAIL_SMTP_PORT')
@@ -25,6 +28,9 @@ EMAIL_SMTP_USERNAME = os.getenv('EMAIL_SMTP_USERNAME')
 EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
+LOG_LEVEL = logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG' else logging.INFO
+LOG_DIRECTORY = os.getenv('LOG_DIRECTORY')
+logging_config.configure_logging(os.path.join(LOG_DIRECTORY, 'cuizinart.log'), LOG_LEVEL)
 
 app = Flask('cuizinart', static_folder=os.path.join(os.path.dirname(__file__), 'frontend', 'build', 'static'), 
             template_folder=os.path.join(os.path.dirname(__file__), 'frontend', 'build'))
