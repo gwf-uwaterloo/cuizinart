@@ -44,7 +44,6 @@ class Variable(db.Model):
     level = db.Column(db.String)
     unit = db.Column(db.String)
 
-
     def __repr__(self):
         return '<Variable {!r} (product: {!r})>'.format(self.key, self.product_id)
 
@@ -99,6 +98,21 @@ class NCFile(db.Model):
         return '<NCFile {!r}>'.format(self.file_id)
 
 
+class Request(db.Model):
+    request_id = db.Column(db.Integer, primary_key=True)
+    request_name = db.Column(db.String, nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    request_status = db.Column(db.String)
+    processing_time_s = db.Column(db.Integer)
+    file_location = db.Column(db.String)
+    n_files = db.Column(db.Integer)
+    file_size_mb = db.Column(db.Integer)
+    backend = db.Column(db.String)
+
+    def __repr__(self):
+        return '<Request {!r}>'.format(self.request_id)
+
+
 roles_users = db.Table('roles_users',
                        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
                        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
@@ -119,7 +133,10 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
+
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
+    requests = db.relationship('Request', backref='user', lazy=True)
+
 
     def __repr__(self):
         return '<User {!r}>'.format(self.id)
