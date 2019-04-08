@@ -16,10 +16,11 @@
 FLASK_APP=cuizinart/main.py
 APP_SECRET_KEY=<secret-key>
 PASSWORD_SALT=<salt>
+LOG_DIRECTORY=<path>
+LOG_LEVEL=DEBUG  # optional
 
 BACKEND=pyspark
 PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001
-CUIZINART_PYSPARK_PASSWORD=<pwd>  # used to create a user for the pyspark slicer
 SSH_USER_NAME=<graham_user>
 SSH_KEYFILE_PATH=<path_to_keyfile>
 
@@ -33,10 +34,9 @@ EMAIL_SMTP_PORT=465
 EMAIL_SMTP_USERNAME=<user>
 EMAIL_ADDRESS=<address>
 EMAIL_PASSWORD=<pwd>
-```
 
-- Create a file `cuizinart_pyspark/.env`, containing:
-```
+
+# PySpark ENV variables
 CUIZINART_URL=cuizinart:5000  # if not using Docker, use localhost:5000
 SPARK_MASTER=local[*]
 

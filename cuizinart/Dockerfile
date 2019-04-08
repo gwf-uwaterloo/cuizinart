@@ -21,4 +21,4 @@ RUN cd gdal-2.1.2; ./configure --with-python; make -j 32; make install -j 32; cd
 
 RUN pip install -r /cuizinart/requirements.txt
 
-CMD ["/bin/bash", "docker-entrypoint.sh", "/tuna1/scratch/mgauch/data/cuizinart"]
+CMD ["/bin/bash", "docker-entrypoint.sh"]
