@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {Form, FormGroup, FormControl, FormLabel, Button, Modal} from "react-bootstrap";
 import "./Settings.css";
+import LoaderButton from "./LoaderButton";
 
 export default class Settings extends Component {
     constructor(props) {
@@ -72,10 +73,9 @@ export default class Settings extends Component {
                                     value={this.state.confirmPassword}
                                 />
                             </FormGroup>
-                            <Button block bssize="large" variant="primary"
-                                    disabled={!this.validateForm()} type="submit">
-                                Change Password
-                            </Button>
+                            <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
+                                          isLoading={this.props.isLoading} text="Change Password"
+                                          variant="primary" loadingText="Loading…"/>
                         </Form>
                     </Modal.Body>
                 </Modal>

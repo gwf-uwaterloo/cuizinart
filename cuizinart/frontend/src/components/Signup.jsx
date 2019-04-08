@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {Button, Form, FormGroup, FormControl, FormLabel, Modal} from "react-bootstrap";
 import "./Signup.css";
+import LoaderButton from "./LoaderButton";
 
 export default class Signup extends Component {
     constructor(props) {
@@ -73,10 +74,9 @@ export default class Signup extends Component {
                             </FormGroup>
                             <div className="row">
                                 <div className="col col-lg-9">
-                                    <Button block bssize="large" variant="primary"
-                                            disabled={!this.validateForm()} type="submit">
-                                        Sign Up
-                                    </Button>
+                                    <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
+                                                  isLoading={this.props.isLoading} text="Sign Up"  variant="primary"
+                                                  loadingText="Loading …"/>
                                 </div>
                                 <div className="col col-lg-3">
                                     <Button block bssize="small" onClick={this.props.onClose} variant="secondary">

@@ -31,7 +31,8 @@ class App extends Component {
         showLoginModal: false,
         showSignupModal: false,
         showSettingsModal: false,
-        auth_token: null,
+        isLoading: false,
+        isLoggedIn: false,
         selectDateSet: null,
         products: [],
         selectedBackend: null
@@ -46,6 +47,7 @@ class App extends Component {
 
     componentDidMount() {
         let self = this;
+        this.setState({isLoggedIn: this.getAuthToken() != null});
         let products = [];
         axios.get('/getBoundaries')
             .then(res => {
@@ -101,7 +103,7 @@ class App extends Component {
         let horizons = new Set();
         let issues = new Set();
 
-        if(!self.state.auth_token){
+        if (self.getAuthToken() == null) {
             NotificationManager.error('Please log in before processing.');
             this.toggleSignupModal();
             return;
@@ -162,7 +164,7 @@ class App extends Component {
             product: self.state.selectDateSet.value,
             backend: self.state.selectedBackend.value,
             bounding_geom: self.features,
-            auth_token: self.state.auth_token
+            auth_token: self.getAuthToken()
         };
         passLoad = _.assign(passLoad, self.userInputs);
         if (window.confirm("Do you want to process?")) {
@@ -202,11 +204,12 @@ class App extends Component {
 
     login = (email, password) => {
         let self = this;
+        this.setState({isLoading: true});
         axios.post('/login', {'email': email, 'password': password})
             .then(response => {
                 if (response.data && response.data.response && response.data.response.user
                     && response.data.response.user.authentication_token) {
-                    self.setState({auth_token: response.data.response.user.authentication_token});
+                    this.setAuthToken(response.data.response.user.authentication_token);
                     self.toggleLoginModal();
                 } else {
                     NotificationManager.error("Login failed.");
@@ -214,14 +217,16 @@ class App extends Component {
             })
             .catch(function (error) {
                 NotificationManager.error(error.message);
-            });
+            })
+            .finally(() => self.setState({isLoading: false}));
     }
 
     logout = () => {
         let self = this;
         axios.get('/logout')
             .then(function (response) {
-                self.setState({auth_token: null});
+                localStorage.removeItem('auth_token');
+                self.setState({isLoggedIn: false});
             })
             .catch(function (error) {
                 NotificationManager.error(error.message);
@@ -230,11 +235,12 @@ class App extends Component {
 
     signup = (email, password) => {
         let self = this;
+        this.setState({isLoading: true});
         axios.post('/register', {'email': email, 'password': password})
             .then(function (response) {
                 if (response.data && response.data.response && response.data.response.user
                     && response.data.response.user.authentication_token) {
-                    self.setState({auth_token: response.data.response.user.authentication_token});
+                    self.setAuthToken(response.data.response.user.authentication_token);
                     self.toggleSignupModal();
                 } else {
                     NotificationManager.error("Signup failed.");
@@ -249,14 +255,16 @@ class App extends Component {
                     message = error.message;
                 }
                 NotificationManager.error(message);
-            });
+            })
+            .finally(() => this.setState({isLoading: false}));
     }
 
     changePassword = (email, oldPassword, password) => {
         let self = this;
+        this.setState({isLoading: true});
         axios.post('/change', {
             'password': oldPassword,
-            'new_password': password, 'new_password_confirm': password, 'auth_token': self.state.auth_token
+            'new_password': password, 'new_password_confirm': password, 'auth_token': self.getAuthToken()
         })
             .then(function (response) {
                 NotificationManager.success("Password changed successfully.");
@@ -268,14 +276,17 @@ class App extends Component {
                     message = error.message;
                 }
                 NotificationManager.error(message);
-            });
+            })
+            .finally(() => this.setState({isLoading: false}));
     }
 
     resetPassword = (email) => {
         let self = this;
+        this.setState({isLoading: true});
         axios.post('/reset', {'email': email})
             .then(function (response) {
                 NotificationManager.success("Password reset request sent. Check your email.");
+                self.toggleLoginModal();
             })
             .catch(function (error) {
                 let message = JSON.stringify(error.response.data.response.errors);
@@ -283,7 +294,21 @@ class App extends Component {
                     message = error.message;
                 }
                 NotificationManager.error(message);
-            });
+            })
+            .finally(() => this.setState({isLoading: false}));
+    }
+
+    setAuthToken = (token) => {
+        localStorage.setItem('auth_token', token);
+        if (token != null) {
+            this.setState({isLoggedIn: true});
+        } else {
+            this.setState({isLoggedIn: false});
+        }
+    }
+
+    getAuthToken = ()  => {
+        return localStorage.getItem('auth_token');
     }
 
     render() {
@@ -298,16 +323,16 @@ class App extends Component {
                             <img className="img-right" src={logo_uw_horizontal}/>
                             <img className="img-right mr-sm-4" src={logo_usask}/>
                         </Nav>
-                            {this.state.auth_token == null &&
-                            <Button variant="outline-light" className="mr-sm-2" onClick={this.toggleSignupModal}>Sign
-                                Up</Button>}
-                            {this.state.auth_token == null &&
+                            {!this.state.isLoggedIn &&
+                            <Button variant="outline-light" className="mr-sm-2" onClick={this.toggleSignupModal}>
+                                Sign Up</Button>}
+                            {!this.state.isLoggedIn &&
                             <Button variant="outline-light"
                                     onClick={this.toggleLoginModal}>Login</Button>}
-                            {this.state.auth_token != null &&
+                            {this.state.isLoggedIn &&
                             <Button variant="outline-light" className="mr-sm-2"
                                     onClick={this.logout}>Logout</Button>}
-                            {this.state.auth_token != null &&
+                            {this.state.isLoggedIn &&
                             <Button variant="outline-light"
                                     onClick={this.toggleSettingsModal}>Settings</Button>}
                     </Navbar.Collapse>
@@ -351,13 +376,13 @@ class App extends Component {
                         <Login showLoginModal={this.state.showLoginModal}
                                onLogin={(email, password) => this.login(email, password)}
                                onResetPassword={(email) => this.resetPassword(email)}
-                               onClose={this.toggleLoginModal}/>
+                               onClose={this.toggleLoginModal} isLoading={this.state.isLoading}/>
                         <Signup showSignupModal={this.state.showSignupModal}
                                 onSignup={(email, password) => this.signup(email, password)}
-                                onClose={this.toggleSignupModal}/>
+                                onClose={this.toggleSignupModal} isLoading={this.state.isLoading}/>
                         <Settings showSettingsModal={this.state.showSettingsModal}
                                   onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
-                                  onClose={this.toggleSettingsModal}/>
+                                  onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}/>
                     </div>
                 </div>
             </React.Fragment>

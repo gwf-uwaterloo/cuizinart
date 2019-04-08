@@ -1,6 +1,7 @@
 import React, {Component} from "react";
-import {Modal, Button, Form, FormGroup, FormControl, FormLabel, Col} from "react-bootstrap";
+import {Modal, Button, Form, FormGroup, FormControl, FormLabel} from "react-bootstrap";
 import "./Login.css";
+import LoaderButton from "./LoaderButton";
 
 export default class Login extends Component {
     constructor(props) {
@@ -80,15 +81,14 @@ export default class Login extends Component {
                             </FormGroup>
                             <div className="row">
                                 <div className="col col-lg-9">
-                                    {!this.state.forgotPassword && <Button block bssize="large" variant="primary"
-                                                                           disabled={!this.validateForm()}
-                                                                           type="submit">
-                                        Login
-                                    </Button>}
-                                    {this.state.forgotPassword && <Button block bssize="large" variant="primary"
-                                                                          disabled={!this.validateForm()} type="submit">
-                                        Reset Password
-                                    </Button>}
+                                    {!this.state.forgotPassword &&
+                                    <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
+                                                  isLoading={this.props.isLoading} text="Login"  variant="primary"
+                                                  loadingText="Logging in…"/>}
+                                    {this.state.forgotPassword &&
+                                    <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
+                                                  isLoading={this.props.isLoading} text="Reset Password"
+                                                  variant="primary" loadingText="Loading…" />}
                                 </div>
                                 <div className="col col-lg-3">
                                     <Button block bssize="small" onClick={this.props.onClose} variant="secondary">
