@@ -64,17 +64,28 @@ def fetch_result():
     user = flask_login.current_user
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
-    # TODO check for uniqueness once we track requests, append counter if not unique.
     request_id = '{}_{}'.format(user.email, int(time.time()))
+    if Request.query.filter_by(request_name=request_id).first() is not None:
+        request_id = request_id + '-1'
+    request_db_entry = Request(request_name=request_id, user=user, request_status='Received')
+
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
         json_request['user_email'] = user.email
-        return process_slurm(json_request)
+        request_db_entry.backend = BACKEND_SLURM
+        result = process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
-        return process_pyspark(request_id, user.email, product, geojson, start_time, end_time, variables, horizons,
+        request_db_entry.backend = BACKEND_PYSPARK
+        result = process_pyspark(request_id, user.email, product, geojson, start_time, end_time, variables, horizons,
                                issues)
     else:
-        return '{message: "Unknown Backend {}"}'.format(backend), 400
+        request_db_entry.request_status = 'Unknown Backend'
+        result = '{message: "Unknown Backend {}"}'.format(backend), 400
+
+    db.session.add(request_db_entry)
+    db.session.commit()
+
+    return result
 
 
 @app.route('/reportJobResult', methods=['POST'])
@@ -86,11 +97,25 @@ def report_job_result():
     """
     job_result = request.get_json()
     request_id = job_result['request_id']
+
     request_user_email = job_result['user_email']
     request_status = job_result['request_status']
     request_files = job_result['file_location']
     num_files = job_result['n_files']
+    file_size = job_result['file_size_MB']
     processing_time = job_result['processing_time_s']
+
+    request_db_entry = Request.query.filter_by(request_name=request_id).first()
+    if request_db_entry is None:
+        print('Request not found in database')
+    else:
+        request_db_entry.request_status = request_status
+        request_db_entry.file_location = request_files
+        request_db_entry.n_files = num_files
+        request_db_entry.processing_time_s = processing_time
+        request_db_entry.file_size_mb = file_size
+        db.session.add(request_db_entry)
+        db.session.commit()
 
     subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
     message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
