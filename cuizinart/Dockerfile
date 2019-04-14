@@ -1,11 +1,17 @@
 FROM python:3.6
 ADD . /cuizinart
 
+RUN curl -sL https://deb.nodesource.com/setup_11.x | bash -
+RUN apt-get install -y nodejs
+
+WORKDIR /cuizinart/frontend
+RUN npm install && npm run build
+
+WORKDIR /
+
 # We need to run the flask commands from the project base folders,
 # so we execute the app from there
 RUN mv /cuizinart/docker-entrypoint.sh /
-
-WORKDIR .
 
 RUN chmod +x docker-entrypoint.sh
 

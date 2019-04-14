@@ -11,10 +11,16 @@ import moment from 'moment';
 import axios from "axios";
 import Select from 'react-select';
 import {NotificationContainer, NotificationManager} from 'react-notifications';
-import saveAs from 'file-saver';
 import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
+import Login from "./components/Login";
+import {Navbar, Nav, Button} from "react-bootstrap";
+import Signup from "./components/Signup";
+import Settings from "./components/Settings";
+import GWF_logo from "./GWF_logo.png";
+import logo_usask from "./logo_usask.png";
+import logo_uw_horizontal from "./logo_uw_horizontal.png";
 
 const backends = [
     { value: 'slurm', label: 'Graham' },
@@ -22,6 +28,11 @@ const backends = [
 ];
 class App extends Component {
     state = {
+        showLoginModal: false,
+        showSignupModal: false,
+        showSettingsModal: false,
+        isLoading: false,
+        isLoggedIn: false,
         selectDateSet: null,
         products: [],
         selectedBackend: null
@@ -36,8 +47,9 @@ class App extends Component {
 
     componentDidMount() {
         let self = this;
+        this.setState({isLoggedIn: this.getAuthToken() != null});
         let products = [];
-        axios.get(`http://127.0.0.1:5000/getBoundaries`)
+        axios.get('/getBoundaries')
             .then(res => {
                 if(res.data.length > 0){
                     //console.log(res.data);
@@ -91,6 +103,12 @@ class App extends Component {
         let horizons = new Set();
         let issues = new Set();
 
+        if (self.getAuthToken() == null) {
+            NotificationManager.error('Please log in before processing.');
+            this.toggleSignupModal();
+            return;
+        }
+
         if(!self.state.selectDateSet){
             NotificationManager.error('No product selected.');
             return;
@@ -134,13 +152,6 @@ class App extends Component {
             return;
         }
 
-        if(self.state.selectedBackend.value === "slurm"){
-            if(!self.validateEmail(self.userInputs.user_email)){
-                NotificationManager.error('Please enter a valid email address.');
-                return;
-            }
-        }
-
         if(self.features.length === 0){
             NotificationManager.error('No geometry data found.');
             return;
@@ -152,12 +163,12 @@ class App extends Component {
             release: Array.from(issues),
             product: self.state.selectDateSet.value,
             backend: self.state.selectedBackend.value,
-            bounding_geom: self.features
+            bounding_geom: self.features,
+            auth_token: self.getAuthToken()
         };
         passLoad = _.assign(passLoad, self.userInputs);
-        //console.log(passLoad);
         if (window.confirm("Do you want to process?")) {
-            axios.post('http://127.0.0.1:5000/fetchResult', passLoad)
+            axios.post('/fetchResult', passLoad)
                 .then(function (response) {
                     NotificationManager.success(response.data);
                 })
@@ -179,44 +190,202 @@ class App extends Component {
         this.child.current.renderGeoJson(geojson);
     };
 
-    validateEmail(email) {
-        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        return re.test(String(email).toLowerCase());
+    toggleLoginModal = () => {
+        this.setState({showLoginModal: !this.state.showLoginModal});
+    }
+
+    toggleSignupModal = () => {
+        this.setState({showSignupModal: !this.state.showSignupModal});
+    }
+
+    toggleSettingsModal = () => {
+        this.setState({showSettingsModal: !this.state.showSettingsModal});
+    }
+
+    login = (email, password) => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/login', {'email': email, 'password': password})
+            .then(response => {
+                if (response.data && response.data.response && response.data.response.user
+                    && response.data.response.user.authentication_token) {
+                    this.setAuthToken(response.data.response.user.authentication_token);
+                    self.toggleLoginModal();
+                } else {
+                    NotificationManager.error("Login failed.");
+                }
+            })
+            .catch(function (error) {
+                NotificationManager.error(error.message);
+            })
+            .finally(() => self.setState({isLoading: false}));
+    }
+
+    logout = () => {
+        let self = this;
+        axios.get('/logout')
+            .then(function (response) {
+                localStorage.removeItem('auth_token');
+                self.setState({isLoggedIn: false});
+            })
+            .catch(function (error) {
+                NotificationManager.error(error.message);
+            });
+    }
+
+    signup = (email, password) => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/register', {'email': email, 'password': password})
+            .then(function (response) {
+                if (response.data && response.data.response && response.data.response.user
+                    && response.data.response.user.authentication_token) {
+                    self.setAuthToken(response.data.response.user.authentication_token);
+                    self.toggleSignupModal();
+                } else {
+                    NotificationManager.error("Signup failed.");
+                }
+            })
+            .catch(function (error) {
+                let message = ''
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors)
+                    message = JSON.stringify(error.response.data.response.errors);
+                else {
+                    message = error.message;
+                }
+                NotificationManager.error(message);
+            })
+            .finally(() => this.setState({isLoading: false}));
+    }
+
+    changePassword = (email, oldPassword, password) => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/change', {
+            'password': oldPassword,
+            'new_password': password, 'new_password_confirm': password, 'auth_token': self.getAuthToken()
+        })
+            .then(function (response) {
+                NotificationManager.success("Password changed successfully.");
+                self.toggleSettingsModal();
+            })
+            .catch(function (error) {
+                let message = JSON.stringify(error.response.data.response.errors);
+                if (message === "") {
+                    message = error.message;
+                }
+                NotificationManager.error(message);
+            })
+            .finally(() => this.setState({isLoading: false}));
+    }
+
+    resetPassword = (email) => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/reset', {'email': email})
+            .then(function (response) {
+                NotificationManager.success("Password reset request sent. Check your email.");
+                self.toggleLoginModal();
+            })
+            .catch(function (error) {
+                let message = JSON.stringify(error.response.data.response.errors);
+                if (message === "") {
+                    message = error.message;
+                }
+                NotificationManager.error(message);
+            })
+            .finally(() => this.setState({isLoading: false}));
+    }
+
+    setAuthToken = (token) => {
+        localStorage.setItem('auth_token', token);
+        if (token != null) {
+            this.setState({isLoggedIn: true});
+        } else {
+            this.setState({isLoggedIn: false});
+        }
+    }
+
+    getAuthToken = ()  => {
+        return localStorage.getItem('auth_token');
     }
 
     render() {
         return (
-            <div className="row">
-                <div className="col col-lg-12">
-                    <UserInputComp updateUserInputs={this.updateUserInputs} products={this.state.products} updateDateSet={this.updateDateSet}/>
-                </div>
-                <div className="col col-lg-3">
-                    <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet} />
-                    <div className="card mt-2">
-                        <div className="card-body">
-                            <FileComp uploadFileCallback={this.updateFeatures} renderGeoJSON={this.renderGeoJSON} />
+            <React.Fragment>
+                <Navbar bg="info">
+                    <Navbar.Brand href="#" style={{color: "white"}}>GWF Cuizinart</Navbar.Brand>
+                    <Navbar.Toggle aria-controls="basic-navbar-nav"/>
+                    <Navbar.Collapse id="basic-navbar-nav">
+                        <Nav className="ml-auto">
+                            <img className="img-right" src={GWF_logo}/>
+                            <img className="img-right" src={logo_uw_horizontal}/>
+                            <img className="img-right mr-sm-4" src={logo_usask}/>
+                        </Nav>
+                            {!this.state.isLoggedIn &&
+                            <Button variant="outline-light" className="mr-sm-2" onClick={this.toggleSignupModal}>
+                                Sign Up</Button>}
+                            {!this.state.isLoggedIn &&
+                            <Button variant="outline-light"
+                                    onClick={this.toggleLoginModal}>Login</Button>}
+                            {this.state.isLoggedIn &&
+                            <Button variant="outline-light" className="mr-sm-2"
+                                    onClick={this.logout}>Logout</Button>}
+                            {this.state.isLoggedIn &&
+                            <Button variant="outline-light"
+                                    onClick={this.toggleSettingsModal}>Settings</Button>}
+                    </Navbar.Collapse>
+                </Navbar>
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col col-lg-12">
+                            < UserInputComp
+                                updateUserInputs={this.updateUserInputs}
+                                products={this.state.products}
+                                updateDateSet={this.updateDateSet}
+                            />
                         </div>
-                    </div>
-                    <div className="mt-2">
-                        <label htmlFor="backend">Process on...</label>
-                        <Select
-                            id="backend"
-                            value={this.state.selectedBackend}
-                            placeholder={"Choose Backend..."}
-                            onChange={this.handleSelectBackend}
-                            options={backends}
-                        />
-                    </div>
-                    <div className="mt-2">
-                        <button className="btn btn-info" onClick={this.postJsonToServer}>Process</button>
+                        <div className="col col-lg-3">
+                            <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet}/>
+                            <div className="card mt-2">
+                                <div className="card-body">
+                                    <FileComp uploadFileCallback={this.updateFeatures}
+                                              renderGeoJSON={this.renderGeoJSON}/>
+                                </div>
+                            </div>
+                            <div className="mt-2">
+                                <label htmlFor="backend">Process on...</label>
+                                <Select
+                                    id="backend"
+                                    value={this.state.selectedBackend}
+                                    placeholder={"Choose Backend..."}
+                                    onChange={this.handleSelectBackend}
+                                    options={backends}
+                                />
+                            </div>
+                            <div className="mt-2">
+                                <button className="btn btn-info" onClick={this.postJsonToServer}>Process</button>
+                            </div>
+                        </div>
+                        <div className="col col-lg-9">
+                            <Map ref={this.child} selectDateSet={this.state.selectDateSet}
+                                 drawCallback={this.updateFeatures}/>
+                        </div>
+                        <NotificationContainer/>
+                        <Login showLoginModal={this.state.showLoginModal}
+                               onLogin={(email, password) => this.login(email, password)}
+                               onResetPassword={(email) => this.resetPassword(email)}
+                               onClose={this.toggleLoginModal} isLoading={this.state.isLoading}/>
+                        <Signup showSignupModal={this.state.showSignupModal}
+                                onSignup={(email, password) => this.signup(email, password)}
+                                onClose={this.toggleSignupModal} isLoading={this.state.isLoading}/>
+                        <Settings showSettingsModal={this.state.showSettingsModal}
+                                  onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
+                                  onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}/>
                     </div>
                 </div>
-                <div className="col col-lg-9">
-                    <Map ref={this.child} selectDateSet={this.state.selectDateSet} drawCallback={this.updateFeatures} />
-                </div>
-                <NotificationContainer/>
-            </div>
-
+            </React.Fragment>
         );
     }
 }
