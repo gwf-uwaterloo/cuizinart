@@ -166,7 +166,7 @@ class App extends Component {
             bounding_geom: self.features,
             auth_token: self.getAuthToken()
         };
-        console.log(JSON.stringify(passLoad));
+        //console.log(JSON.stringify(passLoad));
         passLoad = _.assign(passLoad, self.userInputs);
         if (window.confirm("Do you want to process?")) {
             axios.post('/fetchResult', passLoad)
@@ -217,10 +217,19 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                NotificationManager.error(error.message);
+                let message = '';
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors){
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
+                else {
+                    message = error.message;
+                }
+                NotificationManager.error(message);
             })
             .finally(() => self.setState({isLoading: false}));
-    }
+    };
 
     logout = () => {
         let self = this;
@@ -230,9 +239,18 @@ class App extends Component {
                 self.setState({isLoggedIn: false});
             })
             .catch(function (error) {
-                NotificationManager.error(error.message);
+                let message = '';
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors){
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
+                else {
+                    message = error.message;
+                }
+                NotificationManager.error(message);
             });
-    }
+    };
 
     signup = (email, password) => {
         let self = this;
@@ -248,17 +266,19 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                let message = ''
+                let message = '';
                 if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors)
-                    message = JSON.stringify(error.response.data.response.errors);
+                    && error.response.data.response.errors){
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
                 else {
                     message = error.message;
                 }
                 NotificationManager.error(message);
             })
             .finally(() => this.setState({isLoading: false}));
-    }
+    };
 
     changePassword = (email, oldPassword, password) => {
         let self = this;
@@ -272,8 +292,13 @@ class App extends Component {
                 self.toggleSettingsModal();
             })
             .catch(function (error) {
-                let message = JSON.stringify(error.response.data.response.errors);
-                if (message === "") {
+                let message = '';
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors){
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
+                else {
                     message = error.message;
                 }
                 NotificationManager.error(message);
@@ -290,14 +315,19 @@ class App extends Component {
                 self.toggleLoginModal();
             })
             .catch(function (error) {
-                let message = JSON.stringify(error.response.data.response.errors);
-                if (message === "") {
+                let message = '';
+                if (error.response && error.response.data && error.response.data.response
+                    && error.response.data.response.errors){
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
+                else {
                     message = error.message;
                 }
                 NotificationManager.error(message);
             })
             .finally(() => this.setState({isLoading: false}));
-    }
+    };
 
     setAuthToken = (token) => {
         localStorage.setItem('auth_token', token);
