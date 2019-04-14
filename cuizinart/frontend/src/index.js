@@ -166,6 +166,7 @@ class App extends Component {
             bounding_geom: self.features,
             auth_token: self.getAuthToken()
         };
+        console.log(JSON.stringify(passLoad));
         passLoad = _.assign(passLoad, self.userInputs);
         if (window.confirm("Do you want to process?")) {
             axios.post('/fetchResult', passLoad)
