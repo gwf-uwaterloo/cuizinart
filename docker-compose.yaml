@@ -23,17 +23,23 @@ services:
      networks:
        - backend
      volumes:
-       - /tuna1/scratch/mgauch/data/cuizinart:/tuna1/scratch/mgauch/data/cuizinart
+       - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
+       - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
 
   pyspark:
     build: ./cuizinart_pyspark
+    env_file:
+      - .env
+    environment:
+      FLASK_APP: 'pyspark_app.py'
     expose:
       - '5001'
     networks:
       - backend
     volumes:
-      - /tuna1/scratch/mgauch/data/cuizinart:/tuna1/scratch/mgauch/data/cuizinart
-      - /tuna1/scratch/mgauch/data/output:/tuna1/scratch/mgauch/data/output
+      - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
+      - ${NC_OUTPUT_PATH}:${NC_OUTPUT_PATH}
+      - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
 
 networks:
   backend:

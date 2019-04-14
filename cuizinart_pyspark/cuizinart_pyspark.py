@@ -1,3 +1,4 @@
+import logging
 import re
 from os import path
 import os
@@ -12,6 +13,8 @@ import geopyspark as gps
 from shapely.geometry import Polygon
 
 from pyspark_settings import NC_INPUT_PATH
+
+logger = logging.getLogger('pyspark')
 
 
 def open_file(path):
@@ -183,12 +186,12 @@ def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, h
     is_forecast_product = True
     if len(horizons) == len(issues) == 0:
         is_forecast_product = False
-        print('Treating as non-forecast product.')
+        logger.info('Treating as non-forecast product.')
 
     request_issues = list(map(lambda i: parse(i).time(), issues))
-    print('Request time range: {} - {}, issues {}, horizons {}'.format(request_start_time, request_end_time,
-                                                                       request_issues, horizons))
-    print('Request variables: {}'.format(request_vars))
+    logger.info('Request time range: {} - {}, issues {}, horizons {}'.format(request_start_time, request_end_time,
+                                                                             request_issues, horizons))
+    logger.info('Request variables: {}'.format(request_vars))
 
     # Look for a forecast_productName folder first. If it doesn't exist, check if there's a productName folder.
     product_path = path.join(NC_INPUT_PATH, 'forecast_' + product)
@@ -209,8 +212,8 @@ def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, h
         get_slice_indexes_and_extent(nc_file, geojson_shape)
     x = x_slice_stop - x_slice_start + 1
     y = y_slice_stop - y_slice_start + 1
-    print('x: {}, y: {}, (x_start x_stop y_start y_stop): {}'.format(x, y, (x_slice_start, x_slice_stop,
-                                                                            y_slice_start, y_slice_stop)))
+    logger.info('x: {}, y: {}, (x_start x_stop y_start y_stop): {}'.format(x, y, (x_slice_start, x_slice_stop,
+                                                                                  y_slice_start, y_slice_stop)))
 
     # Read the x/y- and lat/lon-coordinates specified by the request
     x_coords = nc_file['rlon'][x_slice_start:x_slice_stop + 1]
@@ -266,7 +269,8 @@ def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, h
         if not is_forecast_product:
             current_start_date = max(file_instants.min(), request_start_time)
             current_end_date = min(file_instants.max(), request_end_time)
-            print('Matched file: {} and period {} - {}'.format(nc_file_name, current_start_date, current_end_date))
+            logger.info('Matched file: {} and period {} - {}'.format(nc_file_name, current_start_date,
+                                                                     current_end_date))
 
             # Get indices of the request's time range
             start_instant = file_instants[file_instants <= current_start_date][-1]
@@ -277,7 +281,7 @@ def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, h
             time_slices = date2index([file_instants[0] + relativedelta(hours=h) for h in horizons], nc_file['time'])
             if len(horizons) == 1:
                 time_slices = [time_slices]
-        print('time slice indices: {}'.format(time_slices))
+        logger.info('time slice indices: {}'.format(time_slices))
 
         variables_data = np.ndarray(shape=(len(time_slices), len(request_vars), y, x))
         for i, var_name in enumerate(request_vars):
@@ -315,7 +319,7 @@ def slice(product, out_dir, geojson_shape, start_time, end_time, request_vars, h
     for f in out_files:
         f.close()
 
-    print('Slicing completed.')
+    logger.info('Slicing completed.')
     return len(out_files)
 
 
