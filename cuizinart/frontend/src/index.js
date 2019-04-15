@@ -130,7 +130,7 @@ class App extends Component {
 
         if (self.getAuthToken() == null) {
             NotificationManager.error('Please log in before processing.');
-            this.toggleSignupModal();
+            this.toggleLoginModal();
             return;
         }
 
