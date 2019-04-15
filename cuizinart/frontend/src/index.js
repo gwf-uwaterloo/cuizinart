@@ -62,6 +62,7 @@ class App extends Component {
                         });
                         //console.log(coord);
                         let product = {
+                            id: p.product_id,
                             value: p.key,
                             label: p.name,
                             vars: _.map(p.variables, function(i){
@@ -95,6 +96,30 @@ class App extends Component {
 
     updateFeatures = (features) => {
         this.features = features;
+    };
+
+    filterProducts = (features) => {
+        let self = this;
+        if(!this.state.selectDateSet && features.length > 0){
+            let bounds = {
+                "features": features
+            };
+            axios.post('/filterProducts', bounds)
+                .then(function (response) {
+                    if(response.data.length === 0){
+                        NotificationManager.warning("No corresponding products found!")
+                    }
+                    else{
+                        let prods = _.filter(self.state.products, function (pd) {
+                            return response.data.includes(pd.id);
+                        });
+                        self.setState({products: prods});
+                    }
+                })
+                .catch(function (error) {
+                    NotificationManager.error(error.message);
+                });
+        }
     };
 
     postJsonToServer = () => {
@@ -167,6 +192,7 @@ class App extends Component {
             auth_token: self.getAuthToken()
         };
         passLoad = _.assign(passLoad, self.userInputs);
+        //console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
             axios.post('/fetchResult', passLoad)
                 .then(function (response) {
@@ -370,7 +396,7 @@ class App extends Component {
                         </div>
                         <div className="col col-lg-9">
                             <Map ref={this.child} selectDateSet={this.state.selectDateSet}
-                                 drawCallback={this.updateFeatures}/>
+                                 drawCallback={this.updateFeatures} filterProd={this.filterProducts}/>
                         </div>
                         <NotificationContainer/>
                         <Login showLoginModal={this.state.showLoginModal}

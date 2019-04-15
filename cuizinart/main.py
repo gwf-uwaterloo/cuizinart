@@ -13,8 +13,9 @@ from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
+from shapely.geometry import shape, Point
 
-from metadata_schema import ProductSchema, Product
+from metadata_schema import ProductSchema, Product, Domain
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_KEYFILE_PATH, SSH_USER_NAME, EMAIL_ADDRESS, \
     EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
@@ -38,6 +39,14 @@ def parse_json(obj):
     return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
 
+def check_points_in_shape(shp, pts):
+    for pt in pts:
+        if shp.contains(pt):
+            return True
+
+    return False
+
+
 @app.route('/', methods=['GET'])
 def get_main_page():
     return render_template('index.html')
@@ -49,6 +58,24 @@ def get_boundaries():
     product_schema = ProductSchema(many=True)
     output = product_schema.dump(products).data
     return jsonify(output)
+
+
+@app.route('/filterProducts', methods=['POST'])
+def filter_products():
+    filtered_products = []
+    vertex = []
+    bounds = request.get_json()['features']
+    for feature in bounds:
+        for coords in feature['geometry']['coordinates'][0]:
+            vertex.append(Point(coords))
+    domains = Domain.query.all()
+    for dm in domains:
+        shp = shape(dm.extent)
+        if check_points_in_shape(shp, vertex):
+            filtered_products.append(dm.product.product_id)
+
+    return jsonify(filtered_products)
+
 
 
 @app.route('/fetchResult', methods=['POST'])
