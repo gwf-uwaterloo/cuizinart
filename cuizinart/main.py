@@ -14,7 +14,7 @@ from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
 
-from metadata_schema import ProductSchema, Product
+from metadata_schema import ProductSchema, Product, Request, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_KEYFILE_PATH, SSH_USER_NAME, EMAIL_ADDRESS, \
     EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
