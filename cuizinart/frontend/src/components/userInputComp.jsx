@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import DateRangePicker from 'react-bootstrap-daterangepicker';
 import Select from 'react-select';
 import moment from 'moment';
+import "./userInputComp.css";
 /*
     show date range picker, headers checkbox
  */
@@ -49,6 +50,7 @@ export default class UserInputComp extends Component {
                             placeholder={"Choose product..."}
                             onChange={this.handleSelectProduct}
                             options={this.props.products}
+                            className={'select-product'}
                         />
                     </div>
                     <div className="form-group col-lg-4">
