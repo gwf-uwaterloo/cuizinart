@@ -1,16 +1,23 @@
 import React, { Component } from 'react';
-import { Map, TileLayer, Rectangle, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
+import { Map, TileLayer, Marker, Rectangle, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
 import { EditControl } from "react-leaflet-draw"
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import L from 'leaflet';
 
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow
-});
+delete L.Icon.Default.prototype._getIconUrl;
 
-L.Marker.prototype.options.icon = DefaultIcon;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+    iconUrl: require('leaflet/dist/images/marker-icon.png'),
+    shadowUrl: require('leaflet/dist/images/marker-shadow.png')
+});
+// let DefaultIcon = L.icon({
+//     iconUrl: icon,
+//     shadowUrl: iconShadow
+// });
+
+//L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const zoomLevel = 4;
@@ -159,7 +166,7 @@ export default class MapComp extends Component {
                                     showArea: false
                                 },
                                 circle: false,
-                                marker: false,
+                                marker: true,
                                 polyline: false,
                                 circlemarker: false
                             }}
