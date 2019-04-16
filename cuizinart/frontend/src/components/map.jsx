@@ -98,11 +98,19 @@ export default class MapComp extends Component {
         // if (!this._editableFG || !onChange) {
         //     return;
         // }
-
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
+        if(this.props.selectDateSet){
+            this.props.drawCallback(geojsonData.features);
+        }
+        else{
+            this.props.filterProd(geojsonData.features);
+            this.props.drawCallback(geojsonData.features);
+        }
+
+
         //let lastIndex = geojsonData.features.length-1;
         //console.log(geojsonData.features[lastIndex]);
-        this.props.drawCallback(geojsonData.features);
+
 
         //onChange(geojsonData);
     };
