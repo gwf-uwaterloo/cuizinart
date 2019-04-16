@@ -24,7 +24,7 @@ export default class SideBar extends Component {
             <div>
                 {
                     d ?
-                    <div key={d.id} className="card mt-2">
+                    <div key={d.id} className="card mt-2 scroll">
                         <div className="card-header" style={{backgroundColor: d.color}}>
                             {d.value}
                         </div>

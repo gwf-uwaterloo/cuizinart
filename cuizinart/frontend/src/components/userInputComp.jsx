@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import DateRangePicker from 'react-bootstrap-daterangepicker';
 import Select from 'react-select';
 import moment from 'moment';
+import "./userInputComp.css";
 /*
     show date range picker, headers checkbox
  */
@@ -49,12 +50,13 @@ export default class UserInputComp extends Component {
                             placeholder={"Choose product..."}
                             onChange={this.handleSelectProduct}
                             options={this.props.products}
+                            className={'select-product'}
                         />
                     </div>
                     <div className="form-group col-lg-4">
                         <label htmlFor="userId">Globus ID</label>
                         <input type="text" className="form-control" id="userId"
-                               placeholder="Enter Globus ID"  onChange={this.handleChange.bind(this, "globus_id")}/>
+                               placeholder="foobar@globusid.org"  onChange={this.handleChange.bind(this, "globus_id")}/>
                     </div>
                 </form>
                 <DateRangePicker  startDate={this.state.selectedProduct? moment(this.state.selectedProduct.valid_start_time).format("MM/DD/YYYY") : moment().format("MM/DD/YYYY")}

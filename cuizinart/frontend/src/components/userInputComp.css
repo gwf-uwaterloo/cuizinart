@@ -1,0 +1,5 @@
+@media all and (min-width: 480px) {
+  .select-product {
+    z-index: 1001;
+  }
+}
