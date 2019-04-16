@@ -56,7 +56,7 @@ export default class UserInputComp extends Component {
                     <div className="form-group col-lg-4">
                         <label htmlFor="userId">Globus ID</label>
                         <input type="text" className="form-control" id="userId"
-                               placeholder="Enter Globus ID"  onChange={this.handleChange.bind(this, "globus_id")}/>
+                               placeholder="foobar@globusid.org"  onChange={this.handleChange.bind(this, "globus_id")}/>
                     </div>
                 </form>
                 <DateRangePicker  startDate={this.state.selectedProduct? moment(this.state.selectedProduct.valid_start_time).format("MM/DD/YYYY") : moment().format("MM/DD/YYYY")}
