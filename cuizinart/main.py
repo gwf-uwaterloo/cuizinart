@@ -39,9 +39,9 @@ def parse_json(obj):
     return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
 
-def check_points_in_shape(shp, pts):
-    for pt in pts:
-        if shp.contains(pt):
+def check_shape_intersection(shp, bounds):
+    for b in bounds:
+        if shp.intersection(b):
             return True
 
     return False
@@ -63,19 +63,17 @@ def get_boundaries():
 @app.route('/filterProducts', methods=['POST'])
 def filter_products():
     filtered_products = []
-    vertex = []
-    bounds = request.get_json()['features']
-    for feature in bounds:
-        for coords in feature['geometry']['coordinates'][0]:
-            vertex.append(Point(coords))
+    bounds = []
+    for feature in request.get_json()['features']:
+        bounds.append(shape(feature['geometry']))
+
     domains = Domain.query.all()
     for dm in domains:
         shp = shape(dm.extent)
-        if check_points_in_shape(shp, vertex):
+        if check_shape_intersection(shp, bounds):
             filtered_products.append(dm.product.product_id)
 
     return jsonify(filtered_products)
-
 
 
 @app.route('/fetchResult', methods=['POST'])
