@@ -166,6 +166,7 @@ class App extends Component {
             bounding_geom: self.features,
             auth_token: self.getAuthToken()
         };
+        //console.log(JSON.stringify(passLoad));
         passLoad = _.assign(passLoad, self.userInputs);
         if (window.confirm("Do you want to process?")) {
             axios.post('/fetchResult', passLoad)
@@ -202,6 +203,19 @@ class App extends Component {
         this.setState({showSettingsModal: !this.state.showSettingsModal});
     }
 
+    errorHandling = (error) => {
+        let message = '';
+        if (error.response && error.response.data && error.response.data.response
+            && error.response.data.response.errors){
+            let err = error.response.data.response.errors;
+            message = err[Object.keys(err)[0]][0];
+        }
+        else {
+            message = error.message;
+        }
+        NotificationManager.error(message);
+    };
+
     login = (email, password) => {
         let self = this;
         this.setState({isLoading: true});
@@ -216,10 +230,10 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                NotificationManager.error(error.message);
+                self.errorHandling(error);
             })
             .finally(() => self.setState({isLoading: false}));
-    }
+    };
 
     logout = () => {
         let self = this;
@@ -229,9 +243,9 @@ class App extends Component {
                 self.setState({isLoggedIn: false});
             })
             .catch(function (error) {
-                NotificationManager.error(error.message);
+                self.errorHandling(error);
             });
-    }
+    };
 
     signup = (email, password) => {
         let self = this;
@@ -247,17 +261,10 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                let message = ''
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors)
-                    message = JSON.stringify(error.response.data.response.errors);
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
-    }
+    };
 
     changePassword = (email, oldPassword, password) => {
         let self = this;
@@ -271,11 +278,7 @@ class App extends Component {
                 self.toggleSettingsModal();
             })
             .catch(function (error) {
-                let message = JSON.stringify(error.response.data.response.errors);
-                if (message === "") {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
     }
@@ -289,14 +292,10 @@ class App extends Component {
                 self.toggleLoginModal();
             })
             .catch(function (error) {
-                let message = JSON.stringify(error.response.data.response.errors);
-                if (message === "") {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
-    }
+    };
 
     setAuthToken = (token) => {
         localStorage.setItem('auth_token', token);

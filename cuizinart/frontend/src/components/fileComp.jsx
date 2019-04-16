@@ -69,6 +69,13 @@ export default class FileComp extends Component {
                 });
                 featureList.push(feature);
             }
+            else if(feature["geometry"]["type"] === "Point"){
+                let coord = feature["geometry"]["coordinates"];
+                if(coord[0] > 180){
+                    coord[0] -= 360;
+                }
+                featureList.push(feature);
+            }
         });
         return featureList;
     }
