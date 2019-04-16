@@ -62,18 +62,23 @@ def get_boundaries():
 
 @app.route('/filterProducts', methods=['POST'])
 def filter_products():
+    domains = Domain.query.all()
     filtered_products = []
     bounds = []
     for feature in request.get_json()['features']:
         bounds.append(shape(feature['geometry']))
 
-    domains = Domain.query.all()
-    for dm in domains:
-        shp = shape(dm.extent)
-        if check_shape_intersection(shp, bounds):
-            filtered_products.append(dm.product.product_id)
+    if not bounds:
+        filtered_products = list(map(lambda f: f.product, domains))
+    else:
+        for dm in domains:
+            shp = shape(dm.extent)
+            if check_shape_intersection(shp, bounds):
+                filtered_products.append(dm.product)
 
-    return jsonify(filtered_products)
+    product_schema = ProductSchema(many=True)
+    output = product_schema.dump(filtered_products).data
+    return jsonify(output)
 
 
 @app.route('/fetchResult', methods=['POST'])

@@ -63,6 +63,17 @@ export default class MapComp extends Component {
         this.setState({ currentZoomLevel: newZoomLevel });
     }
 
+    callbackUpdate() {
+        const geojsonData = this._editableFG.leafletElement.toGeoJSON();
+        if(this.props.selectDateSet){
+            this.props.drawCallback(geojsonData.features);
+        }
+        else{
+            this.props.filterProd(geojsonData.features);
+            this.props.drawCallback(geojsonData.features);
+        }
+    }
+
     _onEdited = (e) => {
 
         let numEdited = 0;
@@ -72,6 +83,10 @@ export default class MapComp extends Component {
         //console.log(`_onEdited: edited ${numEdited} layers`, e);
 
         this._onChange();
+    };
+
+    _onDeleted = (e) => {
+        this.callbackUpdate();
     };
 
     _onCreated = (e) => {
@@ -98,15 +113,7 @@ export default class MapComp extends Component {
         // if (!this._editableFG || !onChange) {
         //     return;
         // }
-        const geojsonData = this._editableFG.leafletElement.toGeoJSON();
-        if(this.props.selectDateSet){
-            this.props.drawCallback(geojsonData.features);
-        }
-        else{
-            this.props.filterProd(geojsonData.features);
-            this.props.drawCallback(geojsonData.features);
-        }
-
+        this.callbackUpdate();
 
         //let lastIndex = geojsonData.features.length-1;
         //console.log(geojsonData.features[lastIndex]);
@@ -161,6 +168,7 @@ export default class MapComp extends Component {
                             position='topright'
                             onEdited={this._onEdited}
                             onCreated={this._onCreated}
+                            onDeleted={this._onDeleted}
                             draw={{
                                 rectangle: {
                                     showArea: false
