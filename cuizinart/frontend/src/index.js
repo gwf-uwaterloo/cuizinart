@@ -203,6 +203,19 @@ class App extends Component {
         this.setState({showSettingsModal: !this.state.showSettingsModal});
     }
 
+    errorHandling = (error) => {
+        let message = '';
+        if (error.response && error.response.data && error.response.data.response
+            && error.response.data.response.errors){
+            let err = error.response.data.response.errors;
+            message = err[Object.keys(err)[0]][0];
+        }
+        else {
+            message = error.message;
+        }
+        NotificationManager.error(message);
+    };
+
     login = (email, password) => {
         let self = this;
         this.setState({isLoading: true});
@@ -217,16 +230,7 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                let message = '';
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors){
-                    let err = error.response.data.response.errors;
-                    message = err[Object.keys(err)[0]][0];
-                }
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => self.setState({isLoading: false}));
     };
@@ -239,16 +243,7 @@ class App extends Component {
                 self.setState({isLoggedIn: false});
             })
             .catch(function (error) {
-                let message = '';
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors){
-                    let err = error.response.data.response.errors;
-                    message = err[Object.keys(err)[0]][0];
-                }
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             });
     };
 
@@ -266,16 +261,7 @@ class App extends Component {
                 }
             })
             .catch(function (error) {
-                let message = '';
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors){
-                    let err = error.response.data.response.errors;
-                    message = err[Object.keys(err)[0]][0];
-                }
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
     };
@@ -292,16 +278,7 @@ class App extends Component {
                 self.toggleSettingsModal();
             })
             .catch(function (error) {
-                let message = '';
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors){
-                    let err = error.response.data.response.errors;
-                    message = err[Object.keys(err)[0]][0];
-                }
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
     }
@@ -315,16 +292,7 @@ class App extends Component {
                 self.toggleLoginModal();
             })
             .catch(function (error) {
-                let message = '';
-                if (error.response && error.response.data && error.response.data.response
-                    && error.response.data.response.errors){
-                    let err = error.response.data.response.errors;
-                    message = err[Object.keys(err)[0]][0];
-                }
-                else {
-                    message = error.message;
-                }
-                NotificationManager.error(message);
+                self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
     };

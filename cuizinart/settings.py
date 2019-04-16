@@ -55,8 +55,5 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = EMAIL_SMTP_USERNAME
 app.config['MAIL_PASSWORD'] = EMAIL_PASSWORD
 mail = Mail(app)
-# update default message
-# app.config['SECURITY_MSG_PASSWORD_NOT_PROVIDED'] = ("Bad username or password", "error")
-# app.config['SECURITY_MSG_USER_DOES_NOT_EXIST'] = ("Bad username or password", "error")
-# app.config['SECURITY_MSG_INVALID_PASSWORD'] = ('Bad username or password', 'error')
+
 
