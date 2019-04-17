@@ -53,38 +53,44 @@ class App extends Component {
             .then(res => {
                 if(res.data.length > 0){
                     //console.log(res.data);
-                    res.data.forEach(function (p) {
-                        /*
-                            swap (lon, lat) to (lat, lon)
-                         */
-                        let coord = p.domain.extent.coordinates[0].map(function (arr) {
-                            return [arr[1],arr[0]];
-                        });
-                        //console.log(coord);
-                        let product = {
-                            id: p.product_id,
-                            value: p.key,
-                            label: p.name,
-                            vars: _.map(p.variables, function(i){
-                                return {key: i.key, description: i.name, selected: false}
-                            }),
-                            horizons:  _.map(p.horizons, function(i){
-                                return {key: i.horizon_id, description: i.horizon, selected: false}
-                            }),
-                            issues:  _.map(p.issues, function(i){
-                                return {key: i.issue_id, description: i.issue.slice(0, 5), selected: false}
-                            }),
-                            color: '#17a2b8',
-                            bbox: coord,
-                            valid_start_time: p.start_date,
-                            valid_end_time: p.end_date
-                        };
-                        products.push(product);
-                    });
+                    products = self.formalizeProducts(res.data);
                 }
                 self.setState({products: products});
             });
     }
+
+    formalizeProducts = (prods) => {
+        let products = [];
+        prods.forEach(function (p) {
+            /*
+                swap (lon, lat) to (lat, lon)
+             */
+            let coord = p.domain.extent.coordinates[0].map(function (arr) {
+                return [arr[1],arr[0]];
+            });
+            //console.log(coord);
+            let product = {
+                id: p.product_id,
+                value: p.key,
+                label: p.name,
+                vars: _.map(p.variables, function(i){
+                    return {key: i.key, description: i.name, selected: false}
+                }),
+                horizons:  _.map(p.horizons, function(i){
+                    return {key: i.horizon_id, description: i.horizon, selected: false}
+                }),
+                issues:  _.map(p.issues, function(i){
+                    return {key: i.issue_id, description: i.issue.slice(0, 5), selected: false}
+                }),
+                color: '#17a2b8',
+                bbox: coord,
+                valid_start_time: p.start_date,
+                valid_end_time: p.end_date
+            };
+            products.push(product);
+        });
+        return products;
+    };
 
     updateDateSet = (dataSet) => {
         this.setState(dataSet);
@@ -100,7 +106,7 @@ class App extends Component {
 
     filterProducts = (features) => {
         let self = this;
-        if(!this.state.selectDateSet && features.length > 0){
+        if(!this.state.selectDateSet){
             let bounds = {
                 "features": features
             };
@@ -110,10 +116,7 @@ class App extends Component {
                         NotificationManager.warning("No corresponding products found!")
                     }
                     else{
-                        let prods = _.filter(self.state.products, function (pd) {
-                            return response.data.includes(pd.id);
-                        });
-                        self.setState({products: prods});
+                        self.setState({products: self.formalizeProducts(response.data)});
                     }
                 })
                 .catch(function (error) {

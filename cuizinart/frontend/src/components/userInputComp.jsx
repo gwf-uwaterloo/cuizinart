@@ -45,6 +45,7 @@ export default class UserInputComp extends Component {
                     <div className="form-group col-lg-4">
                         <label htmlFor="product">Select a Product</label>
                         <Select
+                            isClearable={true}
                             id="product"
                             value={this.state.selectedProduct}
                             placeholder={"Choose product..."}
