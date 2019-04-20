@@ -85,4 +85,4 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
 
 
 if __name__ == '__main__':
-    app.run(port=5001)
+    app.run(host='0.0.0.0', port=5001)

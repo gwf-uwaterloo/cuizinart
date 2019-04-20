@@ -185,7 +185,7 @@ def process_slurm(json_request):
     """
     request_string = str(json_request).replace("'", '"')
 
-    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
+    file_name = 'cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
     with open(file_name, 'w') as f:
         f.write(request_string)
@@ -231,4 +231,4 @@ def favicon():
 
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(host='0.0.0.0', port=5000)

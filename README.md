@@ -37,7 +37,7 @@ EMAIL_PASSWORD=<pwd>
 
 
 # PySpark ENV variables
-CUIZINART_URL=cuizinart:5000  # if not using Docker, use localhost:5000
+CUIZINART_URL=tuna.cs.uwaterloo.ca  # if not using Docker, use localhost:5000
 SPARK_MASTER=local[*]
 
 NC_INPUT_PATH=<path to NetCDF files>
@@ -54,7 +54,8 @@ CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in C
 ## Run
 
 ### Docker
-- Run `docker-compose up` or start containers `cuizinart`, `postgres`, `pyspark` as needed. The UI will be served on port 5000
+- For initial setup of the Let's Encrypt certificates, run `./init-letsencrypt.sh` (only needed once)
+- Run `docker-compose up` or start containers `nginx`, `cuizinart`, `postgres`, `pyspark` as needed. nginx will serve the application on tuna.cs.uwaterloo.ca.
 
 ### Without Docker
 - Serving the frontend:
