@@ -41,8 +41,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.secret_key = os.getenv('APP_SECRET_KEY')
 app.config['SECURITY_PASSWORD_SALT'] = os.getenv('PASSWORD_SALT')
-app.config['SECURITY_CONFIRMABLE'] = True
-app.config['SECURITY_REGISTERABLE'] = True
+app.config['SECURITY_CONFIRMABLE'] = False
+app.config['SECURITY_REGISTERABLE'] = False
 app.config['SECURITY_RECOVERABLE'] = True
 app.config['SECURITY_CHANGEABLE'] = True
 app.config['SECURITY_EMAIL_SENDER'] = EMAIL_ADDRESS
@@ -55,5 +55,3 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = EMAIL_SMTP_USERNAME
 app.config['MAIL_PASSWORD'] = EMAIL_PASSWORD
 mail = Mail(app)
-
-

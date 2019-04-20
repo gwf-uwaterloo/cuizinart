@@ -16,7 +16,6 @@ import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 import Login from "./components/Login";
 import {Navbar, Nav, Button} from "react-bootstrap";
-import Signup from "./components/Signup";
 import Settings from "./components/Settings";
 import GWF_logo from "./GWF_logo.png";
 import logo_usask from "./logo_usask.png";
@@ -29,7 +28,6 @@ const backends = [
 class App extends Component {
     state = {
         showLoginModal: false,
-        showSignupModal: false,
         showSettingsModal: false,
         isLoading: false,
         isLoggedIn: false,
@@ -224,10 +222,6 @@ class App extends Component {
         this.setState({showLoginModal: !this.state.showLoginModal});
     }
 
-    toggleSignupModal = () => {
-        this.setState({showSignupModal: !this.state.showSignupModal});
-    }
-
     toggleSettingsModal = () => {
         this.setState({showSettingsModal: !this.state.showSettingsModal});
     }
@@ -274,25 +268,6 @@ class App extends Component {
             .catch(function (error) {
                 self.errorHandling(error);
             });
-    };
-
-    signup = (email, password) => {
-        let self = this;
-        this.setState({isLoading: true});
-        axios.post('/register', {'email': email, 'password': password})
-            .then(function (response) {
-                if (response.data && response.data.response && response.data.response.user
-                    && response.data.response.user.authentication_token) {
-                    self.setAuthToken(response.data.response.user.authentication_token);
-                    self.toggleSignupModal();
-                } else {
-                    NotificationManager.error("Signup failed.");
-                }
-            })
-            .catch(function (error) {
-                self.errorHandling(error);
-            })
-            .finally(() => this.setState({isLoading: false}));
     };
 
     changePassword = (email, oldPassword, password) => {
@@ -352,9 +327,6 @@ class App extends Component {
                             <img className="img-right mr-sm-4" src={logo_usask}/>
                         </Nav>
                             {!this.state.isLoggedIn &&
-                            <Button variant="outline-light" className="mr-sm-2" onClick={this.toggleSignupModal}>
-                                Sign Up</Button>}
-                            {!this.state.isLoggedIn &&
                             <Button variant="outline-light"
                                     onClick={this.toggleLoginModal}>Login</Button>}
                             {this.state.isLoggedIn &&
@@ -405,9 +377,6 @@ class App extends Component {
                                onLogin={(email, password) => this.login(email, password)}
                                onResetPassword={(email) => this.resetPassword(email)}
                                onClose={this.toggleLoginModal} isLoading={this.state.isLoading}/>
-                        <Signup showSignupModal={this.state.showSignupModal}
-                                onSignup={(email, password) => this.signup(email, password)}
-                                onClose={this.toggleSignupModal} isLoading={this.state.isLoading}/>
                         <Settings showSettingsModal={this.state.showSettingsModal}
                                   onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
                                   onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}/>
