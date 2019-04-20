@@ -1,4 +1,5 @@
 import click
+from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import fields
 from flask_marshmallow import Marshmallow
@@ -156,8 +157,8 @@ def pyspark_init(password):
         pyspark_role = user_datastore.create_role(name='pyspark')
     if User.query.filter(User.roles.any(Role.name=='pyspark')).first() is None:
         click.echo('Creating user "pyspark"')
-        user_datastore.create_user(email='pyspark', password=password, active=True, confirmed_at='2019-01-01 00:00:00',
-                                   roles=[pyspark_role])
+        user_datastore.create_user(email='pyspark', password=hash_password(password), active=True,
+                                   confirmed_at='2019-01-01 00:00:00', roles=[pyspark_role])
     db.session.commit()
 
 

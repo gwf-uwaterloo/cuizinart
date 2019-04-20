@@ -66,4 +66,6 @@ In case you chose `npm run build` in the previous step, this Flask app will serv
 
 - Run `python cuizinart_pyspark/pyspark_app.py` to start the PySpark cuizinart.
 
+### Adding Users
+- Run `flask users create <email> --password <pwd> -a`. (When using Docker, you need to run this in the `cuizinart` container.)
 
