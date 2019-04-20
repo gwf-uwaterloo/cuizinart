@@ -65,7 +65,7 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
     for entry in os.scandir(out_file_path):
         file_size += entry.stat(follow_symlinks=False).st_size
 
-    login_request = requests.post('http://{}/login'.format(CUIZINART_URL), json={'email': 'pyspark',
+    login_request = requests.post('{}/login'.format(CUIZINART_URL), json={'email': 'pyspark',
                                                                          'password': CUIZINART_PYSPARK_PASSWORD})
     if login_request.status_code != requests.codes.ok or \
             'user' not in login_request.json()['response'] or \
@@ -78,7 +78,7 @@ def execute_query(request_id, user_email, product, geojson_shape, start_time, en
                      'file_location': out_file_path, 'n_files': num_out_files, 'processing_time_s': elapsed_time,
                      'file_size_MB': file_size // 1048576,  # Byte to MB conversion
                      'auth_token': auth_token}
-    r = requests.post('http://{}/reportJobResult'.format(CUIZINART_URL), json=response_json)
+    r = requests.post('{}/reportJobResult'.format(CUIZINART_URL), json=response_json)
 
     if r.status_code != requests.codes.ok:
         logger.error('Error reporting job results. Status code: {}, reason: {}'.format(r.status_code, r.reason))

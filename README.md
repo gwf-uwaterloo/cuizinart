@@ -37,7 +37,7 @@ EMAIL_PASSWORD=<pwd>
 
 
 # PySpark ENV variables
-CUIZINART_URL=tuna.cs.uwaterloo.ca  # if not using Docker, use localhost:5000
+CUIZINART_URL=https://tuna.cs.uwaterloo.ca  # if not using Docker, use localhost:5000
 SPARK_MASTER=local[*]
 
 NC_INPUT_PATH=<path to NetCDF files>
