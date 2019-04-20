@@ -28,7 +28,6 @@ const backends = [
 class App extends Component {
     state = {
         showLoginModal: false,
-        showSignupModal: false,
         showSettingsModal: false,
         isLoading: false,
         isLoggedIn: false,
