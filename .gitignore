@@ -10,3 +10,4 @@ geojson.json
 npm-debug.log
 migrations/
 build/
+certbot/
