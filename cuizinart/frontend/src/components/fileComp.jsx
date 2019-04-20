@@ -76,6 +76,17 @@ export default class FileComp extends Component {
                 }
                 featureList.push(feature);
             }
+            else if(feature["geometry"]["type"] === "MultiPolygon"){
+                let coord = feature["geometry"]["coordinates"];
+                coord.forEach(function (c) {
+                    c.forEach(function (m) {
+                        if(m[0] > 180){
+                            m[0] -= 360;
+                        }
+                    });
+                });
+                featureList.push(feature);
+            }
         });
         return featureList;
     }
