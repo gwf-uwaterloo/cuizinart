@@ -102,6 +102,11 @@ def fetch_result():
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
         json_request['user_email'] = user.email
+
+        json_request['globus_id'] = user.globus_id
+        if user.globus_id is None or user.globus_id == '':
+            return '{message: "Please provide your Globus id in the settings"}', 400
+
         request_db_entry.backend = BACKEND_SLURM
         result = process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
@@ -162,6 +167,27 @@ def report_job_result():
     return '{message: "Success"}'
 
 
+@app.route('/getUserInfo', methods=['POST'])
+@auth_token_required
+def get_user_info():
+    user = flask_login.current_user
+    return jsonify({'globusId': user.globus_id})
+
+
+@app.route('/setUserInfo', methods=['POST'])
+@auth_token_required
+def set_user_info():
+    user = flask_login.current_user
+    new_globus_id = request.get_json()['globusId']
+
+    if user.globus_id != new_globus_id:
+        user.globus_id = new_globus_id
+        db.session.add(user)
+        db.session.commit()
+
+    return '{message: "Success"}'
+
+
 def process_pyspark(request_id, user_email, product, geojson, start_time, end_time, variables, horizons, issues):
     """
     Process request using PySpark.
@@ -185,7 +211,7 @@ def process_slurm(json_request):
     """
     request_string = str(json_request).replace("'", '"')
 
-    file_name = 'cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
+    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
     with open(file_name, 'w') as f:
         f.write(request_string)

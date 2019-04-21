@@ -144,7 +144,7 @@ export default class MapComp extends Component {
         let d = this.props.selectDateSet;
         return (
             <div>
-                <Map
+                <Map id={"map"}
                     ref={m => { this.leafletMap = m; }}
                     center={mapCenter}
                     zoom={zoomLevel}

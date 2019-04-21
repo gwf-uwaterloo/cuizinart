@@ -1,7 +1,9 @@
 import React, {Component} from "react";
-import {Modal, Button, Form, FormGroup, FormControl, FormLabel} from "react-bootstrap";
+import {Modal} from "react-bootstrap";
 import "./Login.css";
 import LoaderButton from "./LoaderButton";
+import TextField from "@material-ui/core/TextField";
+import Button from "@material-ui/core/Button";
 
 export default class Login extends Component {
     constructor(props) {
@@ -55,48 +57,49 @@ export default class Login extends Component {
                         <Modal.Title>Login</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form onSubmit={e => this.handleSubmit(e)}>
-                            <FormGroup controlId="email" bssize="large">
-                                <FormLabel>Email</FormLabel>
-                                <FormControl
-                                    autoFocus
-                                    required
-                                    type="email"
-                                    value={this.state.email}
-                                    onChange={this.handleChange}
+                        <form onSubmit={e => this.handleSubmit(e)}>
+                            <div className={"row m-2"}>
+                                <TextField id={"email"}
+                                           fullWidth={true}
+                                           variant="outlined"
+                                           label="Email"
+                                           disabled={false}
+                                           required
+                                           type="email"
+                                           value={this.state.email}
+                                           onChange={this.handleChange}
                                 />
-                                <FormControl.Feedback type="invalid">abc</FormControl.Feedback>
-                            </FormGroup>
-                            <FormGroup controlId="password" bssize="large">
-                                <FormLabel>Password</FormLabel>
-                                <FormControl
-                                    required={this.state.forgotPassword}
-                                    disabled={this.state.forgotPassword}
-                                    value={this.state.password}
-                                    onChange={this.handleChange}
-                                    type="password"
+                            </div>
+                            <div className={"row m-2"}>
+                                <TextField id={"password"}
+                                           fullWidth={true}
+                                           variant="outlined"
+                                           label="Password"
+                                           required={this.state.forgotPassword}
+                                           disabled={this.state.forgotPassword}
+                                           value={this.state.password}
+                                           onChange={this.handleChange}
+                                           type="password"
                                 />
-                                <Button variant="link" bssize="small" onClick={this.forgotPassword}>Forgot
+                                <Button className={"ml-auto"} onClick={this.forgotPassword}>Forgot
                                     Password?</Button>
-                            </FormGroup>
+                            </div>
                             <div className="row">
-                                <div className="col col-lg-9">
+                                <div className="col d-flex justify-content-end">
                                     {!this.state.forgotPassword &&
-                                    <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
-                                                  isLoading={this.props.isLoading} text="Login"  variant="primary"
-                                                  loadingText="Logging in…"/>}
+                                    <LoaderButton disabled={!this.validateForm()} type="submit"
+                                                  isLoading={this.props.isLoading} text="Login"
+                                                  loadingText="Logging in…" size={"large"}/>}
                                     {this.state.forgotPassword &&
-                                    <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
+                                    <LoaderButton disabled={!this.validateForm()} type="submit"
                                                   isLoading={this.props.isLoading} text="Reset Password"
-                                                  variant="primary" loadingText="Loading…" />}
+                                                  loadingText="Loading…"/>}
                                 </div>
-                                <div className="col col-lg-3">
-                                    <Button block bssize="small" onClick={this.props.onClose} variant="secondary">
-                                        Close
-                                    </Button>
+                                <div className="col-3">
+                                    <Button onClick={this.props.onClose}>Close</Button>
                                 </div>
                             </div>
-                        </Form>
+                        </form>
                     </Modal.Body>
                 </Modal>
             </div>

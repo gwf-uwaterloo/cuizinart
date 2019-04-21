@@ -10,22 +10,54 @@ import _ from 'lodash';
 import moment from 'moment';
 import axios from "axios";
 import Select from 'react-select';
-import {NotificationContainer, NotificationManager} from 'react-notifications';
 import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 import Login from "./components/Login";
-import {Navbar, Nav, Button} from "react-bootstrap";
+import {AppBar, Button, Card, CardContent, Toolbar} from '@material-ui/core';
 import Settings from "./components/Settings";
 import GWF_logo from "./GWF_logo.png";
 import logo_usask from "./logo_usask.png";
 import logo_uw_horizontal from "./logo_uw_horizontal.png";
+import github_logo from "./GitHub-Mark-32px.png";
+import "./index.css";
+import IconButton from "@material-ui/core/IconButton";
+import Typography from "@material-ui/core/Typography";
+import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
+import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
+import Paper from "@material-ui/core/Paper";
+import Fab from "@material-ui/core/Fab";
+import SendIcon from "@material-ui/icons/Send"
+import {SnackbarProvider, withSnackbar} from 'notistack';
+import AccountCircle from '@material-ui/icons/AccountCircle';
+import PropTypes from 'prop-types';
 
 const backends = [
-    { value: 'slurm', label: 'Graham' },
-    { value: 'pyspark', label: 'Pyspark' }
+    {value: 'slurm', label: 'Graham'},
+    {value: 'pyspark', label: 'Pyspark'}
 ];
-class App extends Component {
+
+const theme = createMuiTheme({
+    palette: {
+        primary: {
+            light: '#60d4ea',
+            main: '#17a2b8',
+            dark: '#007388',
+            contrastText: '#fff',
+        },
+        secondary: {
+            light: '#ff7961',
+            main: '#f44336',
+            dark: '#ba000d',
+            contrastText: '#000',
+        },
+    },
+    typography: {
+        useNextVariants: true,
+    },
+});
+
+class CuizinartApp extends Component {
     state = {
         showLoginModal: false,
         showSettingsModal: false,
@@ -33,14 +65,15 @@ class App extends Component {
         isLoggedIn: false,
         selectDateSet: null,
         products: [],
-        selectedBackend: null
+        selectedBackend: null,
+        globusId: ''
     };
 
     constructor(props) {
         super(props);
         this.child = React.createRef();
-        this.userInputs= {};
-        this.features=[];
+        this.userInputs = {};
+        this.features = [];
     }
 
     componentDidMount() {
@@ -49,7 +82,7 @@ class App extends Component {
         let products = [];
         axios.get('/getBoundaries')
             .then(res => {
-                if(res.data.length > 0){
+                if (res.data.length > 0) {
                     //console.log(res.data);
                     products = self.formalizeProducts(res.data);
                 }
@@ -64,20 +97,20 @@ class App extends Component {
                 swap (lon, lat) to (lat, lon)
              */
             let coord = p.domain.extent.coordinates[0].map(function (arr) {
-                return [arr[1],arr[0]];
+                return [arr[1], arr[0]];
             });
             //console.log(coord);
             let product = {
                 id: p.product_id,
                 value: p.key,
                 label: p.name,
-                vars: _.map(p.variables, function(i){
+                vars: _.map(p.variables, function (i) {
                     return {key: i.key, description: i.name, selected: false}
                 }),
-                horizons:  _.map(p.horizons, function(i){
+                horizons: _.map(p.horizons, function (i) {
                     return {key: i.horizon_id, description: i.horizon, selected: false}
                 }),
-                issues:  _.map(p.issues, function(i){
+                issues: _.map(p.issues, function (i) {
                     return {key: i.issue_id, description: i.issue.slice(0, 5), selected: false}
                 }),
                 color: '#17a2b8',
@@ -104,21 +137,20 @@ class App extends Component {
 
     filterProducts = (features) => {
         let self = this;
-        if(!this.state.selectDateSet){
+        if (!this.state.selectDateSet) {
             let bounds = {
                 "features": features
             };
             axios.post('/filterProducts', bounds)
                 .then(function (response) {
-                    if(response.data.length === 0){
-                        NotificationManager.warning("No corresponding products found!")
-                    }
-                    else{
+                    if (response.data.length === 0) {
+                        self.props.enqueueSnackbar("No corresponding products found!", {variant: 'warning'});
+                    } else {
                         self.setState({products: self.formalizeProducts(response.data)});
                     }
                 })
                 .catch(function (error) {
-                    NotificationManager.error(error.message);
+                    self.props.enqueueSnackbar(error.message, {variant: 'error'});
                 });
         }
     };
@@ -130,56 +162,56 @@ class App extends Component {
         let issues = new Set();
 
         if (self.getAuthToken() == null) {
-            NotificationManager.error('Please log in before processing.');
+            self.props.enqueueSnackbar('Please log in before processing.', {variant: 'error'});
             this.toggleLoginModal();
             return;
         }
 
-        if(!self.state.selectDateSet){
-            NotificationManager.error('No product selected.');
+        if (!self.state.selectDateSet) {
+            self.props.enqueueSnackbar('No product selected.', {variant: 'error'});
             return;
         }
         self.state.selectDateSet.vars.forEach(v => {
-            if(v.selected){
+            if (v.selected) {
                 variables.add(v.key);
             }
         });
 
-        if(variables.size === 0){
-            NotificationManager.error('No variable selected.');
+        if (variables.size === 0) {
+            self.props.enqueueSnackbar('No variable selected.', {variant: 'error'});
             return;
         }
         // add selected horizons(forecast windows)
         self.state.selectDateSet.horizons.forEach(v => {
-            if(v.selected){
+            if (v.selected) {
                 horizons.add(v.description);
             }
         });
 
         // add selected issues(forecast issues)
         self.state.selectDateSet.issues.forEach(v => {
-            if(v.selected){
+            if (v.selected) {
                 issues.add(v.description);
             }
         });
 
-        if(!self.userInputs || !self.userInputs.start_time || !self.userInputs.end_time){
-            NotificationManager.error('No date range selected.');
+        if (!self.userInputs || !self.userInputs.start_time || !self.userInputs.end_time) {
+            self.props.enqueueSnackbar('No date range selected.', {variant: 'error'});
             return;
         }
 
-        if(!self.state.selectedBackend){
-            NotificationManager.error('No backend processor selected.');
+        if (!self.state.selectedBackend || self.state.selectedBackend === '') {
+            self.props.enqueueSnackbar('No backend processor selected.', {variant: 'error'});
             return;
         }
 
-        if(moment(self.userInputs.start_time).isBefore(self.state.selectDateSet.valid_start_time) || moment(self.userInputs.end_time).isAfter(self.state.selectDateSet.valid_end_time)){
-            NotificationManager.error('Valid time range is: '+self.state.selectDateSet.valid_start_time +' to '+self.state.selectDateSet.valid_end_time);
+        if (moment(self.userInputs.start_time).isBefore(self.state.selectDateSet.valid_start_time) || moment(self.userInputs.end_time).isAfter(self.state.selectDateSet.valid_end_time)) {
+            self.props.enqueueSnackbar('Valid time range is: ' + self.state.selectDateSet.valid_start_time + ' to ' + self.state.selectDateSet.valid_end_time, {variant: 'error'});
             return;
         }
 
-        if(self.features.length === 0){
-            NotificationManager.error('No geometry data found.');
+        if (self.features.length === 0) {
+            self.props.enqueueSnackbar('No geometry data found.', {variant: 'error'});
             return;
         }
 
@@ -198,14 +230,13 @@ class App extends Component {
         if (window.confirm("Do you want to process?")) {
             axios.post('/fetchResult', passLoad)
                 .then(function (response) {
-                    NotificationManager.success(response.data);
+                    self.props.enqueueSnackbar(response.data, {variant: 'success'});
                 })
                 .catch(function (error) {
-                    NotificationManager.error(error.message);
+                    self.props.enqueueSnackbar(error.message, {variant: 'error'});
                 });
 
-        }
-        else{
+        } else {
             // cancel
         }
     };
@@ -229,14 +260,13 @@ class App extends Component {
     errorHandling = (error) => {
         let message = '';
         if (error.response && error.response.data && error.response.data.response
-            && error.response.data.response.errors){
+            && error.response.data.response.errors) {
             let err = error.response.data.response.errors;
             message = err[Object.keys(err)[0]][0];
-        }
-        else {
+        } else {
             message = error.message;
         }
-        NotificationManager.error(message);
+        this.props.enqueueSnackbar(message, {variant: 'error'});
     };
 
     login = (email, password) => {
@@ -249,13 +279,18 @@ class App extends Component {
                     this.setAuthToken(response.data.response.user.authentication_token);
                     self.toggleLoginModal();
                 } else {
-                    NotificationManager.error("Login failed.");
+                    self.props.enqueueSnackbar("Login failed.", {variant: 'error'});
                 }
             })
             .catch(function (error) {
                 self.errorHandling(error);
             })
-            .finally(() => self.setState({isLoading: false}));
+            .finally(() => {
+                self.setState({isLoading: false});
+                if (self.getAuthToken() != null) {
+                    self.getGlobusId();
+                }
+            });
     };
 
     logout = () => {
@@ -278,7 +313,7 @@ class App extends Component {
             'new_password': password, 'new_password_confirm': password, 'auth_token': self.getAuthToken()
         })
             .then(function (response) {
-                NotificationManager.success("Password changed successfully.");
+                self.props.enqueueSnackbar("Password changed successfully.", {variant: 'success'});
                 self.toggleSettingsModal();
             })
             .catch(function (error) {
@@ -292,7 +327,7 @@ class App extends Component {
         this.setState({isLoading: true});
         axios.post('/reset', {'email': email})
             .then(function (response) {
-                NotificationManager.success("Password reset request sent. Check your email.");
+                self.props.enqueueSnackbar("Password reset request sent. Check your email.", {variant: 'success'});
                 self.toggleLoginModal();
             })
             .catch(function (error) {
@@ -310,85 +345,139 @@ class App extends Component {
         }
     }
 
-    getAuthToken = ()  => {
+    getAuthToken = () => {
         return localStorage.getItem('auth_token');
+    }
+
+    getGlobusId = () => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/getUserInfo', {'auth_token': this.getAuthToken()})
+            .then(function (response) {
+                if (response.data.length === 0) {
+                    self.props.enqueueSnackbar("Error retrieving user information!", {variant: 'error'});
+                } else {
+                    self.setState({globusId: response.data.globusId});
+                }
+            })
+            .catch(function (error) {
+                self.errorHandling(error);
+            })
+            .finally(() => this.setState({isLoading: false}));
+    }
+
+    changeGlobusId = (newId) => {
+        let self = this;
+        this.setState({isLoading: true});
+        axios.post('/setUserInfo', {'globusId': newId, 'auth_token': this.getAuthToken()})
+            .then(function (response) {
+                if (response.data.length === 0) {
+                    self.props.enqueueSnackbar("Error setting user information!", {variant: 'error'});
+                } else {
+                    self.setState({globusId: newId});
+                    self.props.enqueueSnackbar("Globus ID updated successfully.", {variant: 'success'});
+                }
+            })
+            .catch(function (error) {
+                self.errorHandling(error);
+            })
+            .finally(() => this.setState({isLoading: false}));
     }
 
     render() {
         return (
             <React.Fragment>
-                <Navbar bg="info">
-                    <Navbar.Brand href="#" style={{color: "white"}}>GWF Cuizinart</Navbar.Brand>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav"/>
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="ml-auto">
-                            <img className="img-right" src={GWF_logo}/>
-                            <img className="img-right" src={logo_uw_horizontal}/>
-                            <img className="img-right mr-sm-4" src={logo_usask}/>
-                        </Nav>
+                <MuiThemeProvider theme={theme}>
+                    <AppBar position={"sticky"} color={"primary"}>
+                        <Toolbar className={"p-0"}>
+                            <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
+                                <img className="img-right" src={GWF_logo}/>
+                            </IconButton>
+                            <Typography className={"mr-auto"} variant="h6" color="inherit" noWrap>GWF
+                                Cuizinart</Typography>
+                            <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
+                                                                                      src={logo_uw_horizontal}/></a>
+                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask}/></a>
+                            <a href="https://github.com/gwf-uwaterloo/cuizinart"><img className="img-right mr-sm-4"
+                                                                                      src={github_logo}/></a>
                             {!this.state.isLoggedIn &&
-                            <Button variant="outline-light"
+                            <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.toggleLoginModal}>Login</Button>}
                             {this.state.isLoggedIn &&
-                            <Button variant="outline-light" className="mr-sm-2"
+                            <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.logout}>Logout</Button>}
                             {this.state.isLoggedIn &&
-                            <Button variant="outline-light"
-                                    onClick={this.toggleSettingsModal}>Settings</Button>}
-                    </Navbar.Collapse>
-                </Navbar>
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col col-lg-12">
-                            < UserInputComp
-                                updateUserInputs={this.updateUserInputs}
-                                products={this.state.products}
-                                updateDateSet={this.updateDateSet}
-                            />
-                        </div>
-                        <div className="col col-lg-3">
-                            <DataSetComp selectDateSet={this.state.selectDateSet} updateDateSet={this.updateDateSet}/>
-                            <div className="card mt-2">
-                                <div className="card-body">
-                                    <FileComp uploadFileCallback={this.updateFeatures}
-                                              renderGeoJSON={this.renderGeoJSON}/>
+                            <IconButton className={"mr-2"} color="inherit" fontSize="large"
+                                        onClick={this.toggleSettingsModal}>
+                                <AccountCircle/>
+                            </IconButton>}
+                        </Toolbar>
+                    </AppBar>
+                    <div className="container-fluid">
+                        <div className="row">
+                            <Paper className="sidebar-sticky ml-auto col-3 p-2">
+                                <UserInputComp
+                                    updateUserInputs={this.updateUserInputs}
+                                    products={this.state.products}
+                                    updateDateSet={this.updateDateSet}/>
+                                <DataSetComp selectDateSet={this.state.selectDateSet}
+                                             updateDateSet={this.updateDateSet}/>
+                                <Card className="mt-2 mb-2" style={{overflow: "visible"}}>
+                                    <CardContent>
+                                        <FileComp uploadFileCallback={this.updateFeatures}
+                                                  renderGeoJSON={this.renderGeoJSON}/>
+                                    </CardContent>
+                                </Card>
+                                <Card className="mt-2 mb-2" style={{overflow: "visible"}}>
+                                    <CardContent>
+                                        <Select
+                                            id="backend"
+                                            value={this.state.selectedBackend}
+                                            placeholder={"Choose Backend..."}
+                                            onChange={this.handleSelectBackend}
+                                            options={backends}
+                                        />
+                                    </CardContent>
+                                </Card>
+                                <div className={"row m-2"}>
+                                    <Fab variant="extended" color={"primary"} className={"mt-auto"}
+                                         onClick={this.postJsonToServer}>
+                                        <SendIcon className={"mr-2"}/>Process
+                                    </Fab>
                                 </div>
-                            </div>
-                            <div className="mt-2">
-                                <label htmlFor="backend">Process on...</label>
-                                <Select
-                                    id="backend"
-                                    value={this.state.selectedBackend}
-                                    placeholder={"Choose Backend..."}
-                                    onChange={this.handleSelectBackend}
-                                    options={backends}
-                                />
-                            </div>
-                            <div className="mt-2">
-                                <button className="btn btn-info" onClick={this.postJsonToServer}>Process</button>
-                            </div>
+                            </Paper>
+                            <main className={"col-9 p-0"}>
+                                <Map ref={this.child} selectDateSet={this.state.selectDateSet}
+                                     drawCallback={this.updateFeatures} filterProd={this.filterProducts}/>
+                            </main>
+
+                            <Login showLoginModal={this.state.showLoginModal}
+                                   onLogin={(email, password) => this.login(email, password)}
+                                   onResetPassword={(email) => this.resetPassword(email)}
+                                   onClose={this.toggleLoginModal} isLoading={this.state.isLoading}/>
+                            <Settings showSettingsModal={this.state.showSettingsModal}
+                                      onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
+                                      onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}
+                                      globusId={this.state.globusId}
+                                      onChangeGlobusId={(globusId) => this.changeGlobusId(globusId)}/>
                         </div>
-                        <div className="col col-lg-9">
-                            <Map ref={this.child} selectDateSet={this.state.selectDateSet}
-                                 drawCallback={this.updateFeatures} filterProd={this.filterProducts}/>
-                        </div>
-                        <NotificationContainer/>
-                        <Login showLoginModal={this.state.showLoginModal}
-                               onLogin={(email, password) => this.login(email, password)}
-                               onResetPassword={(email) => this.resetPassword(email)}
-                               onClose={this.toggleLoginModal} isLoading={this.state.isLoading}/>
-                        <Settings showSettingsModal={this.state.showSettingsModal}
-                                  onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
-                                  onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}/>
                     </div>
-                </div>
+                </MuiThemeProvider>
             </React.Fragment>
         );
     }
 }
 
+CuizinartApp.propTypes = {
+    enqueueSnackbar: PropTypes.func.isRequired,
+};
+
+const App = withSnackbar(CuizinartApp);
+
 render(
-    <App />,
+    <SnackbarProvider maxSnack={3}>
+        <App/>
+    </SnackbarProvider>,
     document.getElementById('content')
 );
 

@@ -2,6 +2,11 @@ import shortid from 'shortid';
 import {Component} from "react";
 import React from "react";
 import _ from 'lodash';
+import Card from "@material-ui/core/Card";
+import CardContent from "@material-ui/core/CardContent";
+import {Checkbox, FormGroup} from "@material-ui/core";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+
 export default class SideBar extends Component {
     constructor(props) {
         super(props);
@@ -21,52 +26,42 @@ export default class SideBar extends Component {
     render() {
         let d = this.props.selectDateSet;
         return (
-            <div>
+            <Card className="row m-0 mt-2 mb-2">
                 {
                     d ?
-                    <div key={d.id} className="card mt-2 scroll">
-                        <div className="card-header" style={{backgroundColor: d.color}}>
-                            {d.value}
-                        </div>
-                        <div className="card-body">
+                    <div key={d.id} className="mt-2 scroll">
+                        <CardContent>
                             <h5><span className="label label-default">Variables: </span></h5>
-                            {
-                                d.vars.map( va =>
-                                    <div key={`div-${shortid.generate()}`} className="form-check">
-                                        <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('vars', va.key, e)}/>{va["key"]}: {va["description"]}
-                                        </label>
-                                    </div>
-                                )
-                            }
+                            <FormGroup key={`div-${shortid.generate()}`}>
+                                {d.vars.map( va =>
+                                        <FormControlLabel control={
+                                            <Checkbox checked={va.selected} onChange={(e) => this.handleCheckbox('vars', va.key, e)}/>
+                                            } label={va["key"] + ": " + va["description"]}/>
+                                )}
+                            </FormGroup>
                             <h5 className="mt-3"><span className="label label-default">Forecast Windows: </span></h5>
-                            {
-                                d.horizons.map( va =>
-                                    <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
-                                        <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
-                                            <label className="form-check-label" >{va["description"]}</label>
-                                        </label>
-                                    </div>
-                                )
-                            }
-                            <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
-                            {
-                                d.issues.map( va =>
-                                    <div key={`div-${shortid.generate()}`} className="form-check form-check-inline">
-                                        <label className="form-check-label">
-                                            <input type="checkbox" className="form-check-input" checked={va.selected} onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
-                                            <label className="form-check-label">{va["description"]}</label>
-                                        </label>
-                                    </div>
-                                )
-                            }
+                            <FormGroup key={`div-${shortid.generate()}`} row={true}>
+                                {d.horizons.map( va =>
+                                        <FormControlLabel control={
+                                            <Checkbox checked={va.selected}
+                                                      onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
+                                        } label={va["description"]}/>
 
-                        </div>
+                                )}
+                            </FormGroup>
+                            <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
+                                <FormGroup key={`div-${shortid.generate()}`} row={true}>
+                                    {d.issues.map( va =>
+                                        <FormControlLabel control={
+                                            <Checkbox checked={va.selected} onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
+                                        } label={va["description"]}/>
+                                    )}
+                                </FormGroup>
+                        </CardContent>
                     </div>
                     : <div></div>
                 }
-            </div>
+            </Card>
         );
     }
 }
