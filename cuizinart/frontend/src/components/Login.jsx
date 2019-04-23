@@ -75,7 +75,7 @@ export default class Login extends Component {
                                            fullWidth={true}
                                            variant="outlined"
                                            label="Password"
-                                           required={this.state.forgotPassword}
+                                           required={!this.state.forgotPassword}
                                            disabled={this.state.forgotPassword}
                                            value={this.state.password}
                                            onChange={this.handleChange}

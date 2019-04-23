@@ -1,6 +1,5 @@
 import React, {Component} from "react";
 import {Modal} from "react-bootstrap";
-import "./Settings.css";
 import LoaderButton from "./LoaderButton";
 import {CardContent, TextField} from "@material-ui/core";
 import Card from "@material-ui/core/Card";

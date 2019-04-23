@@ -10,7 +10,6 @@ import _ from 'lodash';
 import moment from 'moment';
 import axios from "axios";
 import Select from 'react-select';
-import FileComp from './components/fileComp';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 import Login from "./components/Login";
@@ -25,7 +24,6 @@ import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import MuiThemeProvider from "@material-ui/core/styles/MuiThemeProvider";
-import Paper from "@material-ui/core/Paper";
 import Fab from "@material-ui/core/Fab";
 import SendIcon from "@material-ui/icons/Send"
 import {SnackbarProvider, withSnackbar} from 'notistack';
@@ -46,10 +44,10 @@ const theme = createMuiTheme({
             contrastText: '#fff',
         },
         secondary: {
-            light: '#ff7961',
-            main: '#f44336',
-            dark: '#ba000d',
-            contrastText: '#000',
+            light: '#60d4ea',
+            main: '#17a2b8',
+            dark: '#007388',
+            contrastText: '#fff',
         },
     },
     typography: {
@@ -415,42 +413,37 @@ class CuizinartApp extends Component {
                     </AppBar>
                     <div className="container-fluid">
                         <div className="row">
-                            <Paper className="sidebar-sticky ml-auto col-3 p-2">
-                                <UserInputComp
-                                    updateUserInputs={this.updateUserInputs}
-                                    products={this.state.products}
-                                    updateDateSet={this.updateDateSet}/>
-                                <DataSetComp selectDateSet={this.state.selectDateSet}
-                                             updateDateSet={this.updateDateSet}/>
-                                <Card className="mt-2 mb-2" style={{overflow: "visible"}}>
-                                    <CardContent>
-                                        <FileComp uploadFileCallback={this.updateFeatures}
-                                                  renderGeoJSON={this.renderGeoJSON}/>
-                                    </CardContent>
-                                </Card>
-                                <Card className="mt-2 mb-2" style={{overflow: "visible"}}>
-                                    <CardContent>
-                                        <Select
-                                            id="backend"
-                                            value={this.state.selectedBackend}
-                                            placeholder={"Choose Backend..."}
-                                            onChange={this.handleSelectBackend}
-                                            options={backends}
-                                        />
-                                    </CardContent>
-                                </Card>
-                                <div className={"row m-2"}>
-                                    <Fab variant="extended" color={"primary"} className={"mt-auto"}
-                                         onClick={this.postJsonToServer}>
-                                        <SendIcon className={"mr-2"}/>Process
-                                    </Fab>
-                                </div>
-                            </Paper>
-                            <main className={"col-9 p-0"}>
+                            <main className={"col-12 p-0"}>
                                 <Map ref={this.child} selectDateSet={this.state.selectDateSet}
-                                     drawCallback={this.updateFeatures} filterProd={this.filterProducts}/>
+                                     drawCallback={this.updateFeatures} filterProd={this.filterProducts}
+                                     uploadFileCallback={this.updateFeatures}/>
                             </main>
-
+                            <div className="sidebar-sticky ml-0 col-3 p-2">
+                                <Card className="m-0 p-0" style={{overflow: "visible"}}>
+                                    <CardContent>
+                                        <UserInputComp
+                                            updateUserInputs={this.updateUserInputs}
+                                            products={this.state.products}
+                                            updateDateSet={this.updateDateSet}/>
+                                        <DataSetComp selectDateSet={this.state.selectDateSet}
+                                                     updateDateSet={this.updateDateSet}
+                                                     updateUserInputs={this.updateUserInputs}/>
+                                        <div className={"row mr-2"}>
+                                            <Select className={"col-7"}
+                                                    id="backend"
+                                                    value={this.state.selectedBackend}
+                                                    placeholder={"Choose Backend..."}
+                                                    onChange={this.handleSelectBackend}
+                                                    options={backends}/>
+                                            <Fab variant="extended" color={"primary"} className={"ml-auto mt-auto"}
+                                                 onClick={this.postJsonToServer}
+                                                 disabled={this.state.selectDateSet == null}>
+                                                <SendIcon className={"mr-2"}/>Process
+                                            </Fab>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                             <Login showLoginModal={this.state.showLoginModal}
                                    onLogin={(email, password) => this.login(email, password)}
                                    onResetPassword={(email) => this.resetPassword(email)}

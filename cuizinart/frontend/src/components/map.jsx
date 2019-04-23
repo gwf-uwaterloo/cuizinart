@@ -1,9 +1,11 @@
-import React, { Component } from 'react';
-import { Map, TileLayer, Marker, Rectangle, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
-import { EditControl } from "react-leaflet-draw"
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import React, {Component} from 'react';
+import {Map, TileLayer, FeatureGroup, Tooltip, Polygon} from 'react-leaflet';
+import {EditControl} from "react-leaflet-draw"
 import L from 'leaflet';
+import shp from "shpjs";
+import PropTypes from "prop-types";
+import {SnackbarProvider, withSnackbar} from "notistack";
+import file_icon from "../baseline-folder-24px.svg"
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -12,10 +14,6 @@ L.Icon.Default.mergeOptions({
     iconUrl: require('leaflet/dist/images/marker-icon.png'),
     shadowUrl: require('leaflet/dist/images/marker-shadow.png')
 });
-// let DefaultIcon = L.icon({
-//     iconUrl: icon,
-//     shadowUrl: iconShadow
-// });
 
 //L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -23,8 +21,7 @@ const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright"
 const zoomLevel = 4;
 let mapCenter = [43.4643, -80.5204];
 
-
-export default class MapComp extends Component {
+class MapComp extends Component {
     constructor(props) {
         super(props);
         this.geojsonLayers = [];
@@ -40,6 +37,101 @@ export default class MapComp extends Component {
             const updatedZoomLevel = leafletMap.getZoom();
             this.handleZoomLevelChange(updatedZoomLevel);
         });
+
+        let self = this;
+        leafletMap.removeControl(leafletMap.zoomControl);
+        L.control.zoom({position: 'bottomright'}).addTo(leafletMap);
+        let fileControl = L.control({position: 'topright'});
+        fileControl.onAdd = function (map) {
+            let controlContainer = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            controlContainer.style.backgroundColor = 'white';
+            controlContainer.style.backgroundSize = "20px 20px";
+            controlContainer.style.backgroundRepeat = "no-repeat";
+            controlContainer.style.backgroundPosition = '50%';
+            controlContainer.style.width = '34px';
+            controlContainer.style.height = '34px';
+            controlContainer.style.backgroundImage = "url(" + file_icon + ")";
+            controlContainer.style.cursor = 'pointer';
+
+            controlContainer.onclick = function () {
+                self.fileInput.click();
+            }
+            return controlContainer;
+        }
+        fileControl.addTo(leafletMap);
+    }
+
+    handleSelectedFile = (event) => {
+        let self = this;
+        let geoJson = null;
+        try {
+            if (event.target.files[0].name.endsWith(".zip")) {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    shp(reader.result).then(function (geojson) {
+                        let features = self.parseGeoJson(geojson.features);
+                        self.renderGeoJson(features);
+                        self.props.uploadFileCallback(features);
+                    });
+                };
+                reader.readAsArrayBuffer(event.target.files[0]);
+            } else {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    geoJson = JSON.parse(reader.result);
+                    let features = self.parseGeoJson(geoJson.features);
+                    self.renderGeoJson(features);
+                    self.props.drawCallback(features);
+                };
+                reader.readAsText(event.target.files[0]);
+            }
+        } catch (error) {
+            self.props.enqueueSnackbar('Parsing file error', {variant: 'error'});
+        }
+    };
+
+    parseGeoJson(features) {
+        let featureList = [];
+        features.forEach(function (feature) {
+            if (feature["geometry"]["type"] === "Polygon") {
+                feature["geometry"]["coordinates"].forEach(function (coord) {
+                    coord.forEach(function (c) {
+                        if (c[0] > 180) {
+                            c[0] -= 360;
+                        }
+                    });
+                });
+                featureList.push(feature);
+            } else if (feature["geometry"]["type"] === "MultiPolygon") {
+                feature["geometry"]["coordinates"].forEach(function (polygon) {
+                    polygon.forEach(function (coord) {
+                        coord.forEach(function (c) {
+                            if (c[0] > 180) {
+                                c[0] -= 360;
+                            }
+                        });
+                    });
+                });
+                featureList.push(feature);
+            } else if (feature["geometry"]["type"] === "Point") {
+                let coord = feature["geometry"]["coordinates"];
+                if (coord[0] > 180) {
+                    coord[0] -= 360;
+                }
+                featureList.push(feature);
+            } else if (feature["geometry"]["type"] === "MultiPolygon") {
+                let coord = feature["geometry"]["coordinates"];
+                coord.forEach(function (c) {
+                    c.forEach(function (m) {
+                        if (m[0] > 180) {
+                            m[0] -= 360;
+                        }
+                    });
+                });
+                featureList.push(feature);
+            }
+        });
+        return featureList;
     }
 
     renderGeoJson(features) {
@@ -60,15 +152,14 @@ export default class MapComp extends Component {
     }
 
     handleZoomLevelChange(newZoomLevel) {
-        this.setState({ currentZoomLevel: newZoomLevel });
+        this.setState({currentZoomLevel: newZoomLevel});
     }
 
     callbackUpdate() {
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
-        if(this.props.selectDateSet){
+        if (this.props.selectDateSet) {
             this.props.drawCallback(geojsonData.features);
-        }
-        else{
+        } else {
             this.props.filterProd(geojsonData.features);
             this.props.drawCallback(geojsonData.features);
         }
@@ -77,7 +168,7 @@ export default class MapComp extends Component {
     _onEdited = (e) => {
 
         let numEdited = 0;
-        e.layers.eachLayer( (layer) => {
+        e.layers.eachLayer((layer) => {
             numEdited += 1;
         });
         //console.log(`_onEdited: edited ${numEdited} layers`, e);
@@ -94,9 +185,8 @@ export default class MapComp extends Component {
         let layer = e.layer;
         if (type === 'marker') {
             // Do marker specific actions
-           // console.log("_onCreated: marker created", e);
-        }
-        else {
+            // console.log("_onCreated: marker created", e);
+        } else {
             //console.log("_onCreated: something else created:", type, e);
         }
         // Do whatever else you need to. (save to db; etc)
@@ -143,45 +233,59 @@ export default class MapComp extends Component {
     render() {
         let d = this.props.selectDateSet;
         return (
-            <div>
-                <Map id={"map"}
-                    ref={m => { this.leafletMap = m; }}
-                    center={mapCenter}
-                    zoom={zoomLevel}
-                >
-                    <TileLayer
-                        attribution={stamenTonerAttr}
-                        url={stamenTonerTiles}
-                    />
-
-                    {
-                        d && d.bbox ?
-                            <Polygon positions={d.bbox} color={d.color}>
-                                <Tooltip sticky>{d.label}</Tooltip>
-                            </Polygon>
-                            : ""
-                    }
-
-
-                    <FeatureGroup ref={ (reactFGref) => {this._onFeatureGroupReady(reactFGref);} }>
-                        <EditControl
-                            position='topright'
-                            onEdited={this._onEdited}
-                            onCreated={this._onCreated}
-                            onDeleted={this._onDeleted}
-                            draw={{
-                                rectangle: {
-                                    showArea: false
-                                },
-                                circle: false,
-                                marker: true,
-                                polyline: false,
-                                circlemarker: false
-                            }}
+            <SnackbarProvider maxSnack={3}>
+                <div>
+                    <Map id={"map"}
+                         ref={m => {
+                             this.leafletMap = m;
+                         }}
+                         center={mapCenter}
+                         zoom={zoomLevel}
+                    >
+                        <TileLayer
+                            attribution={stamenTonerAttr}
+                            url={stamenTonerTiles}
                         />
-                    </FeatureGroup>
-                </Map>
-            </div>
+
+                        {
+                            d && d.bbox ?
+                                <Polygon positions={d.bbox} color={d.color}>
+                                    <Tooltip sticky>{d.label}</Tooltip>
+                                </Polygon>
+                                : ""
+                        }
+
+
+                        <FeatureGroup ref={(reactFGref) => {
+                            this._onFeatureGroupReady(reactFGref);
+                        }}>
+                            <EditControl
+                                position='topright'
+                                onEdited={this._onEdited}
+                                onCreated={this._onCreated}
+                                onDeleted={this._onDeleted}
+                                draw={{
+                                    rectangle: {
+                                        showArea: false
+                                    },
+                                    circle: false,
+                                    marker: true,
+                                    polyline: false,
+                                    circlemarker: false
+                                }}
+                            />
+                        </FeatureGroup>
+                        <input style={{display: "none"}} ref={fileInput => this.fileInput = fileInput} type="file"
+                           onChange={this.handleSelectedFile}/>
+                    </Map>
+                </div>
+            </SnackbarProvider>
         );
     }
 }
+
+MapComp.propTypes = {
+    enqueueSnackbar: PropTypes.func.isRequired,
+};
+
+export default withSnackbar(MapComp);
