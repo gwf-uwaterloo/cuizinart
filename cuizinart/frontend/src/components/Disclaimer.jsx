@@ -6,9 +6,6 @@ import Card from "@material-ui/core/Card";
 import LoaderButton from "./LoaderButton";
 
 export default class Disclaimer extends Component {
-    constructor(props) {
-        super(props);
-    }
 
     render() {
         return (

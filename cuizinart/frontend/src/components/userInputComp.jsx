@@ -6,10 +6,6 @@ import Select from 'react-select';
  */
 
 export default class UserInputComp extends Component {
-    constructor(props) {
-        super(props);
-    }
-
     state = {
         selectedProduct: null
     };

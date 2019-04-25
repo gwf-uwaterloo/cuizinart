@@ -453,15 +453,15 @@ class CuizinartApp extends Component {
                     <AppBar position={"sticky"} color={"primary"}>
                         <Toolbar className={"p-0"}>
                             <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
-                                <img className="img-right" src={GWF_logo}/>
+                                <img className="img-right" src={GWF_logo} alt="GWF logo"/>
                             </IconButton>
                             <Typography className={"mr-auto"} variant="h6" color="inherit" noWrap>GWF
                                 Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
-                                                                                      src={logo_uw_horizontal}/></a>
-                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask}/></a>
+                                                                                      src={logo_uw_horizontal} alt="UW logo"/></a>
+                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask} alt="USask logo"/></a>
                             <a href="https://github.com/gwf-uwaterloo/cuizinart"><img className="img-right mr-sm-4"
-                                                                                      src={github_logo}/></a>
+                                                                                      src={github_logo} alt="Github logo"/></a>
                             {!this.state.isLoggedIn &&
                             <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.toggleLoginModal}>Login</Button>}
@@ -506,8 +506,8 @@ class CuizinartApp extends Component {
                                                 <SendIcon className={"mr-2"}/>Process
                                             </Fab>
                                         </div>
-                                        <div className={"row justify-content-end m-2"}>
-                                            <small><a href="#" onClick={this.toggleDisclaimerModal}>Disclaimer & Privacy Notice</a></small>
+                                        <div className={"row justify-content-end mr-2 mt-2"}>
+                                            <Button size="small" href="#" onClick={this.toggleDisclaimerModal}>Disclaimer & Privacy Notice</Button>
                                         </div>
                                     </CardContent>
                                 </Card>

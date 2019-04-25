@@ -16,10 +16,6 @@ export default class SideBar extends Component {
         endDate: null
     };
 
-    constructor(props) {
-        super(props);
-    }
-
     handleCheckbox(property, key, event) {
         let curr = _.assign({}, this.props.selectDateSet);
         let variable = curr[property].find(function (v) {
@@ -47,7 +43,7 @@ export default class SideBar extends Component {
 
     handleInvalidDate = (date) => {
         if (this.props.selectDateSet) {
-            if (moment(date).isBefore(this.props.selectDateSet.valid_start_time) || moment(date).isAfter(this.props.selectDateSet.valid_end_time)) {
+            if (date.isBefore(this.props.selectDateSet.valid_start_time) || date.isAfter(this.props.selectDateSet.valid_end_time)) {
                 return true;
             }
         }
@@ -68,6 +64,7 @@ export default class SideBar extends Component {
                                         <InlineDatePicker
                                             emptyLabel={"Start date"}
                                             label="Start date"
+                                            initialFocusedDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
                                             value={this.state.startDate}
                                             onChange={(date) => this.updateStartDate(date)}
                                             variant="outlined"
@@ -79,6 +76,7 @@ export default class SideBar extends Component {
                                         <InlineDatePicker
                                             emptyLabel={"End date"}
                                             label="End date"
+                                            initialFocusedDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
                                             value={this.state.endDate}
                                             onChange={(date) => this.updateEndDate(date)}
                                             variant="outlined"
@@ -92,25 +90,25 @@ export default class SideBar extends Component {
                             <h5 className={"mt-3"}><span className="label label-default">Variables: </span></h5>
                             <FormGroup key={`div-${shortid.generate()}`}>
                                 {d.vars.map(va =>
-                                    <FormControlLabel control={
+                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
                                         <Checkbox checked={va.selected}
                                                   onChange={(e) => this.handleCheckbox('vars', va.key, e)}/>
                                     } label={va["key"] + ": " + va["description"]}/>
                                 )}
                             </FormGroup>
                             <h5 className="mt-3"><span className="label label-default">Forecast Windows: </span></h5>
-                            <FormGroup key={`div-${shortid.generate()}`} row={true}>
+                            <FormGroup row={true}>
                                 {d.horizons.map(va =>
-                                    <FormControlLabel control={
+                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
                                         <Checkbox checked={va.selected}
                                                   onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
                                     } label={va["description"]}/>
                                 )}
                             </FormGroup>
                             <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
-                            <FormGroup key={`div-${shortid.generate()}`} row={true}>
+                            <FormGroup row={true}>
                                 {d.issues.map(va =>
-                                    <FormControlLabel control={
+                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
                                         <Checkbox checked={va.selected}
                                                   onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
                                     } label={va["description"]}/>
