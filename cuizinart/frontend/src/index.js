@@ -29,6 +29,9 @@ import SendIcon from "@material-ui/icons/Send"
 import {SnackbarProvider, withSnackbar} from 'notistack';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import PropTypes from 'prop-types';
+import Paper from "@material-ui/core/Paper";
+import ArrowLeftIcon from "@material-ui/icons/ArrowLeft";
+import ArrowRightIcon from "@material-ui/icons/ArrowRight";
 
 const backends = [
     {value: 'slurm', label: 'Graham'},
@@ -64,7 +67,8 @@ class CuizinartApp extends Component {
         selectDateSet: null,
         products: [],
         selectedBackend: null,
-        globusId: ''
+        globusId: '',
+        sidebarOpen: true
     };
 
     constructor(props) {
@@ -76,7 +80,8 @@ class CuizinartApp extends Component {
 
     componentDidMount() {
         let self = this;
-        this.setState({isLoggedIn: this.getAuthToken() != null});
+        let authToken = this.getAuthToken();
+        this.setState({isLoggedIn: authToken != null});
         let products = [];
         axios.get('/getBoundaries')
             .then(res => {
@@ -86,6 +91,9 @@ class CuizinartApp extends Component {
                 }
                 self.setState({products: products});
             });
+        if (authToken != null) {
+            this.getGlobusId();
+        }
     }
 
     formalizeProducts = (prods) => {
@@ -231,7 +239,7 @@ class CuizinartApp extends Component {
                     self.props.enqueueSnackbar(response.data, {variant: 'success'});
                 })
                 .catch(function (error) {
-                    self.props.enqueueSnackbar(error.message, {variant: 'error'});
+                    self.errorHandling(error);
                 });
 
         } else {
@@ -257,10 +265,13 @@ class CuizinartApp extends Component {
 
     errorHandling = (error) => {
         let message = '';
-        if (error.response && error.response.data && error.response.data.response
-            && error.response.data.response.errors) {
-            let err = error.response.data.response.errors;
-            message = err[Object.keys(err)[0]][0];
+        if (error.response && error.response.data) {
+            if (error.response.data.message) {
+                message = error.response.data.message;
+            } else if (error.response.data.response && error.response.data.response.errors) {
+                let err = error.response.data.response.errors;
+                message = err[Object.keys(err)[0]][0];
+            }
         } else {
             message = error.message;
         }
@@ -296,7 +307,7 @@ class CuizinartApp extends Component {
         axios.get('/logout')
             .then(function (response) {
                 localStorage.removeItem('auth_token');
-                self.setState({isLoggedIn: false});
+                self.setState({isLoggedIn: false, globusId: ''});
             })
             .catch(function (error) {
                 self.errorHandling(error);
@@ -349,6 +360,9 @@ class CuizinartApp extends Component {
 
     getGlobusId = () => {
         let self = this;
+        if (this.state.globusId != null && this.state.globusId !== '') {
+            return this.state.globusId;
+        }
         this.setState({isLoading: true});
         axios.post('/getUserInfo', {'auth_token': this.getAuthToken()})
             .then(function (response) {
@@ -380,6 +394,14 @@ class CuizinartApp extends Component {
                 self.errorHandling(error);
             })
             .finally(() => this.setState({isLoading: false}));
+    }
+
+    toggleSidebar = () => {
+        if (this.state.sidebarOpen) {
+            this.setState({sidebarOpen: false});
+        } else {
+            this.setState({sidebarOpen: true});
+        }
     }
 
     render() {
@@ -418,7 +440,8 @@ class CuizinartApp extends Component {
                                      drawCallback={this.updateFeatures} filterProd={this.filterProducts}
                                      uploadFileCallback={this.updateFeatures}/>
                             </main>
-                            <div className="sidebar-sticky ml-0 col-3 p-2">
+                            <div className="sidebar-sticky ml-0 col-3 p-2"
+                                 style={{display: this.state.sidebarOpen ? "" : "none"}}>
                                 <Card className="m-0 p-0" style={{overflow: "visible"}}>
                                     <CardContent>
                                         <UserInputComp
@@ -444,6 +467,9 @@ class CuizinartApp extends Component {
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            <Paper className={"col-1 closeSidebar"} onClick={this.toggleSidebar}>
+                                {this.state.sidebarOpen ? <ArrowLeftIcon/>:<ArrowRightIcon/>}</Paper>
                             <Login showLoginModal={this.state.showLoginModal}
                                    onLogin={(email, password) => this.login(email, password)}
                                    onResetPassword={(email) => this.resetPassword(email)}

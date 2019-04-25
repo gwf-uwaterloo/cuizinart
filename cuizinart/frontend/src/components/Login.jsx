@@ -43,16 +43,22 @@ export default class Login extends Component {
         } else {
             this.props.onResetPassword(this.state.email);
         }
+        this.setState({email: "", password: "", forgotPassword: false});
     }
 
     forgotPassword = () => {
-        this.setState({forgotPassword: !this.state.forgotPassword});
+        this.setState({forgotPassword: !this.state.forgotPassword, password: ""});
+    }
+
+    onClose = () => {
+        this.setState({email: "", password: "", forgotPassword: false});
+        this.props.onClose();
     }
 
     render() {
         return (
             <div className="Login">
-                <Modal show={this.props.showLoginModal} onHide={this.props.onClose}>
+                <Modal show={this.props.showLoginModal} onHide={this.onClose}>
                     <Modal.Header closeButton>
                         <Modal.Title>Login</Modal.Title>
                     </Modal.Header>
@@ -96,7 +102,7 @@ export default class Login extends Component {
                                                   loadingText="Loading…"/>}
                                 </div>
                                 <div className="col-3">
-                                    <Button onClick={this.props.onClose}>Close</Button>
+                                    <Button onClick={this.onClose}>Close</Button>
                                 </div>
                             </div>
                         </form>

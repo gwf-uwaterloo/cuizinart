@@ -105,7 +105,7 @@ def fetch_result():
 
         json_request['globus_id'] = user.globus_id
         if user.globus_id is None or user.globus_id == '':
-            return '{message: "Please provide your Globus id in the settings"}', 400
+            return jsonify({'message': 'Please provide your Globus id in the profile settings'}), 400
 
         request_db_entry.backend = BACKEND_SLURM
         result = process_slurm(json_request)
@@ -115,7 +115,7 @@ def fetch_result():
                                issues)
     else:
         request_db_entry.request_status = 'Unknown Backend'
-        result = '{message: "Unknown Backend {}"}'.format(backend), 400
+        result = jsonify({'message': 'Unknown Backend {}'.format(backend)}), 400
 
     db.session.add(request_db_entry)
     db.session.commit()
@@ -162,7 +162,7 @@ def report_job_result():
         send_notification_email(request_user_email, subject, message)
     except:
         logger.info(traceback.format_exc())
-        return '{message: "Error when sending notification email"}', 500
+        return jsonify({'message': 'Error when sending notification email'}), 500
 
     return '{message: "Success"}'
 
@@ -196,11 +196,14 @@ def process_pyspark(request_id, user_email, product, geojson, start_time, end_ti
                'start_time': start_time, 'end_time': end_time, 'request_vars': variables, 'horizons': horizons,
                'issues': issues}
 
-    r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
+    try:
+        r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
+    except Exception:
+        return jsonify({'message': 'Could not access PySpark backend'}), 400
 
     if r.status_code != requests.codes.ok:
         logger.error(r.status_code, r.text)
-        return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
+        return jsonify({'message': 'Server Error: "{}, {}"'.format(r.status_code, r.text)}), 400
 
     return 'Request with id {} submitted successfully.'.format(request_id)
 
