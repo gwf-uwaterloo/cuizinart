@@ -135,6 +135,7 @@ class User(db.Model, UserMixin):
     globus_id = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
+    agreed_disclaimer_at = db.Column(db.DateTime())
 
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
     requests = db.relationship('Request', backref='user', lazy=True)

@@ -32,6 +32,7 @@ import PropTypes from 'prop-types';
 import Paper from "@material-ui/core/Paper";
 import ArrowLeftIcon from "@material-ui/icons/ArrowLeft";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
+import Disclaimer from "./components/Disclaimer"
 
 const backends = [
     {value: 'slurm', label: 'Graham'},
@@ -62,12 +63,14 @@ class CuizinartApp extends Component {
     state = {
         showLoginModal: false,
         showSettingsModal: false,
+        showDisclaimerModal: false,
         isLoading: false,
         isLoggedIn: false,
         selectDateSet: null,
         products: [],
         selectedBackend: null,
         globusId: '',
+        agreedToDisclaimer: false,
         sidebarOpen: true
     };
 
@@ -92,7 +95,7 @@ class CuizinartApp extends Component {
                 self.setState({products: products});
             });
         if (authToken != null) {
-            this.getGlobusId();
+            this.getUserInfo();
         }
     }
 
@@ -170,6 +173,13 @@ class CuizinartApp extends Component {
         if (self.getAuthToken() == null) {
             self.props.enqueueSnackbar('Please log in before processing.', {variant: 'error'});
             this.toggleLoginModal();
+            return;
+        }
+
+        if (!self.state.agreedToDisclaimer) {
+            self.props.enqueueSnackbar('Please agree to the disclaimer and privacy notice before processing.',
+                {variant: 'error'});
+            this.toggleDisclaimerModal();
             return;
         }
 
@@ -263,6 +273,10 @@ class CuizinartApp extends Component {
         this.setState({showSettingsModal: !this.state.showSettingsModal});
     }
 
+    toggleDisclaimerModal = () => {
+        this.setState({showDisclaimerModal: !this.state.showDisclaimerModal});
+    }
+
     errorHandling = (error) => {
         let message = '';
         if (error.response && error.response.data) {
@@ -297,7 +311,7 @@ class CuizinartApp extends Component {
             .finally(() => {
                 self.setState({isLoading: false});
                 if (self.getAuthToken() != null) {
-                    self.getGlobusId();
+                    self.getUserInfo();
                 }
             });
     };
@@ -358,7 +372,7 @@ class CuizinartApp extends Component {
         return localStorage.getItem('auth_token');
     }
 
-    getGlobusId = () => {
+    getUserInfo = () => {
         let self = this;
         if (this.state.globusId != null && this.state.globusId !== '') {
             return this.state.globusId;
@@ -370,6 +384,7 @@ class CuizinartApp extends Component {
                     self.props.enqueueSnackbar("Error retrieving user information!", {variant: 'error'});
                 } else {
                     self.setState({globusId: response.data.globusId});
+                    self.setState({agreedToDisclaimer: response.data.agreedToDisclaimer});
                 }
             })
             .catch(function (error) {
@@ -402,6 +417,33 @@ class CuizinartApp extends Component {
         } else {
             this.setState({sidebarOpen: true});
         }
+    }
+
+    agreeDisclaimer = () => {
+        let self = this;
+        if (!this.state.isLoggedIn) {
+            self.props.enqueueSnackbar("Please Log in to your account first.", {variant: 'error'});
+            return;
+        }
+        if (this.state.agreedToDisclaimer) {
+            self.props.enqueueSnackbar("You already agreed to the disclaimer.", {variant: 'info'});
+            return;
+        }
+        this.setState({isLoading: true});
+        axios.post('/setUserInfo', {'agreedToDisclaimer': true, 'auth_token': this.getAuthToken()})
+            .then(function (response) {
+                if (response.data.length === 0) {
+                    self.props.enqueueSnackbar("Error updating user information!", {variant: 'error'});
+                } else {
+                    self.setState({agreedToDisclaimer: true});
+                    self.props.enqueueSnackbar("Updated user information successfully.", {variant: 'success'});
+                    self.toggleDisclaimerModal();
+                }
+            })
+            .catch(function (error) {
+                self.errorHandling(error);
+            })
+            .finally(() => this.setState({isLoading: false}));
     }
 
     render() {
@@ -464,12 +506,15 @@ class CuizinartApp extends Component {
                                                 <SendIcon className={"mr-2"}/>Process
                                             </Fab>
                                         </div>
+                                        <div className={"row justify-content-end m-2"}>
+                                            <small><a href="#" onClick={this.toggleDisclaimerModal}>Disclaimer & Privacy Notice</a></small>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
 
                             <Paper className={"col-1 closeSidebar"} onClick={this.toggleSidebar}>
-                                {this.state.sidebarOpen ? <ArrowLeftIcon/>:<ArrowRightIcon/>}</Paper>
+                                {this.state.sidebarOpen ? <ArrowLeftIcon/> : <ArrowRightIcon/>}</Paper>
                             <Login showLoginModal={this.state.showLoginModal}
                                    onLogin={(email, password) => this.login(email, password)}
                                    onResetPassword={(email) => this.resetPassword(email)}
@@ -479,6 +524,9 @@ class CuizinartApp extends Component {
                                       onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}
                                       globusId={this.state.globusId}
                                       onChangeGlobusId={(globusId) => this.changeGlobusId(globusId)}/>
+                            <Disclaimer showDisclaimerModal={this.state.showDisclaimerModal}
+                                        hasAgreed={this.state.agreedToDisclaimer} isLoading={this.state.isLoading}
+                                        agreeDisclaimer={this.agreeDisclaimer} onClose={this.toggleDisclaimerModal}/>
                         </div>
                     </div>
                 </MuiThemeProvider>

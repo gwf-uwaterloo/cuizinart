@@ -4,6 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
+from datetime import datetime
 from email.message import EmailMessage
 
 import flask_login
@@ -92,6 +93,9 @@ def fetch_result():
     logger.info(json_request)
 
     user = flask_login.current_user
+    if user.agreed_disclaimer_at is None:
+        return jsonify({'message': 'Please agree to the disclaimer and privacy notice first.'}), 401
+
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     request_id = '{}_{}'.format(user.email, int(time.time()))
@@ -171,17 +175,26 @@ def report_job_result():
 @auth_token_required
 def get_user_info():
     user = flask_login.current_user
-    return jsonify({'globusId': user.globus_id})
+    return jsonify({'globusId': user.globus_id, 'agreedToDisclaimer': (user.agreed_disclaimer_at is not None)})
 
 
 @app.route('/setUserInfo', methods=['POST'])
 @auth_token_required
 def set_user_info():
     user = flask_login.current_user
-    new_globus_id = request.get_json()['globusId']
+    request_json = request.get_json()
+    need_update = False
+    if 'globusId' in request_json:
+        new_globus_id = request_json['globusId']
+        if user.globus_id != new_globus_id:
+            user.globus_id = new_globus_id
+            need_update = True
+    if 'agreedToDisclaimer' in request_json and request_json['agreedToDisclaimer']:
+        agreement_timestamp = datetime.now()
+        user.agreed_disclaimer_at = agreement_timestamp
+        need_update = True
 
-    if user.globus_id != new_globus_id:
-        user.globus_id = new_globus_id
+    if need_update:
         db.session.add(user)
         db.session.commit()
 

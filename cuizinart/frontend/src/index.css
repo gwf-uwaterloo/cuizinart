@@ -38,3 +38,7 @@
 #map {
     height: calc(100vh - 64px);
  }
+
+.Disclaimer .modal-dialog {
+  max-width: 80%;
+}
