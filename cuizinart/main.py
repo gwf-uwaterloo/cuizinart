@@ -4,6 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
+from datetime import datetime
 from email.message import EmailMessage
 
 import flask_login
@@ -92,6 +93,9 @@ def fetch_result():
     logger.info(json_request)
 
     user = flask_login.current_user
+    if user.agreed_disclaimer_at is None:
+        return jsonify({'message': 'Please agree to the disclaimer and privacy notice first.'}), 401
+
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
     request_id = '{}_{}'.format(user.email, int(time.time()))
@@ -102,6 +106,11 @@ def fetch_result():
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
         json_request['user_email'] = user.email
+
+        json_request['globus_id'] = user.globus_id
+        if user.globus_id is None or user.globus_id == '':
+            return jsonify({'message': 'Please provide your Globus id in the profile settings'}), 400
+
         request_db_entry.backend = BACKEND_SLURM
         result = process_slurm(json_request)
     elif backend == BACKEND_PYSPARK:
@@ -110,7 +119,7 @@ def fetch_result():
                                issues)
     else:
         request_db_entry.request_status = 'Unknown Backend'
-        result = '{message: "Unknown Backend {}"}'.format(backend), 400
+        result = jsonify({'message': 'Unknown Backend {}'.format(backend)}), 400
 
     db.session.add(request_db_entry)
     db.session.commit()
@@ -157,7 +166,37 @@ def report_job_result():
         send_notification_email(request_user_email, subject, message)
     except:
         logger.info(traceback.format_exc())
-        return '{message: "Error when sending notification email"}', 500
+        return jsonify({'message': 'Error when sending notification email'}), 500
+
+    return '{message: "Success"}'
+
+
+@app.route('/getUserInfo', methods=['POST'])
+@auth_token_required
+def get_user_info():
+    user = flask_login.current_user
+    return jsonify({'globusId': user.globus_id, 'agreedToDisclaimer': (user.agreed_disclaimer_at is not None)})
+
+
+@app.route('/setUserInfo', methods=['POST'])
+@auth_token_required
+def set_user_info():
+    user = flask_login.current_user
+    request_json = request.get_json()
+    need_update = False
+    if 'globusId' in request_json:
+        new_globus_id = request_json['globusId']
+        if user.globus_id != new_globus_id:
+            user.globus_id = new_globus_id
+            need_update = True
+    if 'agreedToDisclaimer' in request_json and request_json['agreedToDisclaimer']:
+        agreement_timestamp = datetime.now()
+        user.agreed_disclaimer_at = agreement_timestamp
+        need_update = True
+
+    if need_update:
+        db.session.add(user)
+        db.session.commit()
 
     return '{message: "Success"}'
 
@@ -170,11 +209,14 @@ def process_pyspark(request_id, user_email, product, geojson, start_time, end_ti
                'start_time': start_time, 'end_time': end_time, 'request_vars': variables, 'horizons': horizons,
                'issues': issues}
 
-    r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
+    try:
+        r = requests.post('http://{}/process_query'.format(PYSPARK_URL), json=payload)
+    except Exception:
+        return jsonify({'message': 'Could not access PySpark backend'}), 400
 
     if r.status_code != requests.codes.ok:
         logger.error(r.status_code, r.text)
-        return '{{message: Server Error: "{}, {}"}}'.format(r.status_code, r.text), 400
+        return jsonify({'message': 'Server Error: "{}, {}"'.format(r.status_code, r.text)}), 400
 
     return 'Request with id {} submitted successfully.'.format(request_id)
 
@@ -185,7 +227,7 @@ def process_slurm(json_request):
     """
     request_string = str(json_request).replace("'", '"')
 
-    file_name = 'cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
+    file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
     with open(file_name, 'w') as f:
         f.write(request_string)

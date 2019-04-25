@@ -1,7 +1,8 @@
 import React, {Component} from "react";
-import {Form, FormGroup, FormControl, FormLabel, Button, Modal} from "react-bootstrap";
-import "./Settings.css";
+import {Modal} from "react-bootstrap";
 import LoaderButton from "./LoaderButton";
+import {CardContent, TextField} from "@material-ui/core";
+import Card from "@material-ui/core/Card";
 
 export default class Settings extends Component {
     constructor(props) {
@@ -10,11 +11,29 @@ export default class Settings extends Component {
         this.state = {
             password: "",
             oldPassword: "",
-            confirmPassword: ""
+            confirmPassword: "",
+            globusId: ""
         };
     }
 
-    validateForm() {
+    validateGlobusId = () => {
+        return (
+            this.state.globusId.length > 0
+        );
+    }
+
+    handleChangeGlobusClick = (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        if (form.checkValidity() === false) {
+            event.stopPropagation();
+            return;
+        }
+        this.props.onChangeGlobusId(this.state.globusId);
+
+    };
+
+    validateChangePassword = () => {
         return (
             this.state.oldPassword.length > 0 &&
             this.state.password.length > 0 &&
@@ -28,7 +47,7 @@ export default class Settings extends Component {
         });
     };
 
-    handleChangeClick = (event) => {
+    handleChangePasswordClick = (event) => {
         event.preventDefault();
         const form = event.currentTarget;
         if (form.checkValidity() === false) {
@@ -47,36 +66,77 @@ export default class Settings extends Component {
                         <Modal.Title>Settings</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form onSubmit={(e) => this.handleChangeClick(e)}>
-                            <FormGroup bssize="large" controlId="oldPassword">
-                                <FormLabel>Old Password</FormLabel>
-                                <FormControl
-                                    type="password"
-                                    onChange={this.handleChange}
-                                    value={this.state.oldPassword}
-                                />
-                            </FormGroup>
-                            <hr/>
-                            <FormGroup bssize="large" controlId="password">
-                                <FormLabel>New Password</FormLabel>
-                                <FormControl
-                                    type="password"
-                                    value={this.state.password}
-                                    onChange={this.handleChange}
-                                />
-                            </FormGroup>
-                            <FormGroup bssize="large" controlId="confirmPassword">
-                                <FormLabel>Confirm Password</FormLabel>
-                                <FormControl
-                                    type="password"
-                                    onChange={this.handleChange}
-                                    value={this.state.confirmPassword}
-                                />
-                            </FormGroup>
-                            <LoaderButton block bssize="large" disabled={!this.validateForm()} type="submit"
-                                          isLoading={this.props.isLoading} text="Change Password"
-                                          variant="primary" loadingText="Loading…"/>
-                        </Form>
+                        <Card className={"m-2"}>
+                            <CardContent>
+                                <form onSubmit={(e) => this.handleChangeGlobusClick(e)}>
+                                    <div className={"row m-2"}>
+                                        <TextField
+                                            fullWidth={true}
+                                            id={"globusId"}
+                                            variant="outlined"
+                                            label="Globus Id"
+                                            placeholder={"foobar@globusid.org"}
+                                            type="text"
+                                            onChange={this.handleChange}
+                                            defaultValue={this.props.globusId}
+                                        />
+                                    </div>
+                                    <div className="row">
+                                        <div className="col d-flex m-2 justify-content-end">
+                                            <LoaderButton disabled={!this.validateGlobusId()} type="submit"
+                                                          isLoading={this.props.isLoading} text="Change Globus Id"
+                                                          loadingText="Loading…"/>
+                                        </div>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                        <Card className={"m-2"}>
+                            <CardContent>
+                                <form onSubmit={(e) => this.handleChangePasswordClick(e)}>
+                                    <div className={"row m-2"}>
+                                        <TextField
+                                            fullWidth={true}
+                                            id={"oldPassword"}
+                                            variant="outlined"
+                                            label="Old password"
+                                            type="password"
+                                            onChange={this.handleChange}
+                                            value={this.state.oldPassword}
+                                        />
+                                    </div>
+                                    <div className={"row m-2"}>
+                                        <TextField
+                                            fullWidth={true}
+                                            id={"password"}
+                                            variant="outlined"
+                                            label="New password"
+                                            type="password"
+                                            value={this.state.password}
+                                            onChange={this.handleChange}
+                                        />
+                                    </div>
+                                    <div className={"row m-2"}>
+                                        <TextField
+                                            fullWidth={true}
+                                            id={"confirmPassword"}
+                                            variant="outlined"
+                                            label="Confirm password"
+                                            type="password"
+                                            onChange={this.handleChange}
+                                            value={this.state.confirmPassword}
+                                        />
+                                    </div>
+                                    <div className="row">
+                                        <div className="col d-flex m-2 justify-content-end">
+                                            <LoaderButton disabled={!this.validateChangePassword()} type="submit"
+                                                          isLoading={this.props.isLoading} text="Change Password"
+                                                          loadingText="Loading…"/>
+                                        </div>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
                     </Modal.Body>
                 </Modal>
             </div>

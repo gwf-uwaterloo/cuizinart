@@ -18,7 +18,7 @@ def configure_logging(log_file_path, log_level):
             'console': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'default',
-                'level': 'WARNING',
+                'level': log_level,
                 'stream': 'ext://sys.stdout'
             }
         },

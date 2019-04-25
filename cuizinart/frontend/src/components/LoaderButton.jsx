@@ -1,6 +1,7 @@
 import React from "react";
-import {Button, Spinner} from "react-bootstrap";
 import "./LoaderButton.css";
+import Button from "@material-ui/core/Button";
+import {CircularProgress} from "@material-ui/core";
 
 export default ({
         isLoading,
@@ -10,8 +11,9 @@ export default ({
         disabled = false,
         ...props
     }) =>
-    <Button className={`LoaderButton ${className}`} disabled={disabled || isLoading} {...props}>
-        {isLoading && <Spinner className="spinning" as="span" animation="border" size="sm" role="status"
-                               aria-hidden="true"/>}
+    <Button className={`LoaderButton ${className}`} variant="contained"
+            color="primary"
+            disabled={disabled || isLoading} {...props}>
+        {isLoading && <CircularProgress className={"spinning"} as="span" animation="border" size={24}/>}
         {!isLoading ? text : loadingText}
     </Button>;
