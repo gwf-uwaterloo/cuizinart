@@ -23,6 +23,12 @@ export default class Disclaimer extends Component {
                             <p>By using this web site, you agree to the <a
                                 href="https://gwf.usask.ca/documents/GWF_Data_Policy_March-4-2019-Final.pdf">GWF Data
                                 Policy</a>.</p>
+                            <p>
+                                The data provided on this web site has been obtained from a variety of sources and is
+                                provided as a public service by the University of Waterloo. It is provided by the
+                                University of Waterloo with an open license on an "AS IS" basis without any warranty or
+                                representation, express or implied, as to its accuracy or completeness.
+                            </p>
                             <h5>Disclaimer of Liability</h5>
                             <p>While we make every effort to ensure that its databases are error-free, errors do occur.
                                 We ask that you notify us immediately of any errors that you discover in our data.
