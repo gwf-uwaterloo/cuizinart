@@ -72,15 +72,22 @@ class MapComp extends Component {
                         let features = self.parseGeoJson(geojson.features);
                         self.renderGeoJson(features);
                         self.props.uploadFileCallback(features);
+                    }).catch(function (error) {
+                        self.props.enqueueSnackbar('Error reading shapefile', {variant: 'error'});
                     });
                 };
                 reader.readAsArrayBuffer(event.target.files[0]);
             } else {
                 let reader = new FileReader();
+                let features = null;
                 reader.onload = function (e) {
-                    geoJson = JSON.parse(reader.result);
-                    let features = self.parseGeoJson(geoJson.features);
-                    self.renderGeoJson(features);
+                    try {
+                        geoJson = JSON.parse(reader.result);
+                        features = self.parseGeoJson(geoJson.features);
+                        self.renderGeoJson(features);
+                    } catch (e) {
+                        self.props.enqueueSnackbar('Parsing file error', {variant: 'error'});
+                    }
                     self.props.drawCallback(features);
                 };
                 reader.readAsText(event.target.files[0]);
