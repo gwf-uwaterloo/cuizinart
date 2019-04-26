@@ -23,6 +23,7 @@ BACKEND=pyspark
 PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001
 SSH_USER_NAME=<graham_user>
 SSH_KEYFILE_PATH=<path_to_keyfile>
+SSH_KNOWN_HOSTS_PATH=<path_to_file>
 
 POSTGRES_USER=<user>
 POSTGRES_PW=<pwd>

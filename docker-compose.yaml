@@ -45,6 +45,7 @@ services:
        - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
        - ${SSH_KEYFILE_PATH}:${SSH_KEYFILE_PATH}
+       - ${SSH_KNOWN_HOSTS_PATH}:/root/.ssh/known_hosts
 
   pyspark:
     build: ./cuizinart_pyspark
