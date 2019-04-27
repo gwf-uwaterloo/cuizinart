@@ -244,14 +244,15 @@ class CuizinartApp extends Component {
         passLoad = _.assign(passLoad, self.userInputs);
         //console.log(JSON.stringify(passLoad));
         if (window.confirm("Do you want to process?")) {
+            this.setState({isLoading: true});
             axios.post('/fetchResult', passLoad)
                 .then(function (response) {
                     self.props.enqueueSnackbar(response.data, {variant: 'success'});
                 })
                 .catch(function (error) {
                     self.errorHandling(error);
-                });
-
+                })
+                .finally(() => self.setState({isLoading: false}));
         } else {
             // cancel
         }
@@ -493,7 +494,7 @@ class CuizinartApp extends Component {
                                         <DataSetComp selectDateSet={this.state.selectDateSet}
                                                      updateDateSet={this.updateDateSet}
                                                      updateUserInputs={this.updateUserInputs}/>
-                                        <div className={"row mr-2"}>
+                                        <div className={"row mr-0"}>
                                             <Select className={"col-7"}
                                                     id="backend"
                                                     value={this.state.selectedBackend}
@@ -502,11 +503,11 @@ class CuizinartApp extends Component {
                                                     options={backends}/>
                                             <Fab variant="extended" color={"primary"} className={"ml-auto mt-auto"}
                                                  onClick={this.postJsonToServer}
-                                                 disabled={this.state.selectDateSet == null}>
+                                                 disabled={this.state.selectDateSet == null || this.state.isLoading}>
                                                 <SendIcon className={"mr-2"}/>Process
                                             </Fab>
                                         </div>
-                                        <div className={"row justify-content-end mr-2 mt-2"}>
+                                        <div className={"row justify-content-end mr-0 mt-2"}>
                                             <Button size="small" href="#" onClick={this.toggleDisclaimerModal}>Disclaimer & Privacy Notice</Button>
                                         </div>
                                     </CardContent>

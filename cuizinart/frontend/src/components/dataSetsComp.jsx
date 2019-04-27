@@ -8,12 +8,16 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import moment from 'moment';
 import {MuiPickersUtilsProvider} from "material-ui-pickers";
 import MomentUtils from "@date-io/moment";
+import Select from "react-select";
 
 
 export default class SideBar extends Component {
     state = {
         startDate: null,
-        endDate: null
+        endDate: null,
+        varInputValue: "",
+        menuIsOpen: undefined,
+        variables: []
     };
 
     handleCheckbox(property, key, event) {
@@ -50,73 +54,114 @@ export default class SideBar extends Component {
         return false;
     };
 
+    onInputChange = (inputValue, {action}) => {
+        switch (action) {
+            case 'input-change':
+                this.setState({varInputValue: inputValue});
+                return;
+            case 'menu-close':
+                let menuIsOpen = undefined;
+                if (this.state.varInputValue) {
+                    menuIsOpen = true;
+                }
+                this.setState({menuIsOpen: menuIsOpen});
+                return;
+            default:
+                return;
+        }
+    };
+
+    onVarChange = (selectedVars, {action}) => {
+        this.setState({variables: selectedVars});
+
+        let selectedKeys = selectedVars.map((v) => v.value);
+        let curr = _.assign({}, this.props.selectDateSet);
+        for (let i = 0; i < curr.vars.length; i++) {
+            curr["vars"][i]["selected"] = selectedKeys.includes(curr["vars"][i].key);
+        }
+        this.props.updateDateSet({selectDateSet: curr});
+    };
+
     render() {
         let d = this.props.selectDateSet;
         return (
             <div className="row m-0 mt-2 mb-2">
-                {
-                    d ?
-                        <div key={d.id} className="mt-2">
-                            <h5 className={"mb-3"}><span className="label label-default">Date Range:</span></h5>
-                            <MuiPickersUtilsProvider utils={MomentUtils}>
-                                <div className={"row m-0"}>
-                                    <div className={"col pr-1"}>
-                                        <InlineDatePicker
-                                            emptyLabel={"Start date"}
-                                            label="Start date"
-                                            initialFocusedDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
-                                            value={this.state.startDate}
-                                            onChange={(date) => this.updateStartDate(date)}
-                                            variant="outlined"
-                                            shouldDisableDate={(date) => this.handleInvalidDate(date)}
-                                            format={"YYYY-MM-DD"}
-                                        />
-                                    </div>
-                                    <div className={"col pl-1"}>
-                                        <InlineDatePicker
-                                            emptyLabel={"End date"}
-                                            label="End date"
-                                            initialFocusedDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
-                                            value={this.state.endDate}
-                                            onChange={(date) => this.updateEndDate(date)}
-                                            variant="outlined"
-                                            shouldDisableDate={(date) => this.handleInvalidDate(date)}
-                                            format={"YYYY-MM-DD"}
-                                        />
-                                    </div>
+                {d ?
+                    <div key={d.id} className="col p-0 mt-2">
+                        <h5 className={"mb-3"}><span className="label label-default">Date Range:</span></h5>
+                        <MuiPickersUtilsProvider utils={MomentUtils}>
+                            <div className={"row m-0"}>
+                                <div className={"col pr-1 pl-0"}>
+                                    <InlineDatePicker
+                                        emptyLabel={"Start date"}
+                                        label="Start date"
+                                        initialFocusedDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
+                                        value={this.state.startDate}
+                                        onChange={(date) => this.updateStartDate(date)}
+                                        variant="outlined"
+                                        shouldDisableDate={(date) => this.handleInvalidDate(date)}
+                                        format={"YYYY-MM-DD"}
+                                    />
                                 </div>
-                            </MuiPickersUtilsProvider>
+                                <div className={"col pl-1 pr-0"}>
+                                    <InlineDatePicker
+                                        emptyLabel={"End date"}
+                                        label="End date"
+                                        initialFocusedDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
+                                        value={this.state.endDate}
+                                        onChange={(date) => this.updateEndDate(date)}
+                                        variant="outlined"
+                                        shouldDisableDate={(date) => this.handleInvalidDate(date)}
+                                        format={"YYYY-MM-DD"}
+                                    />
+                                </div>
+                            </div>
+                        </MuiPickersUtilsProvider>
 
-                            <h5 className={"mt-3"}><span className="label label-default">Variables: </span></h5>
-                            <FormGroup key={`div-${shortid.generate()}`}>
-                                {d.vars.map(va =>
-                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
-                                        <Checkbox checked={va.selected}
-                                                  onChange={(e) => this.handleCheckbox('vars', va.key, e)}/>
-                                    } label={va["key"] + ": " + va["description"]}/>
-                                )}
-                            </FormGroup>
-                            <h5 className="mt-3"><span className="label label-default">Forecast Windows: </span></h5>
-                            <FormGroup row={true}>
-                                {d.horizons.map(va =>
-                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
-                                        <Checkbox checked={va.selected}
-                                                  onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
-                                    } label={va["description"]}/>
-                                )}
-                            </FormGroup>
-                            <h5 className="mt-3"><span className="label label-default">Forecast Issues: </span></h5>
-                            <FormGroup row={true}>
-                                {d.issues.map(va =>
-                                    <FormControlLabel key={`div-${shortid.generate()}`} control={
-                                        <Checkbox checked={va.selected}
-                                                  onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
-                                    } label={va["description"]}/>
-                                )}
-                            </FormGroup>
-
-                        </div>
-                        : <div></div>
+                        <h5 className={"mt-3"}><span className="label label-default">Variables: </span></h5>
+                        <Select className={"mb-3"}
+                                isMulti isClearable isSearchable
+                                inputValue={this.state.varInputValue}
+                                onInputChange={this.onInputChange}
+                                value={this.state.vars}
+                                onChange={this.onVarChange}
+                                name="variables"
+                                placeholder={"Select variables..."}
+                                options={d.vars.map((v) => {
+                                    return {value: v.key, label: v.key + ": " + v.description};
+                                })}
+                                hideSelectedOptions={false}
+                                menuIsOpen={this.state.menuIsOpen}
+                        />
+                        {(d.horizons.length > 0) ?
+                            <div>
+                                <h5 className={"mb-0"}><span className="label label-default">Forecast Windows: </span>
+                                </h5>
+                                < FormGroup row={true}>
+                                    {d.horizons.map(va =>
+                                        <FormControlLabel key={`div-${shortid.generate()}`} control={
+                                            <Checkbox checked={va.selected} className={"pr-1"}
+                                                      onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
+                                        } label={va["description"]}/>
+                                    )}
+                                </FormGroup>
+                            </div> : <div></div>
+                        }
+                        {(d.issues.length > 0) ?
+                            <div>
+                                <h5 className={"mb-0"}><span className="label label-default">Forecast Issues: </span>
+                                </h5>
+                                <FormGroup row={true}>
+                                    {d.issues.map(va =>
+                                        <FormControlLabel key={`div-${shortid.generate()}`} control={
+                                            <Checkbox checked={va.selected} className={"pr-1"}
+                                                      onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
+                                        } label={va["description"]}/>
+                                    )}
+                                </FormGroup>
+                            </div> : <div></div>
+                        }
+                    </div> : <div></div>
                 }
             </div>
         );
