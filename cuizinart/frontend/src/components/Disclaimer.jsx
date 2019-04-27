@@ -17,7 +17,7 @@ export default class Disclaimer extends Component {
                     <Card>
                         <CardContent>
                             <h3>Disclaimer</h3>
-                            <p>By using this web site, you agree to the <a
+                            <p>By using this web site you are agreeing to Appendix D of the <a target="_blank" rel="noopener noreferrer"
                                 href="https://gwf.usask.ca/documents/GWF_Data_Policy_March-4-2019-Final.pdf">GWF Data
                                 Policy</a>.</p>
                             <p>

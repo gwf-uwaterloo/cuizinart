@@ -23,7 +23,7 @@ export default class UserInputComp extends Component {
     render() {
         return (
             <form>
-                <div className={"mb-2 pr-2"}>
+                <div className={"mb-2"}>
                     <Select
                         isClearable={true}
                         id="product"

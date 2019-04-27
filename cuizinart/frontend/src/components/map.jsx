@@ -52,6 +52,7 @@ class MapComp extends Component {
             controlContainer.style.height = '34px';
             controlContainer.style.backgroundImage = "url(" + file_icon + ")";
             controlContainer.style.cursor = 'pointer';
+            controlContainer.title = "Upload shapefile or GeoJSON"
 
             controlContainer.onclick = function () {
                 self.fileInput.click();
