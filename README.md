@@ -1,6 +1,9 @@
 
 # GWF Cuizinart
 
+The Cuizinart is a cloud-based platform that provides an interactive portal for researchers to "slice and dice" large NetCDF datasets across the GWF program and beyond.
+The platform provides an easy-to-use interface similar to Google Maps: researchers select products and variables of interest, provide geographical bounds, and after a short wait, are delivered a custom dataset that meets their exact specifications.
+
 ## Setup
 
 ### Dependencies (if not using Docker)
