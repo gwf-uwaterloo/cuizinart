@@ -65,7 +65,6 @@ class CuizinartApp extends Component {
         showSettingsModal: false,
         showDisclaimerModal: false,
         isLoading: false,
-        isLoggedIn: false,
         selectDateSet: null,
         products: [],
         selectedBackend: null,
@@ -84,7 +83,6 @@ class CuizinartApp extends Component {
     componentDidMount() {
         let self = this;
         let authToken = this.getAuthToken();
-        this.setState({isLoggedIn: authToken != null});
         let products = [];
         axios.get('/getBoundaries')
             .then(res => {
@@ -170,7 +168,7 @@ class CuizinartApp extends Component {
         let horizons = new Set();
         let issues = new Set();
 
-        if (self.getAuthToken() == null) {
+        if (!self.isLoggedIn()) {
             self.props.enqueueSnackbar('Please log in before processing.', {variant: 'error'});
             this.toggleLoginModal();
             return;
@@ -280,7 +278,10 @@ class CuizinartApp extends Component {
 
     errorHandling = (error) => {
         let message = '';
-        if (error.response && error.response.data) {
+        if (error.response.status === 401) {
+            localStorage.removeItem('auth_token');
+            message = 'Authentication expired. Please log in again.'
+        } else if (error.response && error.response.data) {
             if (error.response.data.message) {
                 message = error.response.data.message;
             } else if (error.response.data.response && error.response.data.response.errors) {
@@ -311,22 +312,15 @@ class CuizinartApp extends Component {
             })
             .finally(() => {
                 self.setState({isLoading: false});
-                if (self.getAuthToken() != null) {
+                if (self.isLoggedIn()) {
                     self.getUserInfo();
                 }
             });
     };
 
     logout = () => {
-        let self = this;
-        axios.get('/logout')
-            .then(function (response) {
-                localStorage.removeItem('auth_token');
-                self.setState({isLoggedIn: false, globusId: ''});
-            })
-            .catch(function (error) {
-                self.errorHandling(error);
-            });
+        localStorage.removeItem('auth_token');
+        this.setState({globusId: ''});
     };
 
     changePassword = (email, oldPassword, password) => {
@@ -362,15 +356,14 @@ class CuizinartApp extends Component {
 
     setAuthToken = (token) => {
         localStorage.setItem('auth_token', token);
-        if (token != null) {
-            this.setState({isLoggedIn: true});
-        } else {
-            this.setState({isLoggedIn: false});
-        }
     }
 
     getAuthToken = () => {
         return localStorage.getItem('auth_token');
+    }
+
+    isLoggedIn = () => {
+        return this.getAuthToken() != null;
     }
 
     getUserInfo = () => {
@@ -422,7 +415,7 @@ class CuizinartApp extends Component {
 
     agreeDisclaimer = () => {
         let self = this;
-        if (!this.state.isLoggedIn) {
+        if (!this.isLoggedIn()) {
             self.props.enqueueSnackbar("Please Log in to your account first.", {variant: 'error'});
             return;
         }
@@ -459,17 +452,20 @@ class CuizinartApp extends Component {
                             <Typography className={"mr-auto"} variant="h6" color="inherit" noWrap>GWF
                                 Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
-                                                                                      src={logo_uw_horizontal} alt="UW logo"/></a>
-                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask} alt="USask logo"/></a>
+                                                                                      src={logo_uw_horizontal}
+                                                                                      alt="UW logo"/></a>
+                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask}
+                                                                 alt="USask logo"/></a>
                             <a href="https://github.com/gwf-uwaterloo/cuizinart"><img className="img-right mr-sm-4"
-                                                                                      src={github_logo} alt="Github logo"/></a>
-                            {!this.state.isLoggedIn &&
+                                                                                      src={github_logo}
+                                                                                      alt="Github logo"/></a>
+                            {!this.isLoggedIn() &&
                             <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.toggleLoginModal}>Login</Button>}
-                            {this.state.isLoggedIn &&
+                            {this.isLoggedIn() &&
                             <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.logout}>Logout</Button>}
-                            {this.state.isLoggedIn &&
+                            {this.isLoggedIn() &&
                             <IconButton className={"mr-2"} color="inherit" fontSize="large"
                                         onClick={this.toggleSettingsModal}>
                                 <AccountCircle/>
@@ -508,7 +504,8 @@ class CuizinartApp extends Component {
                                             </Fab>
                                         </div>
                                         <div className={"row justify-content-end mr-0 mt-2"}>
-                                            <Button size="small" href="#" onClick={this.toggleDisclaimerModal}>Disclaimer & Privacy Notice</Button>
+                                            <Button size="small" href="#" onClick={this.toggleDisclaimerModal}>Disclaimer
+                                                & Privacy Notice</Button>
                                         </div>
                                     </CardContent>
                                 </Card>
