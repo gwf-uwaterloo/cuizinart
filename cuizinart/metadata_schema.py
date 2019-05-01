@@ -26,6 +26,7 @@ class Product(db.Model):
     horizons = db.relationship('Horizon', backref='product', lazy=True)
     issues = db.relationship('Issue', backref='product', lazy=True)
     ncFiles = db.relationship('NCFile', backref='product', lazy=True)
+    requests = db.relationship('Request', backref='product', lazy=True)
 
     def __repr__(self):
         return '<Product {!r}>'.format(self.key)
@@ -103,6 +104,8 @@ class Request(db.Model):
     request_id = db.Column(db.Integer, primary_key=True)
     request_name = db.Column(db.String, nullable=False, unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
+    request_json = db.Column(db.JSON, nullable=False)
     request_status = db.Column(db.String)
     processing_time_s = db.Column(db.Integer)
     file_location = db.Column(db.String)
