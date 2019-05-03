@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_mail import Mail
 from flask_wtf import CSRFProtect
+from flask import g
+from flask.sessions import SecureCookieSessionInterface
+from flask_login import user_loaded_from_header
 
 import logging_config
 
@@ -55,3 +58,19 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = EMAIL_SMTP_USERNAME
 app.config['MAIL_PASSWORD'] = EMAIL_PASSWORD
 mail = Mail(app)
+
+
+# Do not set session cookie as we're using token-based authentication
+# https://flask-login.readthedocs.io/en/latest/#disabling-session-cookie-for-apis
+class CustomSessionInterface(SecureCookieSessionInterface):
+    """Prevent creating session from API requests."""
+    def save_session(self, *args, **kwargs):
+        return
+
+app.session_interface = CustomSessionInterface()
+
+@user_loaded_from_header.connect
+def user_loaded_from_header(self, user=None):
+    g.login_via_header = True
+
+app.config['SECURITY_TOKEN_MAX_AGE'] = 7*24*60*60  # 1 week
