@@ -101,7 +101,13 @@ def fetch_result():
     request_id = '{}_{}'.format(user.email, int(time.time()))
     if Request.query.filter_by(request_name=request_id).first() is not None:
         request_id = request_id + '-1'
-    request_db_entry = Request(request_name=request_id, user=user, request_status='Received')
+
+    product_entry = Product.query.filter_by(key=product).first()
+    if product_entry is None:
+        return jsonify({'message': 'Unknown product {}'.format(product)}), 400
+
+    request_db_entry = Request(request_name=request_id, user=user, request_status='Received', request_json=json_request,
+                               product_id=product_entry.product_id)
 
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
