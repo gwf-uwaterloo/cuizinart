@@ -281,6 +281,8 @@ class CuizinartApp extends Component {
         if (error.response.status === 401) {
             localStorage.removeItem('auth_token');
             message = 'Authentication expired. Please log in again.'
+        } else if (error.response.status === 413) {
+            message = 'Payload too large. Use a smaller shapefile or GeoJSON.'
         } else if (error.response && error.response.data) {
             if (error.response.data.message) {
                 message = error.response.data.message;
@@ -288,8 +290,14 @@ class CuizinartApp extends Component {
                 let err = error.response.data.response.errors;
                 message = err[Object.keys(err)[0]][0];
             }
-        } else {
-            message = error.message;
+        }
+        if (message === "") {
+            console.log(error);
+            if (error.message) {
+                message = error.message;
+            } else {
+                message = "Unknown error.";
+            }
         }
         this.props.enqueueSnackbar(message, {variant: 'error'});
     };
