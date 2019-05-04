@@ -46,6 +46,7 @@ services:
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
        - ${SSH_KEYFILE_PATH}:${SSH_KEYFILE_PATH}
        - ${SSH_KNOWN_HOSTS_PATH}:/root/.ssh/known_hosts
+       - ${DB_MIGRATIONS_FOLDER}:/migrations
 
   pyspark:
     build: ./cuizinart_pyspark
