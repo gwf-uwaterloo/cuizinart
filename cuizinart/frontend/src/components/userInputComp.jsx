@@ -1,6 +1,9 @@
 import React, {Component} from 'react';
 import "./userInputComp.css";
 import Select from 'react-select';
+import {Button} from "@material-ui/core";
+import OpenInNewIcon from "@material-ui/icons/OpenInNew";
+
 /*
     show date range picker, headers checkbox
  */
@@ -23,7 +26,7 @@ export default class UserInputComp extends Component {
     render() {
         return (
             <form>
-                <div className={"mb-2"}>
+                <div>
                     <Select
                         isClearable={true}
                         id="product"
@@ -33,6 +36,12 @@ export default class UserInputComp extends Component {
                         options={this.props.products}
                         className={'select-product'}
                     />
+                    {(this.state.selectedProduct != null && this.state.selectedProduct.doi != null) ?
+                        <div className={"row justify-content-end m-0"}>
+                            <Button size="small" href={this.state.selectedProduct.doi} target="_blank">
+                                View Metadata <OpenInNewIcon style={{height: "18px"}} className={"ml-1"}/>
+                            </Button>
+                        </div> : <div className={"mb-2"}></div>}
                 </div>
             </form>
 
