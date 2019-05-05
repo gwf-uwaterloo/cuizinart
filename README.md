@@ -32,6 +32,7 @@ POSTGRES_USER=<user>
 POSTGRES_PW=<pwd>
 POSTGRES_URL=postgres:5432  # if not using Docker, use localhost:5432
 POSTGRES_DB=cuizinart
+DB_MIGRATIONS_FOLDER=<path>  # only needed when using Docker (allows DB migrations across container builds) 
 
 EMAIL_SMTP_SERVER=<server>
 EMAIL_SMTP_PORT=465
