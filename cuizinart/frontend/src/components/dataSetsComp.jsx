@@ -32,22 +32,26 @@ export default class SideBar extends Component {
     }
 
     updateStartDate(date) {
+        let utcDate = moment.utc(date.valueOf() + date.utcOffset() * 60000);  // Ignore local timezone
         this.props.updateUserInputs({
-            start_time: date.format("YYYY-MM-DD")
+            start_time: utcDate.format("YYYY-MM-DD")
         });
-        this.setState({startDate: date});
+        this.setState({startDate: utcDate});
     }
 
     updateEndDate(date) {
+        let utcDate = moment.utc(date.valueOf() + date.utcOffset() * 60000);  // Ignore local timezone
         this.props.updateUserInputs({
-            end_time: date.format("YYYY-MM-DD")
+            end_time: utcDate.format("YYYY-MM-DD")
         });
-        this.setState({endDate: date});
+        this.setState({endDate: utcDate});
     }
 
     handleInvalidDate = (date) => {
+        let utcDate = moment.utc(date.valueOf() + date.utcOffset() * 60000);  // Ignore local timezone
         if (this.props.selectDateSet) {
-            if (date.isBefore(this.props.selectDateSet.valid_start_time) || date.isAfter(this.props.selectDateSet.valid_end_time)) {
+            if (utcDate.valueOf() < moment.utc(this.props.selectDateSet.valid_start_time).valueOf() ||
+                utcDate.valueOf() > moment.utc(this.props.selectDateSet.valid_end_time).valueOf()) {
                 return true;
             }
         }
@@ -87,15 +91,20 @@ export default class SideBar extends Component {
         return (
             <div className="row m-0 mb-2">
                 {d ?
-                    <div key={d.id} className="col p-0">
-                        <h5 className={"mb-3"}><span className="label label-default">Date Range:</span></h5>
+                    <div key={d.id} className="col p-0 mt-2">
+                        <div className={"row m-0 mb-3"}>
+                            <h5 className={"col-fluid p-0"}><span className="label label-default">Date Range:</span></h5>
+                            <small className={"col-fluid p-0 ml-auto align-self-center"}>
+                                (Available: {moment.utc(d.valid_start_time).format("YYYY-MM-DD")} &ndash; {moment.utc(d.valid_end_time).format("YYYY-MM-DD")})
+                            </small>
+                        </div>
                         <MuiPickersUtilsProvider utils={MomentUtils}>
                             <div className={"row m-0"}>
                                 <div className={"col pr-1 pl-0"}>
                                     <InlineDatePicker
                                         emptyLabel={"Start date"}
                                         label="Start date"
-                                        initialFocusedDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
+                                        initialFocusedDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
                                         value={this.state.startDate}
                                         onChange={(date) => this.updateStartDate(date)}
                                         variant="outlined"
@@ -107,7 +116,7 @@ export default class SideBar extends Component {
                                     <InlineDatePicker
                                         emptyLabel={"End date"}
                                         label="End date"
-                                        initialFocusedDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
+                                        initialFocusedDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
                                         value={this.state.endDate}
                                         onChange={(date) => this.updateEndDate(date)}
                                         variant="outlined"

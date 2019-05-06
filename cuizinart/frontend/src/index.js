@@ -220,8 +220,10 @@ class CuizinartApp extends Component {
             return;
         }
 
-        if (moment(self.userInputs.start_time).isBefore(self.state.selectDateSet.valid_start_time) || moment(self.userInputs.end_time).isAfter(self.state.selectDateSet.valid_end_time)) {
-            self.props.enqueueSnackbar('Valid time range is: ' + self.state.selectDateSet.valid_start_time + ' to ' + self.state.selectDateSet.valid_end_time, {variant: 'error'});
+        if (moment.utc(self.userInputs.start_time).isBefore(moment.utc(self.state.selectDateSet.valid_start_time)) ||
+            moment.utc(self.userInputs.end_time).isAfter(moment.utc(self.state.selectDateSet.valid_end_time))) {
+            self.props.enqueueSnackbar('Valid time range is: ' + self.state.selectDateSet.valid_start_time + ' to '
+                + self.state.selectDateSet.valid_end_time, {variant: 'error'});
             return;
         }
 
