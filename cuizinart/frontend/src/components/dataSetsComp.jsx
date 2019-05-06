@@ -85,9 +85,9 @@ export default class SideBar extends Component {
     render() {
         let d = this.props.selectDateSet;
         return (
-            <div className="row m-0 mt-2 mb-2">
+            <div className="row m-0 mb-2">
                 {d ?
-                    <div key={d.id} className="col p-0 mt-2">
+                    <div key={d.id} className="col p-0">
                         <h5 className={"mb-3"}><span className="label label-default">Date Range:</span></h5>
                         <MuiPickersUtilsProvider utils={MomentUtils}>
                             <div className={"row m-0"}>

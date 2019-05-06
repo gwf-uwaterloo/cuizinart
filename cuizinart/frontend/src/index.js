@@ -123,7 +123,8 @@ class CuizinartApp extends Component {
                 color: '#17a2b8',
                 bbox: coord,
                 valid_start_time: p.start_date,
-                valid_end_time: p.end_date
+                valid_end_time: p.end_date,
+                doi: p.doi
             };
             products.push(product);
         });
@@ -498,7 +499,7 @@ class CuizinartApp extends Component {
                                         <DataSetComp selectDateSet={this.state.selectDateSet}
                                                      updateDateSet={this.updateDateSet}
                                                      updateUserInputs={this.updateUserInputs}/>
-                                        <div className={"row mr-0"}>
+                                        <div className={"row mr-0 mt-2"}>
                                             <Select className={"col-7"}
                                                     id="backend"
                                                     value={this.state.selectedBackend}
