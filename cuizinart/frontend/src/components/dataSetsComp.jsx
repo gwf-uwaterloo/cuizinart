@@ -89,7 +89,7 @@ export default class SideBar extends Component {
     render() {
         let d = this.props.selectDateSet;
         return (
-            <div className="row m-0 mt-2 mb-2">
+            <div className="row m-0 mb-2">
                 {d ?
                     <div key={d.id} className="col p-0 mt-2">
                         <div className={"row m-0 mb-3"}>
