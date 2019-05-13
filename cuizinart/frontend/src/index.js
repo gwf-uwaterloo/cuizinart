@@ -15,10 +15,10 @@ import UserInputComp from "./components/userInputComp";
 import Login from "./components/Login";
 import {AppBar, Button, Card, CardContent, Toolbar} from '@material-ui/core';
 import Settings from "./components/Settings";
-import GWF_logo from "./GWF_logo.png";
-import logo_usask from "./logo_usask.png";
-import logo_uw_horizontal from "./logo_uw_horizontal.png";
-import github_logo from "./GitHub-Mark-32px.png";
+import GWF_logo from "./images/GWF_logo.png";
+import logo_usask from "./images/logo_usask.png";
+import logo_uw_horizontal from "./images/logo_uw_horizontal.png";
+import github_logo from "./images/GitHub-Mark-32px.png";
 import "./index.css";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
@@ -32,7 +32,9 @@ import PropTypes from 'prop-types';
 import Paper from "@material-ui/core/Paper";
 import ArrowLeftIcon from "@material-ui/icons/ArrowLeft";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
+import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
 import Disclaimer from "./components/Disclaimer"
+import About from "./components/About";
 
 const backends = [
     {value: 'slurm', label: 'Graham'},
@@ -64,6 +66,7 @@ class CuizinartApp extends Component {
         showLoginModal: false,
         showSettingsModal: false,
         showDisclaimerModal: false,
+        showAboutModal: false,
         isLoading: false,
         selectDateSet: null,
         products: [],
@@ -279,6 +282,10 @@ class CuizinartApp extends Component {
         this.setState({showDisclaimerModal: !this.state.showDisclaimerModal});
     }
 
+    toggleAboutModal = () => {
+        this.setState({showAboutModal: !this.state.showAboutModal});
+    }
+
     errorHandling = (error) => {
         let message = '';
         if (error.response.status === 401) {
@@ -477,10 +484,12 @@ class CuizinartApp extends Component {
                             <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.logout}>Logout</Button>}
                             {this.isLoggedIn() &&
-                            <IconButton className={"mr-2"} color="inherit" fontSize="large"
-                                        onClick={this.toggleSettingsModal}>
+                            <IconButton color="inherit" fontSize="large" onClick={this.toggleSettingsModal}>
                                 <AccountCircle/>
                             </IconButton>}
+                            <IconButton className={"mr-2"} onClick={this.toggleAboutModal} color="inherit" fontSize="large">
+                                <InfoOutlinedIcon />
+                            </IconButton>
                         </Toolbar>
                     </AppBar>
                     <div className="container-fluid">
@@ -539,6 +548,8 @@ class CuizinartApp extends Component {
                                         showAgreeButton={this.isLoggedIn() && !this.state.agreedToDisclaimer}
                                         isLoading={this.state.isLoading} agreeDisclaimer={this.agreeDisclaimer}
                                         onClose={this.toggleDisclaimerModal}/>
+                            <About showAboutModal={this.state.showAboutModal}
+                                   onClose={this.toggleAboutModal}/>
                         </div>
                     </div>
                 </MuiThemeProvider>
