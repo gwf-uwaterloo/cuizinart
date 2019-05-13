@@ -95,7 +95,7 @@ export default class SideBar extends Component {
                         <div className={"row m-0 mb-3"}>
                             <h5 className={"col-fluid p-0"}><span className="label label-default">Date Range:</span></h5>
                             <small className={"col-fluid p-0 ml-auto align-self-center"}>
-                                (Available: {moment.utc(d.valid_start_time).format("YYYY-MM-DD")} &ndash; {moment.utc(d.valid_end_time).format("YYYY-MM-DD")})
+                                ({moment.utc(d.valid_start_time).format("YYYY/MM/DD")} &ndash; {moment.utc(d.valid_end_time).format("YYYY/MM/DD")})
                             </small>
                         </div>
                         <MuiPickersUtilsProvider utils={MomentUtils}>

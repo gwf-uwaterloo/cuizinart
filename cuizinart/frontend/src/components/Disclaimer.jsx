@@ -171,7 +171,7 @@ export default class Disclaimer extends Component {
                     <div className={"row justify-content-end m-0"}>
                         <LoaderButton onClick={this.props.agreeDisclaimer} isLoading={this.props.isLoading}
                                       text="Agree" loadingText="Loading…"
-                                      style={{display: this.props.hasAgreed ? "none" : ""}}/>
+                                      style={{display: this.props.showAgreeButton ? "" : "none"}}/>
                         <Button onClick={this.props.onClose}>Close</Button>
                     </div>
                 </Modal.Body>

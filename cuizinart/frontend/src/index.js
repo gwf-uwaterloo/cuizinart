@@ -467,7 +467,7 @@ class CuizinartApp extends Component {
                             <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
                                 <img className="img-right" src={GWF_logo} alt="GWF logo"/>
                             </IconButton>
-                            <Typography className={"mr-auto"} variant="h6" color="inherit" noWrap>GWF
+                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>GWF
                                 Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
                                                                                       src={logo_uw_horizontal}
@@ -502,7 +502,7 @@ class CuizinartApp extends Component {
                             <div className="sidebar-sticky ml-0 col-3 p-2"
                                  style={{display: this.state.sidebarOpen ? "" : "none"}}>
                                 <Card className="m-0 p-0" style={{overflow: "visible"}}>
-                                    <CardContent>
+                                    <CardContent className="p-3">
                                         <UserInputComp
                                             updateUserInputs={this.updateUserInputs}
                                             products={this.state.products}
@@ -523,16 +523,18 @@ class CuizinartApp extends Component {
                                                 <SendIcon className={"mr-2"}/>Process
                                             </Fab>
                                         </div>
-                                        <div className={"row justify-content-end mr-0 mt-2"}>
-                                            <Button size="small" href="#" onClick={this.toggleDisclaimerModal}>Disclaimer
-                                                & Privacy Notice</Button>
+                                        <div className={"row justify-content-end mr-0 mt-1"}>
+                                            <Button size="small" href="#" onClick={this.toggleDisclaimerModal}
+                                                    style={{color: "gray", fontSize: "x-small", textTransform: "none"}}>
+                                                Disclaimer & Privacy Notice</Button>
                                         </div>
                                     </CardContent>
                                 </Card>
                             </div>
 
                             <Paper className={"col-1 closeSidebar"} onClick={this.toggleSidebar}>
-                                {this.state.sidebarOpen ? <ArrowLeftIcon/> : <ArrowRightIcon/>}</Paper>
+                                {this.state.sidebarOpen ? <ArrowLeftIcon viewBox="4 0 24 20"/> :
+                                    <ArrowRightIcon viewBox="4 0 24 20"/>}</Paper>
                             <Login showLoginModal={this.state.showLoginModal}
                                    onLogin={(email, password) => this.login(email, password)}
                                    onResetPassword={(email) => this.resetPassword(email)}
@@ -543,8 +545,9 @@ class CuizinartApp extends Component {
                                       globusId={this.state.globusId}
                                       onChangeGlobusId={(globusId) => this.changeGlobusId(globusId)}/>
                             <Disclaimer showDisclaimerModal={this.state.showDisclaimerModal}
-                                        hasAgreed={this.state.agreedToDisclaimer} isLoading={this.state.isLoading}
-                                        agreeDisclaimer={this.agreeDisclaimer} onClose={this.toggleDisclaimerModal}/>
+                                        showAgreeButton={this.isLoggedIn() && !this.state.agreedToDisclaimer}
+                                        isLoading={this.state.isLoading} agreeDisclaimer={this.agreeDisclaimer}
+                                        onClose={this.toggleDisclaimerModal}/>
                             <About showAboutModal={this.state.showAboutModal}
                                    onClose={this.toggleAboutModal}/>
                         </div>
