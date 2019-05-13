@@ -32,7 +32,9 @@ import PropTypes from 'prop-types';
 import Paper from "@material-ui/core/Paper";
 import ArrowLeftIcon from "@material-ui/icons/ArrowLeft";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
+import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
 import Disclaimer from "./components/Disclaimer"
+import About from "./components/About";
 
 const backends = [
     {value: 'slurm', label: 'Graham'},
@@ -64,6 +66,7 @@ class CuizinartApp extends Component {
         showLoginModal: false,
         showSettingsModal: false,
         showDisclaimerModal: false,
+        showAboutModal: false,
         isLoading: false,
         selectDateSet: null,
         products: [],
@@ -279,6 +282,10 @@ class CuizinartApp extends Component {
         this.setState({showDisclaimerModal: !this.state.showDisclaimerModal});
     }
 
+    toggleAboutModal = () => {
+        this.setState({showAboutModal: !this.state.showAboutModal});
+    }
+
     errorHandling = (error) => {
         let message = '';
         if (error.response.status === 401) {
@@ -477,10 +484,12 @@ class CuizinartApp extends Component {
                             <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.logout}>Logout</Button>}
                             {this.isLoggedIn() &&
-                            <IconButton className={"mr-2"} color="inherit" fontSize="large"
-                                        onClick={this.toggleSettingsModal}>
+                            <IconButton color="inherit" fontSize="large" onClick={this.toggleSettingsModal}>
                                 <AccountCircle/>
                             </IconButton>}
+                            <IconButton className={"mr-2"} onClick={this.toggleAboutModal} color="inherit" fontSize="large">
+                                <InfoOutlinedIcon />
+                            </IconButton>
                         </Toolbar>
                     </AppBar>
                     <div className="container-fluid">
@@ -536,6 +545,8 @@ class CuizinartApp extends Component {
                             <Disclaimer showDisclaimerModal={this.state.showDisclaimerModal}
                                         hasAgreed={this.state.agreedToDisclaimer} isLoading={this.state.isLoading}
                                         agreeDisclaimer={this.agreeDisclaimer} onClose={this.toggleDisclaimerModal}/>
+                            <About showAboutModal={this.state.showAboutModal}
+                                   onClose={this.toggleAboutModal}/>
                         </div>
                     </div>
                 </MuiThemeProvider>
