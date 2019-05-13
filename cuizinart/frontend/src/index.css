@@ -39,6 +39,7 @@
     height: calc(100vh - 64px);
  }
 
+.About .modal-dialog,
 .Disclaimer .modal-dialog {
   max-width: 80%;
 }
