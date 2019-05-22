@@ -101,8 +101,7 @@ export default class SideBar extends Component {
                         <MuiPickersUtilsProvider utils={MomentUtils}>
                             <div className={"row m-0"}>
                                 <div className={"col pr-1 pl-0"}>
-                                    <InlineDatePicker
-                                        emptyLabel={"Start date"}
+                                    <InlineDatePicker keyboard
                                         label="Start date"
                                         initialFocusedDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
                                         value={this.state.startDate}
@@ -110,18 +109,23 @@ export default class SideBar extends Component {
                                         variant="outlined"
                                         shouldDisableDate={(date) => this.handleInvalidDate(date)}
                                         format={"YYYY-MM-DD"}
+                                        minDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
+                                        maxDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
+                                        mask={[/\d/, /\d/, /\d/, /\d/, "-", /\d/, /\d/, "-", /\d/, /\d/]}
                                     />
                                 </div>
                                 <div className={"col pl-1 pr-0"}>
-                                    <InlineDatePicker
-                                        emptyLabel={"End date"}
+                                    <InlineDatePicker keyboard
                                         label="End date"
                                         initialFocusedDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
                                         value={this.state.endDate}
                                         onChange={(date) => this.updateEndDate(date)}
                                         variant="outlined"
                                         shouldDisableDate={(date) => this.handleInvalidDate(date)}
+                                        minDate={moment(d.valid_start_time).format("YYYY-MM-DD")}
+                                        maxDate={moment(d.valid_end_time).format("YYYY-MM-DD")}
                                         format={"YYYY-MM-DD"}
+                                        mask={[/\d/, /\d/, /\d/, /\d/, "-", /\d/, /\d/, "-", /\d/, /\d/]}
                                     />
                                 </div>
                             </div>
