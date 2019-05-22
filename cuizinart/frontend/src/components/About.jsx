@@ -3,6 +3,7 @@ import {Modal} from "react-bootstrap";
 import jmai from "../images/jmai.jpg";
 import jlin from "../images/jlin.jpg";
 import mgauch from "../images/mgauch.jpg";
+import hkpour from "../images/hkpour.jpg";
 import btolson from "../images/btolson.jpg";
 import Avatar from "@material-ui/core/Avatar";
 import Grid from "@material-ui/core/Grid";
@@ -14,7 +15,7 @@ const team = [{name: "Juliane Mai", website: "http://www.civil.uwaterloo.ca/jmai
     {name: "Bhaleka Persaud"}, {name: "Martin Gauch", img: mgauch},
     {name: "Ethan Wang"}, {name: "Alex Weatherhead"},
     {name: "Bryan Tolson", website: "http://www.civil.uwaterloo.ca/btolson/", img: btolson},
-    {name: "Homa Kheyrollah Pour", website: "https://uwaterloo.ca/ecohydrology/people-profiles/homa-kheyrollah-pour"},
+    {name: "Homa Kheyrollah Pour", website: "https://uwaterloo.ca/ecohydrology/people-profiles/homa-kheyrollah-pour", img: hkpour},
 ];
 
 let teamHtml = [];
