@@ -1,0 +1,13 @@
+.env
+*.pdf
+data/
+*.iml
+.idea
+env/*
+__pycache__/
+node_modules/
+geojson.json
+npm-debug.log
+migrations/
+build/
+certbot/
