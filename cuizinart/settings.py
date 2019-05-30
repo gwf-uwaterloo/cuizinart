@@ -21,7 +21,6 @@ PYSPARK_URL = os.getenv('PYSPARK_URL')
 
 BACKEND_SLURM = 'slurm'
 BACKEND_PYSPARK = 'pyspark'
-BACKEND = os.getenv('BACKEND')
 SSH_KEYFILE_PATH = os.getenv('SSH_KEYFILE_PATH')
 SSH_USER_NAME = os.getenv('SSH_USER_NAME')
 
