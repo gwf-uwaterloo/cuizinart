@@ -14,42 +14,7 @@ The platform provides an easy-to-use interface similar to Google Maps: researche
 - Frontend: Run `npm install` in `frontend`
 
 ### Backend and Database
-- Create a file `.env` in the base folder, containing:
-```
-FLASK_APP=cuizinart/main.py
-APP_SECRET_KEY=<secret-key>
-PASSWORD_SALT=<salt>
-LOG_DIRECTORY=<path>
-LOG_LEVEL=DEBUG  # optional
-
-BACKEND=pyspark
-PYSPARK_URL=pyspark:5001  # if not using Docker, use localhost:5001
-SSH_USER_NAME=<graham_user>
-SSH_KEYFILE_PATH=<path_to_keyfile>
-SSH_KNOWN_HOSTS_PATH=<path_to_file>
-
-POSTGRES_USER=<user>
-POSTGRES_PW=<pwd>
-POSTGRES_URL=postgres:5432  # if not using Docker, use localhost:5432
-POSTGRES_DB=cuizinart
-DB_MIGRATIONS_FOLDER=<path>  # only needed when using Docker (allows DB migrations across container builds) 
-
-EMAIL_SMTP_SERVER=<server>
-EMAIL_SMTP_PORT=465
-EMAIL_SMTP_USERNAME=<user>
-EMAIL_ADDRESS=<address>
-EMAIL_PASSWORD=<pwd>
-
-
-# PySpark ENV variables
-CUIZINART_URL=https://tuna.cs.uwaterloo.ca  # if not using Docker, use localhost:5000
-SPARK_MASTER=local[*]
-
-NC_INPUT_PATH=<path to NetCDF files>
-NC_OUTPUT_PATH=<path to store output NetCDF files>
-
-CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in Cuizinart
-```
+- Create a file `.env` in the base folder, as described in `docs/env.md`:
 
 - If not using Docker: Create the metadata database:
   - In a `psql` shell, type: `create database cuizinart`
@@ -58,9 +23,13 @@ CUIZINART_PYSPARK_PASSWORD=<pwd>  # password to authenticate PySpark-slicer in C
 
 ## Run
 
+Currently, we have a development deployment in `tuna` under `/home/mgauch/dev-cuizinart/` (running the `master` branch) and a production deployment in `/home/mgauch/Cuizinart/` (running the `production` branch).
+Once code is known to run fine on `dev-cuizinart`, we `git merge` `master` into `production`.
+
 ### Docker
 - For initial setup of the Let's Encrypt certificates, run `./init-letsencrypt.sh` (only needed once)
 - Run `docker-compose up` or start containers `nginx`, `cuizinart`, `postgres`, `pyspark` as needed. nginx will serve the application on tuna.cs.uwaterloo.ca.
+- To deploy code changes, run `docker-compose stop cuizinart`, `docker-compose build cuizinart`, `docker-compose up cuizinart`.
 
 ### Without Docker
 - Serving the frontend:
