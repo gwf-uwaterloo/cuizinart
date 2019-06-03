@@ -498,7 +498,7 @@ class CuizinartApp extends Component {
 
                         <div className="row">
 
-                        <SplitPane className="sidebar" split="vertical" minSize={100} defaultSize={300}>
+                        <SplitPane className="sidebar" split="vertical" minSize={100} defaultSize={500}>
                             <div>
 
                                 <Card className="m-0 p-0" style={{ overflow: "visible" }}>
