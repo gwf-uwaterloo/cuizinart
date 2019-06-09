@@ -5,6 +5,7 @@ import jlin from "../images/jlin.jpg";
 import mgauch from "../images/mgauch.jpg";
 import hkpour from "../images/hkpour.jpg";
 import btolson from "../images/btolson.jpg";
+import khuang from "../images/khuang.jpg";
 import Avatar from "@material-ui/core/Avatar";
 import Grid from "@material-ui/core/Grid";
 import CardContent from "@material-ui/core/CardContent";
@@ -16,6 +17,7 @@ const team = [{name: "Juliane Mai", website: "http://www.civil.uwaterloo.ca/jmai
     {name: "Ethan Wang"}, {name: "Alex Weatherhead"},
     {name: "Bryan Tolson", website: "http://www.civil.uwaterloo.ca/btolson/", img: btolson},
     {name: "Homa Kheyrollah Pour", website: "https://uwaterloo.ca/ecohydrology/people-profiles/homa-kheyrollah-pour", img: hkpour},
+    {name: "Kaisong Huang", img: khuang}
 ];
 
 let teamHtml = [];
