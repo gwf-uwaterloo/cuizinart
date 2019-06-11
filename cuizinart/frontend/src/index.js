@@ -13,6 +13,7 @@ import Select from 'react-select';
 import DataSetComp from './components/dataSetsComp';
 import UserInputComp from "./components/userInputComp";
 import Login from "./components/Login";
+import Register from "./components/Register";
 import { AppBar, Button, Card, CardContent, Toolbar } from '@material-ui/core';
 import Settings from "./components/Settings";
 import GWF_logo from "./images/GWF_logo.png";
@@ -65,6 +66,7 @@ const theme = createMuiTheme({
 class CuizinartApp extends Component {
     state = {
         showLoginModal: false,
+        showRegisterModal: false,
         showSettingsModal: false,
         showDisclaimerModal: false,
         showAboutModal: false,
@@ -275,6 +277,10 @@ class CuizinartApp extends Component {
         this.setState({ showLoginModal: !this.state.showLoginModal });
     }
 
+    toggleRegisterModal = () => {
+        this.setState({ showRegisterModal: !this.state.showRegisterModal });
+    }
+
     toggleSettingsModal = () => {
         this.setState({ showSettingsModal: !this.state.showSettingsModal });
     }
@@ -335,6 +341,20 @@ class CuizinartApp extends Component {
                     self.getUserInfo();
                 }
             });
+    };
+
+    register = (email, password, re_password) => {
+        let self = this;
+        this.setState({ isLoading: true });
+        axios.post('/register', { 'email': email, 'password': password, 're_password': re_password})
+            .then(function (response) {
+                self.props.enqueueSnackbar("New user created successfully.", { variant: 'success'});
+                self.toggleRegisterModal();
+            })
+            .catch(function (error) {
+                self.errorHandling(error);
+            })
+            .finally(() => this.setState({ isLoading: false }));
     };
 
     logout = () => {
@@ -535,6 +555,9 @@ class CuizinartApp extends Component {
                                         onLogin={(email, password) => this.login(email, password)}
                                         onResetPassword={(email) => this.resetPassword(email)}
                                         onClose={this.toggleLoginModal} isLoading={this.state.isLoading} />
+                                    <Register showRegisterModal={this.state.showRegisterModal}
+                                        onRegister={(email, password, re_password) => this.register(email, password, re_password)}
+                                        onClose={this.toggleRegisterModal}/>
                                     <Settings showSettingsModal={this.state.showSettingsModal}
                                         onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
                                         onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}
