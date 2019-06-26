@@ -501,6 +501,9 @@ class CuizinartApp extends Component {
                             {!this.isLoggedIn() &&
                                 <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.toggleLoginModal}>Login</Button>}
+                            {!this.isLoggedIn() && 
+                                <Button variant="outlined" color={"inherit"} className={"mr-2"}
+                                onClick={this.toggleRegisterModal}>Register</Button>}
                             {this.isLoggedIn() &&
                                 <Button variant="outlined" color={"inherit"} className={"mr-2"}
                                     onClick={this.logout}>Logout</Button>}
