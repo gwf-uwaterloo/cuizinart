@@ -38,7 +38,7 @@ export default class Register extends Component {
             event.stopPropagation();
             return;
         }
-        this.props.onSubmit(this.state.email, this.state.password);
+        this.props.onRegister(this.state.email, this.state.password, this.state.re_password);
         this.setState({ email: "", password: "", re_password: "" });
     }
 
