@@ -14,6 +14,7 @@ from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
+from flask_security.utils import hash_password
 from shapely.geometry import shape, Point
 
 from metadata_schema import ProductSchema, Product, Domain, Request, db, User
@@ -56,7 +57,7 @@ def get_main_page():
 def register():
     email = request.get_json()['email']
     password = request.get_json()['password']
-    new_user = User(email=email, password=password)
+    new_user = User(email=email, password=hash_password(password))
     db.session.add(new_user)
     db.session.commit()
     return '{message: "Success"}'
