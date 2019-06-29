@@ -57,7 +57,7 @@ def get_main_page():
 def register():
     email = request.get_json()['email']
     password = request.get_json()['password']
-    new_user = User(email=email, password=hash_password(password))
+    new_user = User(email=email, password=hash_password(password), active=True)
     db.session.add(new_user)
     db.session.commit()
     return '{message: "Success"}'
