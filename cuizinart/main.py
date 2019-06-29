@@ -14,10 +14,9 @@ from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
-from flask_security.utils import hash_password
 from shapely.geometry import shape, Point
 
-from metadata_schema import ProductSchema, Product, Domain, Request, db, User
+from metadata_schema import ProductSchema, Product, Domain, Request, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_KEYFILE_PATH, SSH_USER_NAME, EMAIL_ADDRESS, \
     EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
@@ -52,6 +51,7 @@ def check_shape_intersection(shp, bounds):
 @app.route('/', methods=['GET'])
 def get_main_page():
     return render_template('index.html')
+
 
 @app.route('/getBoundaries', methods=['GET'])
 def get_boundaries():
