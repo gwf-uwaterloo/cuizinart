@@ -343,10 +343,10 @@ class CuizinartApp extends Component {
             });
     };
 
-    register = (email, password, re_password) => {
+    register = (email, password) => {
         let self = this;
         this.setState({ isLoading: true });
-        axios.post('/register', { 'email': email, 'password': password, 're_password': re_password})
+        axios.post('/register', { 'email': email, 'password': password })
             .then(function (response) {
                 self.props.enqueueSnackbar("New user created successfully.", { variant: 'success'});
                 self.toggleRegisterModal();
