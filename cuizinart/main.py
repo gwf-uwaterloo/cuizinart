@@ -53,15 +53,6 @@ def check_shape_intersection(shp, bounds):
 def get_main_page():
     return render_template('index.html')
 
-@app.route('/register', methods=['POST'])
-def register():
-    email = request.get_json()['email']
-    password = request.get_json()['password']
-    new_user = User(email=email, password=hash_password(password), active=True)
-    db.session.add(new_user)
-    db.session.commit()
-    return '{message: "Success"}'
-
 @app.route('/getBoundaries', methods=['GET'])
 def get_boundaries():
     products = Product.query.all()

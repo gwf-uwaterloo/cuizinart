@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { Modal } from "react-bootstrap";
-import "./Register.css";
 import LoaderButton from "./LoaderButton";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
