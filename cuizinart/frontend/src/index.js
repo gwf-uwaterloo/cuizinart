@@ -348,7 +348,7 @@ class CuizinartApp extends Component {
         this.setState({ isLoading: true });
         axios.post('/register', { 'email': email, 'password': password })
             .then(function (response) {
-                self.props.enqueueSnackbar("New user created successfully.", { variant: 'success'});
+                self.props.enqueueSnackbar("New user created successfully. The activation link has been sent to your email.", { variant: 'success'});
                 self.toggleRegisterModal();
             })
             .catch(function (error) {
