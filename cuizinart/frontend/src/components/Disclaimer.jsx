@@ -159,10 +159,10 @@ export default class Disclaimer extends Component {
                                 Data Protection and Privacy Statement to stay informed on how we use and protect your
                                 personal information.
                             </p>
-                            <h5>OpenStreetMap Map Services</h5>
+                            <h5>Wikimedia Foundation</h5>
                             <p>
-                                We use map data from OpenStreetMap to display the geographical extent of data products.
-                                These maps are requested from the tile.openstreetmap.org web service. This service might
+                                We use map data from Wikimedia to display the geographical extent of data products.
+                                These maps are requested from the maps.wikimedia.org web service. This service might
                                 store these requests, however these requests will not contain any personal user data.
                             </p>
                             <p><strong>April 25, 2019</strong></p>
