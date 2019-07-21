@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 
 //L.Marker.prototype.options.icon = DefaultIcon;
 const stamenTonerTiles = 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png'; // Attribution: Wikimedia Maps | Map data OpenStreetMap contributors
-const stamenTonerAttr = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const stamenTonerAttr = '<a href="https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use"> Wikimedia Maps </a> | Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const zoomLevel = 4;
 let mapCenter = [43.4643, -80.5204];
 
