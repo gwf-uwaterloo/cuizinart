@@ -6,6 +6,8 @@ The platform provides an easy-to-use interface similar to Google Maps: researche
 
 ## Setup
 
+For the production setup of Cuizinart and CaSPAr, refer to https://github.com/gwf-uwaterloo/production.
+
 ### Dependencies (if not using Docker)
 - Install packages: `pip install -r requirements.txt`
 - PySpark backend: 
@@ -23,12 +25,14 @@ The platform provides an easy-to-use interface similar to Google Maps: researche
 
 ## Run
 
-Currently, we have a development deployment in `tuna` under `/home/mgauch/dev-cuizinart/` (running the `master` branch) and a production deployment in `/home/mgauch/Cuizinart/` (running the `production` branch).
-Once code is known to run fine on `dev-cuizinart`, we `git merge` `master` into `production`.
+Currently, we have a development deployment in `tuna` under `/home/mgauch/dev-cuizinart/` (running the `master` branch, no nginx server) and 
+- a cuizinart production deployment in `/home/mgauch/Cuizinart/` (running the `cuizinart-prod` branch)
+- a CaSPAr production deployment in `/home/mgauch/caspar/` (running the `caspar-prod` branch).
+The production deployments are accessed through an nginx server, deployed from `/home/mgauch/production`.
+Once code is known to run fine on `dev-cuizinart`, we `git merge` `master` into `*-prod`.
 
 ### Docker
-- For initial setup of the Let's Encrypt certificates, run `./init-letsencrypt.sh` (only needed once)
-- Run `docker-compose up` or start containers `nginx`, `cuizinart`, `postgres`, `pyspark` as needed. nginx will serve the application on tuna.cs.uwaterloo.ca.
+- Run `docker-compose up` or start containers `cuizinart`, `postgres`, `pyspark` as needed.
 - To deploy code changes, run `docker-compose stop cuizinart`, `docker-compose build cuizinart`, `docker-compose up cuizinart`.
 
 ### Without Docker
