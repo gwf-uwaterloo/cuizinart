@@ -9,7 +9,7 @@ from email.message import EmailMessage
 
 import flask_login
 import requests
-from flask import jsonify
+from flask import jsonify, json
 from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
@@ -231,7 +231,7 @@ def process_slurm(json_request):
     """
     scp the request json to Graham, where it will be processed.
     """
-    request_string = str(json_request).replace("'", '"')
+    request_string = json.dumps(json_request)
 
     file_name = '__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
