@@ -17,6 +17,9 @@ services:
   cuizinart:
      build: ./cuizinart
      restart: unless-stopped
+     read_only: true  # make root fs read-only, but keep /tmp writable (for request files)
+     tmpfs:
+       - /tmp
      depends_on:
        - postgres
      env_file:
@@ -29,8 +32,10 @@ services:
        - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
        - ${SSH_KEYFILE_PATH}:${SSH_KEYFILE_PATH}
-       - ${SSH_KNOWN_HOSTS_PATH}:/root/.ssh/known_hosts
-       - ${DB_MIGRATIONS_FOLDER}:/migrations
+       - ${SSH_KNOWN_HOSTS_PATH}:/home/gwf/.ssh/known_hosts
+       - ${DB_MIGRATIONS_FOLDER}:/home/gwf/migrations
+     security_opt:
+       - no-new-privileges:true
 
   pyspark:
     build: ./cuizinart_pyspark
