@@ -13,7 +13,7 @@ import Card from "@material-ui/core/Card";
 
 const team = [{name: "Juliane Mai", website: "http://www.civil.uwaterloo.ca/jmai/", img: jmai},
     {name: "Jimmy Lin", website: "https://cs.uwaterloo.ca/~jimmylin/", img: jlin},
-    {name: "Bhaleka Persaud"}, {name: "Martin Gauch", img: mgauch},
+    {name: "Bhaleka Persaud"}, {name: "Martin Gauch", img: mgauch, website: "https://gauchm.github.io"},
     {name: "Ethan Wang"}, {name: "Alex Weatherhead"},
     {name: "Bryan Tolson", website: "http://www.civil.uwaterloo.ca/btolson/", img: btolson},
     {name: "Homa Kheyrollah Pour", website: "https://uwaterloo.ca/ecohydrology/people-profiles/homa-kheyrollah-pour", img: hkpour},

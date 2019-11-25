@@ -26,8 +26,8 @@ For the production setup of Cuizinart and CaSPAr, refer to https://github.com/gw
 ## Run
 
 Currently, we have a development deployment in `tuna` under `/home/mgauch/dev-cuizinart/` (running the `master` branch, no nginx server) and 
-- a cuizinart production deployment in `/home/mgauch/Cuizinart/` (running the `cuizinart-prod` branch)
-- a CaSPAr production deployment in `/home/mgauch/caspar/` (running the `caspar-prod` branch).
+- a cuizinart production deployment in `/home/mgauch/cuizinart-prod/` (running the `cuizinart-prod` branch)
+- a CaSPAr production deployment in `/home/mgauch/caspar-prod/` (running the `caspar-prod` branch).
 The production deployments are accessed through an nginx server, deployed from `/home/mgauch/production`.
 Once code is known to run fine on `dev-cuizinart`, we `git merge` `master` into `*-prod`.
 
