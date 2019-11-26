@@ -10,7 +10,7 @@
 ||||
 |PYSPARK_URL|`pyspark:5001`|URL where Cuizinart can send jobs to the pyspark slicer. If not using Docker, use `localhost:5001`|
 |SSH_USER_NAME|`<graham_user>`|User on tuna that is used to `scp` jobs to Graham|
-|SSH_KEYFILE_PATH|`<path_to_keyfile>`|Path to keyfile (generated through `ssh-keygen`) for above user|
+|SSH_TARGET_PATH|`host:path`|Host and path where incoming processing requests will be scp'ed to|
 |SSH_KNOWN_HOSTS_PATH|`<path_to_file>`|Path to `known_host` file that will be mapped into Cuizinart container so `scp` to Graham works immediately|
 ||||
 |POSTGRES_USER|`<user>`|Username of postgres db|

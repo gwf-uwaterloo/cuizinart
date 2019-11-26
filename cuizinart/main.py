@@ -17,8 +17,8 @@ from flask_security import auth_token_required
 from shapely.geometry import shape, Point
 
 from metadata_schema import ProductSchema, Product, Domain, Request, db
-from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_KEYFILE_PATH, SSH_USER_NAME, EMAIL_ADDRESS, \
-    EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
+from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_USER_NAME, SSH_TARGET_PATH, \
+    EMAIL_ADDRESS, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
 logger = logging.getLogger('cuizinart')
 CORS(app)
@@ -239,8 +239,8 @@ def process_slurm(json_request):
         f.write(request_string)
 
     os.system(
-        'scp -i "{}" {} {}@graham.computecanada.ca:/project/6008034/cuizinart/INBOX/'.format(
-            SSH_KEYFILE_PATH, file_name, SSH_USER_NAME))
+        'scp -i "/home/gwf/.ssh/id_rsa" {} {}@{}'.format(
+            file_name, SSH_USER_NAME, SSH_TARGET_PATH))
 
     os.remove(file_name)
 
