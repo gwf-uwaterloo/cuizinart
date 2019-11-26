@@ -31,7 +31,7 @@ services:
      volumes:
        - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
-       - ${SSH_KEYFILE_PATH}:${SSH_KEYFILE_PATH}
+       - ${SSH_KEYFILE_PATH}:/home/gwf/.ssh/id_rsa
        - ${SSH_KNOWN_HOSTS_PATH}:/home/gwf/.ssh/known_hosts
        - ${DB_MIGRATIONS_FOLDER}:/home/gwf/migrations
      security_opt:
