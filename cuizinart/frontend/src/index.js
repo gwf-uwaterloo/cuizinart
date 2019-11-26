@@ -39,8 +39,7 @@ import About from "./components/About";
 import SplitPane from 'react-split-pane';
 
 const backends = [
-    { value: 'slurm', label: 'Graham' },
-    { value: 'pyspark', label: 'Pyspark' }
+    { value: 'slurm', label: 'Graham' }
 ];
 
 const theme = createMuiTheme({
@@ -73,7 +72,7 @@ class CuizinartApp extends Component {
         isLoading: false,
         selectDateSet: null,
         products: [],
-        selectedBackend: null,
+        selectedBackend: backends[0],
         globusId: '',
         agreedToDisclaimer: false,
         sidebarOpen: true
@@ -263,10 +262,6 @@ class CuizinartApp extends Component {
         } else {
             // cancel
         }
-    };
-
-    handleSelectBackend = (selectedOption) => {
-        this.setState({ selectedBackend: selectedOption });
     };
 
     renderGeoJSON = (geojson) => {
