@@ -32,7 +32,7 @@ services:
        - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
        - ${SSH_KNOWN_HOSTS_PATH}:/home/gwf/.ssh/known_hosts
-       - ${DB_MIGRATIONS_FOLDER}:/home/gwf/migrations
+       - ${DB_MIGRATIONS_FOLDER}:/tmp/gwf/migrations
      security_opt:
        - no-new-privileges:true
 
