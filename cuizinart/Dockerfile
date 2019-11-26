@@ -3,6 +3,7 @@ FROM python:3.6
 RUN useradd -ms /bin/bash gwf
 COPY --chown=gwf . /home/gwf/cuizinart
 
+RUN mkdir /home/gwf/.ssh && mv /home/gwf/cuizinart/.id_rsa /home/gwf/.ssh/id_rsa && chown -R gwf:gwf /home/gwf/.ssh && chmod 700 /home/gwf/.ssh
 RUN curl -sL https://deb.nodesource.com/setup_11.x | bash -
 RUN apt-get install -y nodejs
 

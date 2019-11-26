@@ -16,7 +16,11 @@ For the production setup of Cuizinart and CaSPAr, refer to https://github.com/gw
 - Frontend: Run `npm install` in `frontend`
 
 ### Backend and Database
-- Create a file `.env` in the base folder, as described in `docs/env.md`:
+- Create a file `.env` in the base folder, as described in `docs/env.md`
+
+- Create an ssh keyfile that will be used to transfer requests to the remote data processing engine: 
+  - Run `ssh-keygen -f cuizinart/.id_rsa -t rsa -N ''`
+  - Transfer the created `.id_rsa.pub` to the remote server
 
 - If not using Docker: Create the metadata database:
   - In a `psql` shell, type: `create database cuizinart`
