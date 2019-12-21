@@ -6,7 +6,7 @@ COPY --chown=gwf . /home/gwf/cuizinart
 RUN mkdir /home/gwf/.ssh && mv /home/gwf/cuizinart/.id_rsa /home/gwf/.ssh/id_rsa && chown -R gwf:gwf /home/gwf/.ssh && chmod 700 /home/gwf/.ssh
 RUN curl -sL https://deb.nodesource.com/setup_11.x | bash -
 RUN apt-get install -y nodejs
-
+RUN apt-get install -y vim curl
 RUN apt-get update && apt-get -y install libgdal-dev
 RUN wget http://download.osgeo.org/gdal/2.1.2/gdal212.zip; unzip gdal212.zip; rm gdal212.zip
 RUN cd gdal-2.1.2; ./configure --with-python; make -j 32; make install -j 32; cd ..

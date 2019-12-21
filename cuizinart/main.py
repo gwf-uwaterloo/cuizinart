@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 
 import flask_login
@@ -16,7 +16,7 @@ from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
 from shapely.geometry import shape, Point
 
-from metadata_schema import ProductSchema, Product, Domain, Request, db
+from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Request,Variable, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_USER_NAME, SSH_TARGET_PATH, \
     EMAIL_ADDRESS, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
@@ -277,6 +277,42 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'favicon.ico',
                                mimetype='image/vnd.microsoft.icon')
 
+dom_id=1
+var_id=1
+prod_id=1
+@app.route('/updateInfo', methods=['POST'])
+def update__info():
+    jsonObj= request.get_json()
+    key=next(iter(jsonObj))
+    data = request.get_json()[key]
+    product_key=data['product']
+#    product = Product.query.filter_by(key=data['product']).first()
+    var_list=[]    
+    for variable in data['variables']:
+        new_variable=Variable(key=variable['short_name'],name=variable['long_name'],is_live =True)
+        print (new_variable)
+        var_list.append(new_variable)
+    time= data['time']
+    startTime=datetime.strptime(time[0],'%Y-%m-%d %H:%M:%S')
+    endTime=datetime.strptime(time[-1],'%Y-%m-%d %H:%M:%S')
+    domain=data['domain'][0]
+    ext=domain['geometry']
+    dom=Domain(extent =ext)
+    hor=Horizon(horizon_id=data['fcst_window'][0],horizon=data['fcst_window'][1])
+    iss=Issue(issue_id =data['issues'][0],issue =data['issues'][1])
+    if not product:
+        new_product=Product(key=product_key,name=product_key,domain=dom, variables=var_list,temporal_resolution=timedelta(hours=3),start_date=startTime,end_date=endTime,horizons=hor,issue=iss)
+        db.session.add(new_product)
+    else:
+        product.domain=dom
+        product.variable=var_list    
+    db.session.add(dom)
+    db.session.add_all(var_list)
+    db.session.commit()
+    return "you called this"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+
+

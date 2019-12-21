@@ -16,7 +16,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import { AppBar, Button, Card, CardContent, Toolbar } from '@material-ui/core';
 import Settings from "./components/Settings";
-import GWF_logo from "./images/GWF_logo.png";
+import CaSPAr_logo from "./images/CaSPAr_logo.png";
 import logo_usask from "./images/logo_usask.png";
 import logo_uw_horizontal from "./images/logo_uw_horizontal.png";
 import github_logo from "./images/GitHub-Mark-32px.png";
@@ -40,7 +40,6 @@ import SplitPane from 'react-split-pane';
 
 const backends = [
     { value: 'slurm', label: 'Graham' },
-    { value: 'pyspark', label: 'Pyspark' }
 ];
 
 const theme = createMuiTheme({
@@ -296,7 +295,7 @@ class CuizinartApp extends Component {
     errorHandling = (error) => {
         let message = '';
         if (error.response.status === 401) {
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('caspar_auth_token');
             message = 'Authentication expired. Please log in again.'
         } else if (error.response.status === 413) {
             message = 'Payload too large. Use a smaller shapefile or GeoJSON.'
@@ -358,7 +357,7 @@ class CuizinartApp extends Component {
     };
 
     logout = () => {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('caspar_auth_token');
         this.setState({ globusId: '' });
     };
 
@@ -394,11 +393,11 @@ class CuizinartApp extends Component {
     };
 
     setAuthToken = (token) => {
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem('caspar_auth_token', token);
     }
 
     getAuthToken = () => {
-        return localStorage.getItem('auth_token');
+        return localStorage.getItem('caspar_auth_token');
     }
 
     isLoggedIn = () => {
@@ -486,9 +485,9 @@ class CuizinartApp extends Component {
                     <AppBar position={"sticky"} color={"primary"}>
                         <Toolbar className={"p-0"}>
                             <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
-                                <img className="img-right" src={GWF_logo} alt="GWF logo" />
+                                <img className="img-right" src={CaSPAR_logo} alt="CaSPAR logo" />
                             </IconButton>
-                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>GWF
+                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>CaSPAR
                                 Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
                                 src={logo_uw_horizontal}
