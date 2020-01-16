@@ -485,9 +485,9 @@ class CuizinartApp extends Component {
                     <AppBar position={"sticky"} color={"primary"}>
                         <Toolbar className={"p-0"}>
                             <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
-                                <img className="img-right" src={CaSPAR_logo} alt="CaSPAR logo" />
+                                <img className="img-right" src={CaSPAr_logo} alt="CaSPAr logo" />
                             </IconButton>
-                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>CaSPAR
+                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>CaSPAr
                                 Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
                                 src={logo_uw_horizontal}

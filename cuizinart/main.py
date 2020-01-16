@@ -25,7 +25,7 @@ CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 pyspark_permission = Permission(RoleNeed('pyspark'))
-
+caspar_permission = Permission(RoleNeed('cASPAr'))
 
 def parse_json(obj):
     backend = obj['backend']
@@ -277,39 +277,59 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'favicon.ico',
                                mimetype='image/vnd.microsoft.icon')
 
-dom_id=1
-var_id=1
-prod_id=1
 @app.route('/updateInfo', methods=['POST'])
+@auth_token_required
+@caspar_permission.require()
 def update__info():
     jsonObj= request.get_json()
     key=next(iter(jsonObj))
     data = request.get_json()[key]
     product_key=data['product']
-#    product = Product.query.filter_by(key=data['product']).first()
+    product = Product.query.filter_by(key=data['product']).first()
     var_list=[]    
     for variable in data['variables']:
-        new_variable=Variable(key=variable['short_name'],name=variable['long_name'],is_live =True)
-        print (new_variable)
-        var_list.append(new_variable)
+        if not Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id):
+            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],is_live =True)
+            var_list.append(new_variable)
     time= data['time']
     startTime=datetime.strptime(time[0],'%Y-%m-%d %H:%M:%S')
     endTime=datetime.strptime(time[-1],'%Y-%m-%d %H:%M:%S')
+    dom= None
     domain=data['domain'][0]
     ext=domain['geometry']
-    dom=Domain(extent =ext)
-    hor=Horizon(horizon_id=data['fcst_window'][0],horizon=data['fcst_window'][1])
-    iss=Issue(issue_id =data['issues'][0],issue =data['issues'][1])
     if not product:
-        new_product=Product(key=product_key,name=product_key,domain=dom, variables=var_list,temporal_resolution=timedelta(hours=3),start_date=startTime,end_date=endTime,horizons=hor,issue=iss)
-        db.session.add(new_product)
+        dom=Domain(extent =ext)
     else:
-        product.domain=dom
-        product.variable=var_list    
-    db.session.add(dom)
+        dom=Domain.query.filter_by(product_id=product.product_id).first()
+        dom.extent=ext
+        product.variables=product.variables+var_list
+
+    hor_list=[]
+    if 'fcst_window' in data:
+        for horizons in data['fcst_window']:
+            if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id):
+                hor=Horizon(horizon=horizons)
+                hor_list.append(hor)
+    issue_list=[]
+    if 'issues' in data:
+        for issues in data['issues']:
+            if not Issue.query.filter_by(issue=issues,product_id=product.product_id):
+                 iss=Issue(issue_id =issues)
+                 issue_list.append(iss)
+    if not product:
+        product=Product(key=product_key,name=product_key,domain=dom, variables=var_list,temporal_resolution=timedelta(hours=3),start_date=startTime,end_date=endTime)
+        db.session.add(product)
+        db.session.add(dom)
+
     db.session.add_all(var_list)
+    if 'fcst_window' in data:
+        product.horizons=product.horizons+hor_list
+        db.session.add_all(hor_list)
+    if 'issue_list' in data:
+        product.issues=issue_list+issue_list
+        db.session.add_all(issue_list)
     db.session.commit()
-    return "you called this"
+    return "successfully added"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
