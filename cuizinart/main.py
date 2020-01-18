@@ -58,6 +58,8 @@ def get_boundaries():
     products = Product.query.all()
     product_schema = ProductSchema(many=True)
     output = product_schema.dump(products).data
+    for i in range(len(output)):
+        output[i]['variables'] = list(filter(lambda var: var['is_live'], output[i]['variables']))
     return jsonify(output)
 
 
