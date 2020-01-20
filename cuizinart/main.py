@@ -14,7 +14,7 @@ from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
-from shapely.geometry import shape, Point
+from shapely.geometry import shape
 
 from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Request,Variable, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_USER_NAME, SSH_TARGET_PATH, \
@@ -95,8 +95,6 @@ def fetch_result():
     logger.info(json_request)
 
     user = flask_login.current_user
-    if user.agreed_disclaimer_at is None:
-        return jsonify({'message': 'Please agree to the disclaimer and privacy notice first.'}), 401
 
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
@@ -183,7 +181,7 @@ def report_job_result():
 @auth_token_required
 def get_user_info():
     user = flask_login.current_user
-    return jsonify({'globusId': user.globus_id, 'agreedToDisclaimer': (user.agreed_disclaimer_at is not None)})
+    return jsonify({'globusId': user.globus_id})
 
 
 @app.route('/setUserInfo', methods=['POST'])
@@ -197,11 +195,7 @@ def set_user_info():
         if user.globus_id != new_globus_id:
             user.globus_id = new_globus_id
             need_update = True
-    if 'agreedToDisclaimer' in request_json and request_json['agreedToDisclaimer']:
-        agreement_timestamp = datetime.now()
-        user.agreed_disclaimer_at = agreement_timestamp
-        need_update = True
-
+    
     if need_update:
         db.session.add(user)
         db.session.commit()
@@ -278,6 +272,17 @@ def send_notification_email(recipient_address, subject, content):
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'favicon.ico',
                                mimetype='image/vnd.microsoft.icon')
+
+
+@app.route('/caspar_terms.txt')
+def caspar_terms():
+    return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'caspar_terms.txt')
+
+
+@app.route('/eccc_terms.txt')
+def eccc_terms():
+    return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'eccc_terms.txt')
+
 
 @app.route('/updateInfo', methods=['POST'])
 @auth_token_required
