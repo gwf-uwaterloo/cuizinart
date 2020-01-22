@@ -286,7 +286,7 @@ def update__info():
     jsonObj= request.get_json()
     key=next(iter(jsonObj))
     data = request.get_json()[key]
-    product_key=data['product']
+    product_key=data['product_info']
     product = Product.query.filter_by(key=data['product']).first()
     var_list=[]    
     for variable in data['variables']:

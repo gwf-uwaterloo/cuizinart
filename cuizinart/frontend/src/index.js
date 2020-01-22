@@ -17,7 +17,7 @@ import Register from "./components/Register";
 import { AppBar, Button, Card, CardContent, Toolbar } from '@material-ui/core';
 import Settings from "./components/Settings";
 import CaSPAr_logo from "./images/CaSPAr_logo.png";
-import logo_usask from "./images/logo_usask.png";
+import logo_floodnet from "./images/FloodNet_logo.png";
 import logo_uw_horizontal from "./images/logo_uw_horizontal.png";
 import github_logo from "./images/GitHub-Mark-32px.png";
 import "./index.css";
@@ -484,17 +484,15 @@ class CuizinartApp extends Component {
                 <MuiThemeProvider theme={theme}>
                     <AppBar position={"sticky"} color={"primary"}>
                         <Toolbar className={"p-0"}>
-                            <IconButton className={"menuButton"} color="inherit" aria-label="Menu">
+                            <IconButton className={"menuButton mr-auto"} color="inherit" aria-label="Menu">
                                 <img className="img-right" src={CaSPAr_logo} alt="CaSPAr logo" />
                             </IconButton>
-                            <Typography className={"mr-auto"} variant="h5" color="inherit" noWrap>CaSPAr
-                                Cuizinart</Typography>
                             <a href="https://uwaterloo.ca/global-water-futures/"><img className="img-right"
                                 src={logo_uw_horizontal}
                                 alt="UW logo" /></a>
-                            <a href="https://gwf.usask.ca/"><img className="img-right" src={logo_usask}
-                                alt="USask logo" /></a>
-                            <a href="https://github.com/gwf-uwaterloo/cuizinart"><img className="img-right mr-sm-4"
+                            <a href="https://www.nsercfloodnet.ca/"><img className="img-right" src={logo_floodnet}
+                                alt="Floodnet logo" /></a>
+                            <a href="https://github.com/julemai/CaSPAr"><img className="img-right mr-sm-4"
                                 src={github_logo}
                                 alt="Github logo" /></a>
                             {!this.isLoggedIn() &&
