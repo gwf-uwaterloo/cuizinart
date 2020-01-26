@@ -286,26 +286,37 @@ def update__info():
     jsonObj= request.get_json()
     key=next(iter(jsonObj))
     data = request.get_json()[key]
-    product_key=data['product_info']
-    product = Product.query.filter_by(key=data['product']).first()
+    product_key=data['product_info']['product']
+    product = Product.query.filter_by(key=data['product_info']['product']).first()
+    time= data['date']
+    time=datetime.strptime(time,'%Y-%m-%d')
+
+    if not product:
+        product=Product(key=product_key,name=product_key,temporal_resolution=timedelta(hours=3),start_date=time,end_date=time)
+        db.session.add(product)
+    else:
+        if(time<product.start_date):
+            product.start_date =time
+        if(time>product.end_date):
+            product.end_date=time
+    
     var_list=[]    
     for variable in data['variables']:
-        if not Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id):
+        if not Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first():
             new_variable=Variable(key=variable['short_name'],name=variable['long_name'],is_live =True)
             var_list.append(new_variable)
-    time= data['time']
-    startTime=datetime.strptime(time[0],'%Y-%m-%d %H:%M:%S')
-    endTime=datetime.strptime(time[-1],'%Y-%m-%d %H:%M:%S')
-    dom= None
+
+    dom=Domain.query.filter_by(product_id=product.product_id).first()
     domain=data['domain'][0]
     ext=domain['geometry']
-    if not product:
+    if not dom:
         dom=Domain(extent =ext)
     else:
-        dom=Domain.query.filter_by(product_id=product.product_id).first()
         dom.extent=ext
-        product.variables=product.variables+var_list
-
+    
+    product.variables=product.variables+var_list
+    product.domain=dom
+    db.session.add(dom)
     hor_list=[]
     if 'fcst_window' in data:
         for horizons in data['fcst_window']:
@@ -318,17 +329,19 @@ def update__info():
             if not Issue.query.filter_by(issue=issues,product_id=product.product_id):
                  iss=Issue(issue_id =issues)
                  issue_list.append(iss)
-    if not product:
-        product=Product(key=product_key,name=product_key,domain=dom, variables=var_list,temporal_resolution=timedelta(hours=3),start_date=startTime,end_date=endTime)
-        db.session.add(product)
-        db.session.add(dom)
 
     db.session.add_all(var_list)
     if 'fcst_window' in data:
-        product.horizons=product.horizons+hor_list
+        if product.horizons:
+            product.horizons=product.horizons+hor_list
+        else:
+            product.horizons=hor_list 
         db.session.add_all(hor_list)
     if 'issue_list' in data:
-        product.issues=issue_list+issue_list
+        if product.issues:
+            product.issues=issue_list+issue_list
+        else:
+            product.issues=issue_list
         db.session.add_all(issue_list)
     db.session.commit()
     return "successfully added"
