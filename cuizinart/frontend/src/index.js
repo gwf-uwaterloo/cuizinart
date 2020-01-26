@@ -30,11 +30,7 @@ import SendIcon from "@material-ui/icons/Send"
 import { SnackbarProvider, withSnackbar } from 'notistack';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import PropTypes from 'prop-types';
-import Paper from "@material-ui/core/Paper";
-import ArrowLeftIcon from "@material-ui/icons/ArrowLeft";
-import ArrowRightIcon from "@material-ui/icons/ArrowRight";
 import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
-import Disclaimer from "./components/Disclaimer"
 import About from "./components/About";
 import SplitPane from 'react-split-pane';
 
@@ -67,14 +63,12 @@ class CuizinartApp extends Component {
         showLoginModal: false,
         showRegisterModal: false,
         showSettingsModal: false,
-        showDisclaimerModal: false,
         showAboutModal: false,
         isLoading: false,
         selectDateSet: null,
         products: [],
         selectedBackend: null,
         globusId: '',
-        agreedToDisclaimer: false,
         sidebarOpen: true
     };
 
@@ -180,13 +174,6 @@ class CuizinartApp extends Component {
             return;
         }
 
-        if (!self.state.agreedToDisclaimer) {
-            self.props.enqueueSnackbar('Please agree to the disclaimer and privacy notice before processing.',
-                { variant: 'error' });
-            this.toggleDisclaimerModal();
-            return;
-        }
-
         if (!self.state.selectDateSet) {
             self.props.enqueueSnackbar('No product selected.', { variant: 'error' });
             return;
@@ -284,10 +271,6 @@ class CuizinartApp extends Component {
         this.setState({ showSettingsModal: !this.state.showSettingsModal });
     }
 
-    toggleDisclaimerModal = () => {
-        this.setState({ showDisclaimerModal: !this.state.showDisclaimerModal });
-    }
-
     toggleAboutModal = () => {
         this.setState({ showAboutModal: !this.state.showAboutModal });
     }
@@ -342,12 +325,13 @@ class CuizinartApp extends Component {
             });
     };
 
-    register = (email, password) => {
+    register = (user_info) => {
         let self = this;
         this.setState({ isLoading: true });
-        axios.post('/register', { 'email': email, 'password': password })
+        axios.post('/register', user_info)
             .then(function (response) {
-                self.props.enqueueSnackbar("New user created successfully. The activation link has been sent to your email.", { variant: 'success'});
+                self.props.enqueueSnackbar("New user created successfully. " +
+                    "The activation link has been sent to your email.", { variant: 'success'});
                 self.toggleRegisterModal();
             })
             .catch(function (error) {
@@ -416,7 +400,6 @@ class CuizinartApp extends Component {
                     self.props.enqueueSnackbar("Error retrieving user information!", { variant: 'error' });
                 } else {
                     self.setState({ globusId: response.data.globusId });
-                    self.setState({ agreedToDisclaimer: response.data.agreedToDisclaimer });
                 }
             })
             .catch(function (error) {
@@ -449,33 +432,6 @@ class CuizinartApp extends Component {
         } else {
             this.setState({ sidebarOpen: true });
         }
-    }
-
-    agreeDisclaimer = () => {
-        let self = this;
-        if (!this.isLoggedIn()) {
-            self.props.enqueueSnackbar("Please Log in to your account first.", { variant: 'error' });
-            return;
-        }
-        if (this.state.agreedToDisclaimer) {
-            self.props.enqueueSnackbar("You already agreed to the disclaimer.", { variant: 'info' });
-            return;
-        }
-        this.setState({ isLoading: true });
-        axios.post('/setUserInfo', { 'agreedToDisclaimer': true, 'auth_token': this.getAuthToken() })
-            .then(function (response) {
-                if (response.data.length === 0) {
-                    self.props.enqueueSnackbar("Error updating user information!", { variant: 'error' });
-                } else {
-                    self.setState({ agreedToDisclaimer: true });
-                    self.props.enqueueSnackbar("Updated user information successfully.", { variant: 'success' });
-                    self.toggleDisclaimerModal();
-                }
-            })
-            .catch(function (error) {
-                self.errorHandling(error);
-            })
-            .finally(() => this.setState({ isLoading: false }));
     }
 
     render() {
@@ -543,10 +499,14 @@ class CuizinartApp extends Component {
                                                     <SendIcon className={"mr-2"} />Process
                                                 </Fab>
                                             </div>
-                                            <div className={"row justify-content-end mr-0 mt-1"}>
-                                                <Button size="small" href="#" onClick={this.toggleDisclaimerModal}
-                                                    style={{ color: "gray", fontSize: "x-small", textTransform: "none" }}>
-                                                    Disclaimer & Privacy Notice</Button>
+                                            <div className={"row justify-content-end mr-0 mt-1"}
+                                                 style={{ color: "gray", fontSize: "x-small"}}>
+                                                <a href={"/caspar_terms.txt"} target={"blank"}
+                                                   style={{color: "gray", textDecoration: "underline"}}>CaSPAr</a>
+                                                &nbsp;&&nbsp;
+                                                <a href={"/eccc_terms.txt"} target={"blank"}
+                                                   style={{color: "gray", textDecoration: "underline"}}>ECCC</a>
+                                                &nbsp;Terms of Service
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -556,17 +516,13 @@ class CuizinartApp extends Component {
                                         onResetPassword={(email) => this.resetPassword(email)}
                                         onClose={this.toggleLoginModal} isLoading={this.state.isLoading} />
                                     <Register showRegisterModal={this.state.showRegisterModal}
-                                        onRegister={(email, password, re_password) => this.register(email, password, re_password)}
+                                        onRegister={(user_info) => this.register(user_info)}
                                         onClose={this.toggleRegisterModal}/>
                                     <Settings showSettingsModal={this.state.showSettingsModal}
                                         onChangePassword={(email, oldPassword, password) => this.changePassword(email, oldPassword, password)}
                                         onClose={this.toggleSettingsModal} isLoading={this.state.isLoading}
                                         globusId={this.state.globusId}
                                         onChangeGlobusId={(globusId) => this.changeGlobusId(globusId)} />
-                                    <Disclaimer showDisclaimerModal={this.state.showDisclaimerModal}
-                                        showAgreeButton={this.isLoggedIn() && !this.state.agreedToDisclaimer}
-                                        isLoading={this.state.isLoading} agreeDisclaimer={this.agreeDisclaimer}
-                                        onClose={this.toggleDisclaimerModal} />
                                     <About showAboutModal={this.state.showAboutModal}
                                         onClose={this.toggleAboutModal} />
 
