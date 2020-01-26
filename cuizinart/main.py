@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,time
 from email.message import EmailMessage
 
 import flask_login
@@ -288,17 +288,17 @@ def update__info():
     data = request.get_json()[key]
     product_key=data['product_info']['product']
     product = Product.query.filter_by(key=data['product_info']['product']).first()
-    time= data['date']
-    time=datetime.strptime(time,'%Y-%m-%d')
+    time_string= data['date']
+    t=datetime.strptime(time_string,'%Y-%m-%d')
 
     if not product:
-        product=Product(key=product_key,name=product_key,temporal_resolution=timedelta(hours=3),start_date=time,end_date=time)
+        product=Product(key=product_key,name=product_key,temporal_resolution=timedelta(hours=3),start_date=time,end_date=t)
         db.session.add(product)
     else:
-        if(time<product.start_date):
-            product.start_date =time
-        if(time>product.end_date):
-            product.end_date=time
+        if(t<product.start_date):
+            product.start_date =t
+        if(t>product.end_date):
+            product.end_date=t
     
     var_list=[]    
     for variable in data['variables']:
@@ -318,28 +318,31 @@ def update__info():
     product.domain=dom
     db.session.add(dom)
     hor_list=[]
-    if 'fcst_window' in data:
-        for horizons in data['fcst_window']:
-            if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id):
+    if 'horizon' in data:
+        for horizons in data['horizon']:
+            if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id).first():
                 hor=Horizon(horizon=horizons)
                 hor_list.append(hor)
     issue_list=[]
     if 'issues' in data:
         for issues in data['issues']:
-            if not Issue.query.filter_by(issue=issues,product_id=product.product_id):
-                 iss=Issue(issue_id =issues)
+            if not Issue.query.filter_by(issue=time(hour = issues),product_id=product.product_id).first():
+                 iss=Issue(issue =time(hour = issues))
                  issue_list.append(iss)
-
+    print(hor_list)
+    print(issue_list)
     db.session.add_all(var_list)
-    if 'fcst_window' in data:
+    if 'horizon' in data:
+        print("horizon")
         if product.horizons:
             product.horizons=product.horizons+hor_list
         else:
             product.horizons=hor_list 
         db.session.add_all(hor_list)
-    if 'issue_list' in data:
+    if 'issues' in data:
+        print("issues")
         if product.issues:
-            product.issues=issue_list+issue_list
+            product.issues=product.issues+issue_list
         else:
             product.issues=issue_list
         db.session.add_all(issue_list)
