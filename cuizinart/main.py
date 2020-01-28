@@ -24,7 +24,7 @@ logger = logging.getLogger('cuizinart')
 CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-pyspark_permission = Permission(RoleNeed('pyspark'))
+report_result_permission = Permission(RoleNeed('pyspark'), RoleNeed('cASPAr'))  # this means "pyspark OR cASPAr"
 caspar_permission = Permission(RoleNeed('cASPAr'))
 
 def parse_json(obj):
@@ -135,7 +135,7 @@ def fetch_result():
 
 @app.route('/reportJobResult', methods=['POST'])
 @auth_token_required
-@pyspark_permission.require()
+@report_result_permission.require()
 def report_job_result():
     """
     REST endpoint to report success or failure of a job.
@@ -152,27 +152,33 @@ def report_job_result():
 
     request_db_entry = Request.query.filter_by(request_name=request_id).first()
     if request_db_entry is None:
-        print('Request not found in database')
-    else:
-        request_db_entry.request_status = request_status
-        request_db_entry.file_location = request_files
-        request_db_entry.n_files = num_files
-        request_db_entry.processing_time_s = processing_time
-        request_db_entry.file_size_mb = file_size
-        db.session.add(request_db_entry)
-        db.session.commit()
+        err = 'Request {} not found in database'.format(request_id)
+        logger.error(err)
+        return jsonify({'message': err}), 500
 
-    subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
-    message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
-              + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
-                                                                       processing_time) \
-              + 'You can now locate your files under the following path: {}'.format(request_files)
+    request_db_entry.request_status = request_status
+    request_db_entry.file_location = request_files
+    request_db_entry.n_files = num_files
+    request_db_entry.processing_time_s = processing_time
+    request_db_entry.file_size_mb = file_size
+    db.session.add(request_db_entry)
+    db.session.commit()
 
-    try:
-        send_notification_email(request_user_email, subject, message)
-    except:
-        logger.info(traceback.format_exc())
-        return jsonify({'message': 'Error when sending notification email'}), 500
+    # only send result-email to the user if the backend wants us to.
+    # (the backend might send emails itself, in which case we wouldn't want to send something again)
+    if 'send_email' in job_result and job_result['send_email']:
+        subject = 'CaSPAr request {} completed with status {}'.format(request_id, request_status)
+        message = 'Your CaSPAr request with id {} was processed with status {}.\n\n'.format(request_id,
+                                                                                            request_status) \
+                  + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
+                                                                           processing_time) \
+                  + 'You can now locate your files under the following path: {}'.format(request_files)
+
+        try:
+            send_notification_email(request_user_email, subject, message)
+        except:
+            logger.error(traceback.format_exc())
+            return jsonify({'message': 'Error when sending notification email'}), 500
 
     return '{message: "Success"}'
 
