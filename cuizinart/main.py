@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime, timedelta,time
+from datetime import datetime, timedelta, time
 from email.message import EmailMessage
 
 import flask_login
@@ -285,40 +285,64 @@ def eccc_terms():
 
 
 @app.route('/updateInfo', methods=['POST'])
-@auth_token_required
-@caspar_permission.require()
-def update__info():
-    jsonObj= request.get_json()
+# @auth_token_required
+# @caspar_permission.require()
+def update():
+    try:
+        return update__info(request.get_json())
+    except: 
+        return str(traceback.format_exc()), 500
+
+def update__info(jsonObj):
     key=next(iter(jsonObj))
     data = request.get_json()[key]
     product_key=data['product_info']['product']
     product = Product.query.filter_by(key=data['product_info']['product']).first()
     time_string= data['date']
     t=datetime.strptime(time_string,'%Y-%m-%d')
-
+    success_message=""
     if not product:
-        product=Product(key=product_key,name=product_key,temporal_resolution=timedelta(hours=3),start_date=time,end_date=t)
+        product=Product(key=product_key,name=product_key,temporal_resolution=None,start_date=t,end_date=t)
         db.session.add(product)
     else:
         if(t<product.start_date):
+            success_message=""
             product.start_date =t
         if(t>product.end_date):
             product.end_date=t
     
     var_list=[]    
+    update_count=0
     for variable in data['variables']:
-        if not Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first():
-            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],is_live =True)
+        query= Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
+        if not query:
+            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["unit"])
             var_list.append(new_variable)
+        else:
+            query.is_live=variable["islive"]
+            query.name=variable["long_name"]
+            query.ec_varname=variable['vname_eccc']
+            query.level=variable['level_human']
+            query.grid_mapping=variable['grid_mapping']
+            query.type=variable['type']
+            query.unit=variable['units']
+            update_count+=1
+    if update_count+len(var_list)>0:
+        success_message+=str(update_count+len(var_list))+"variable(s)\n"
+    product.grid=data["grid"]
+    product.dimension=data["dimensions"]
+    product.projection=data["projections"]
 
     dom=Domain.query.filter_by(product_id=product.product_id).first()
     domain=data['domain'][0]
     ext=domain['geometry']
     if not dom:
         dom=Domain(extent =ext)
+        success_message+="1 domain\n"
     else:
-        dom.extent=ext
-    
+        if(dom.ext!=ext):
+            dom.extent=ext
+            success_message+="1 domain\n"
     product.variables=product.variables+var_list
     product.domain=dom
     db.session.add(dom)
@@ -328,31 +352,32 @@ def update__info():
             if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id).first():
                 hor=Horizon(horizon=horizons)
                 hor_list.append(hor)
+    if len(hor_list)>0:
+        success_message+=str(len(hor_list))+"horizon(s)\n"
+
     issue_list=[]
     if 'issues' in data:
         for issues in data['issues']:
             if not Issue.query.filter_by(issue=time(hour = issues),product_id=product.product_id).first():
                  iss=Issue(issue =time(hour = issues))
                  issue_list.append(iss)
-    print(hor_list)
-    print(issue_list)
+    if len(issue_list)>0:
+        success_message+=str(len(issue_list))+"issue(s)\n"
     db.session.add_all(var_list)
     if 'horizon' in data:
-        print("horizon")
         if product.horizons:
             product.horizons=product.horizons+hor_list
         else:
             product.horizons=hor_list 
         db.session.add_all(hor_list)
     if 'issues' in data:
-        print("issues")
         if product.issues:
             product.issues=product.issues+issue_list
         else:
             product.issues=issue_list
         db.session.add_all(issue_list)
     db.session.commit()
-    return "successfully added"
+    return success_message+"successfully added"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
