@@ -285,8 +285,8 @@ def eccc_terms():
 
 
 @app.route('/updateInfo', methods=['POST'])
-# @auth_token_required
-# @caspar_permission.require()
+@auth_token_required
+@caspar_permission.require()
 def update():
     try:
         return update__info(request.get_json())
@@ -316,7 +316,7 @@ def update__info(jsonObj):
     for variable in data['variables']:
         query= Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
         if not query:
-            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["unit"])
+            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
             var_list.append(new_variable)
         else:
             query.is_live=variable["islive"]
