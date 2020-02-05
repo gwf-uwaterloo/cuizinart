@@ -329,9 +329,12 @@ def update__info(jsonObj):
             update_count+=1
     if update_count+len(var_list)>0:
         success_message+=str(update_count+len(var_list))+"variable(s)\n"
-    product.grid=data["grid"]
-    product.dimension=data["dimensions"]
-    product.projection=data["projections"]
+    if "grid" in data:
+        product.grid=data["grid"]
+    if "dimensions" in data:
+        product.dimension=data["dimensions"]
+    if "projections" in data:
+        product.projection=data["projections"]
 
     dom=Domain.query.filter_by(product_id=product.product_id).first()
     if 'domain' in data:
