@@ -334,15 +334,16 @@ def update__info(jsonObj):
     product.projection=data["projections"]
 
     dom=Domain.query.filter_by(product_id=product.product_id).first()
-    domain=data['domain'][0]
-    ext=domain['geometry']
-    if not dom:
-        dom=Domain(extent =ext)
-        success_message+="1 domain\n"
-    else:
-        if(dom.ext!=ext):
-            dom.extent=ext
+    if 'domain' in data:
+        domain=data['domain'][0]
+        ext=domain['geometry']
+        if not dom:
+            dom=Domain(extent =ext)
             success_message+="1 domain\n"
+        else:
+            if(dom.ext!=ext):
+                dom.extent=ext
+                success_message+="1 domain\n"
     product.variables=product.variables+var_list
     product.domain=dom
     db.session.add(dom)
