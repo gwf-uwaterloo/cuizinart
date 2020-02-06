@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from email.message import EmailMessage
 
 import flask_login
@@ -14,9 +14,9 @@ from flask import request, render_template, send_from_directory
 from flask_cors import CORS
 from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
-from shapely.geometry import shape, Point
+from shapely.geometry import shape
 
-from metadata_schema import ProductSchema, Product, Domain, Request, db
+from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Request,Variable, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_USER_NAME, SSH_TARGET_PATH, \
     EMAIL_ADDRESS, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
 
@@ -25,7 +25,7 @@ CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 pyspark_permission = Permission(RoleNeed('pyspark'))
-
+caspar_permission = Permission(RoleNeed('cASPAr'))
 
 def parse_json(obj):
     backend = obj['backend']
@@ -58,6 +58,8 @@ def get_boundaries():
     products = Product.query.all()
     product_schema = ProductSchema(many=True)
     output = product_schema.dump(products).data
+    for i in range(len(output)):
+        output[i]['variables'] = list(filter(lambda var: var['is_live'], output[i]['variables']))
     return jsonify(output)
 
 
@@ -93,8 +95,6 @@ def fetch_result():
     logger.info(json_request)
 
     user = flask_login.current_user
-    if user.agreed_disclaimer_at is None:
-        return jsonify({'message': 'Please agree to the disclaimer and privacy notice first.'}), 401
 
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
@@ -181,7 +181,7 @@ def report_job_result():
 @auth_token_required
 def get_user_info():
     user = flask_login.current_user
-    return jsonify({'globusId': user.globus_id, 'agreedToDisclaimer': (user.agreed_disclaimer_at is not None)})
+    return jsonify({'globusId': user.globus_id})
 
 
 @app.route('/setUserInfo', methods=['POST'])
@@ -195,11 +195,7 @@ def set_user_info():
         if user.globus_id != new_globus_id:
             user.globus_id = new_globus_id
             need_update = True
-    if 'agreedToDisclaimer' in request_json and request_json['agreedToDisclaimer']:
-        agreement_timestamp = datetime.now()
-        user.agreed_disclaimer_at = agreement_timestamp
-        need_update = True
-
+    
     if need_update:
         db.session.add(user)
         db.session.commit()
@@ -278,5 +274,117 @@ def favicon():
                                mimetype='image/vnd.microsoft.icon')
 
 
+@app.route('/caspar_terms.txt')
+def caspar_terms():
+    return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'caspar_terms.txt')
+
+
+@app.route('/eccc_terms.txt')
+def eccc_terms():
+    return send_from_directory(os.path.join(app.root_path, 'frontend', 'public'), 'eccc_terms.txt')
+
+
+@app.route('/updateInfo', methods=['POST'])
+@auth_token_required
+@caspar_permission.require()
+def update():
+    try:
+        return update__info(request.get_json())
+    except: 
+        return str(traceback.format_exc()), 500
+
+def update__info(jsonObj):
+    key=next(iter(jsonObj))
+    data = request.get_json()[key]
+    product_key=data['product_info']['product']
+    product = Product.query.filter_by(key=data['product_info']['product']).first()
+    time_string= data['date']
+    t=datetime.strptime(time_string,'%Y-%m-%d')
+    success_message=""
+    if not product:
+        product=Product(key=product_key,name=product_key,temporal_resolution=None,start_date=t,end_date=t)
+        db.session.add(product)
+    else:
+        if(t<product.start_date):
+            success_message=""
+            product.start_date =t
+        if(t>product.end_date):
+            product.end_date=t
+    
+    var_list=[]    
+    update_count=0
+    for variable in data['variables']:
+        query= Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
+        if not query:
+            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
+            var_list.append(new_variable)
+        else:
+            query.is_live=variable["islive"]
+            query.name=variable["long_name"]
+            query.ec_varname=variable['vname_eccc']
+            query.level=variable['level_human']
+            query.grid_mapping=variable['grid_mapping']
+            query.type=variable['type']
+            query.unit=variable['units']
+            update_count+=1
+    if update_count+len(var_list)>0:
+        success_message+=str(update_count+len(var_list))+"variable(s)\n"
+    if "grid" in data:
+        product.grid=data["grid"]
+    if "dimensions" in data:
+        product.dimension=data["dimensions"]
+    if "projections" in data:
+        product.projection=data["projections"]
+
+    dom=Domain.query.filter_by(product_id=product.product_id).first()
+    if 'domain' in data:
+        domain=data['domain'][0]
+        ext=domain['geometry']
+        if not dom:
+            dom=Domain(extent =ext)
+            success_message+="1 domain\n"
+        else:
+            if(dom.ext!=ext):
+                dom.extent=ext
+                success_message+="1 domain\n"
+    product.variables=product.variables+var_list
+    product.domain=dom
+    db.session.add(dom)
+    hor_list=[]
+    if 'horizon' in data:
+        for horizons in data['horizon']:
+            if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id).first():
+                hor=Horizon(horizon=horizons)
+                hor_list.append(hor)
+    if len(hor_list)>0:
+        success_message+=str(len(hor_list))+"horizon(s)\n"
+
+    issue_list=[]
+    if 'issues' in data:
+        for issues in data['issues']:
+            if not Issue.query.filter_by(issue=time(hour = issues),product_id=product.product_id).first():
+                 iss=Issue(issue =time(hour = issues))
+                 issue_list.append(iss)
+    if len(issue_list)>0:
+        success_message+=str(len(issue_list))+"issue(s)\n"
+    db.session.add_all(var_list)
+    if 'horizon' in data:
+        if product.horizons:
+            product.horizons=product.horizons+hor_list
+        else:
+            product.horizons=hor_list 
+        db.session.add_all(hor_list)
+    if 'issues' in data:
+        if product.issues:
+            product.issues=product.issues+issue_list
+        else:
+            product.issues=issue_list
+        db.session.add_all(issue_list)
+    db.session.commit()
+    return success_message+"successfully added"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+
+

@@ -54,30 +54,13 @@ export default class About extends Component {
                 <Modal.Body>
                     <Card>
                         <CardContent>
-                            <h5>Global Water Futures (GWF) Data Cuizinart</h5>
+                            <h5>The Canadian Surface Prediction Archive (CaSPAr)</h5>
                             <p>
-                                GWF aims to position Canada as a global leader in water science for cold regions and
-                                will address the strategic needs of the Canadian economy in adapting to change and
-                                managing risks of uncertain water futures and extreme events. The Cuizinart is a
-                                cloud-based platform that provides an interactive portal for researchers to "slice and
-                                dice" large NetCDF datasets across the GWF program and beyond. The platform provides an
-                                easy-to-use interface similar to Google Maps: researchers select products and variables
-                                of interest, provide geographical bounds, and after a short wait, are delivered a custom
-                                dataset that meets their exact specifications.
+                            CaSPAr provides easily accessible archives for a range of Environment and Climate Change Canada's operational numerical weather predictions for researchers and end-users. CaSPAr was formed by a partnership between the NSERC Canadian FloodNet, Environment and Climate Change Canada, Esri Canada and several Canadian universities such as the University of Waterloo and McMaster University.
                             </p>
-                            <a href="mailto:gwf.cuizinart@uwaterloo.ca">gwf.cuizinart@uwaterloo.ca</a><br/>
-                            <a className="ml-auto" href="https://gwf.usask.ca" target="_blank"
-                               rel="noopener noreferrer">https://gwf.usask.ca</a>
-                        </CardContent>
-                    </Card>
-                    <Card className={"mt-2 mb-2"}>
-                        <CardContent>
-                            <h5>Team Members</h5>
-                            <div>
-                                <Grid container>
-                                    {teamHtml}
-                                </Grid>
-                            </div>
+                            <a href="mailto:caspar.data@uwaterloo.ca">caspar.data@uwaterloo.ca</a><br/>
+                            <a className="ml-auto" href="http://www.caspar-data.ca" target="_blank"
+                               rel="noopener noreferrer">http://www.caspar-data.ca</a>
                         </CardContent>
                     </Card>
                 </Modal.Body>

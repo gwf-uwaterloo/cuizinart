@@ -1,8 +1,10 @@
 import click
+from flask_security.forms import Required, StringField, BooleanField, ConfirmRegisterForm
 from flask_security.utils import hash_password
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import fields
 from flask_marshmallow import Marshmallow
+
 from settings import app
 from flask_migrate import Migrate
 from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
@@ -16,10 +18,13 @@ class Product(db.Model):
     product_id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String, unique=True, nullable=False)
     name = db.Column(db.String, nullable=False)
-    temporal_resolution = db.Column(db.Interval, nullable=False)
+    temporal_resolution = db.Column(db.Interval)
     doi = db.Column(db.String)
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
+    projection = db.Column(db.JSON)
+    grid = db.Column(db.JSON)
+    dimension = db.Column(db.JSON)
 
     domain = db.relationship("Domain", uselist=False, backref="product", lazy=True)
     variables = db.relationship('Variable', backref='product', lazy=True)
@@ -40,6 +45,7 @@ class Variable(db.Model):
     key = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
+    grid_mapping=db.Column(db.String)
     is_live = db.Column(db.Boolean, nullable=False)
     ec_varname = db.Column(db.String)
     type = db.Column(db.String)
@@ -68,7 +74,6 @@ class Horizon(db.Model):
     horizon_id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'), nullable=False)
     horizon = db.Column(db.Integer, nullable=False)
-
 
     def __repr__(self):
         return '<Horizon {!r}>'.format(self.horizon_id)
@@ -135,10 +140,16 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    areas_of_interest = db.Column(db.String(255))
+    usage_proposal = db.Column(db.String(255))
     globus_id = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     agreed_disclaimer_at = db.Column(db.DateTime())
+    caspar_terms_accepted = db.Column(db.Boolean())
+    eccc_terms_accepted = db.Column(db.Boolean())
 
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
     requests = db.relationship('Request', backref='user', lazy=True)
@@ -147,8 +158,21 @@ class User(db.Model, UserMixin):
         return '<User {!r}>'.format(self.id)
 
 
+# We're not using the form itself, but this definition makes Flask-Security
+# create a /register endpoint with these fields.
+class ExtendedRegisterForm(ConfirmRegisterForm):
+    first_name = StringField('First Name', [Required()])
+    last_name = StringField('Last Name', [Required()])
+    organization = StringField('Organization', [Required()])
+    globus_id = StringField('Globus ID (name@globusid.org)', [Required()])
+    areas_of_interest = StringField('Areas of Interest', [Required()])
+    usage_proposal = StringField('Short Proposal for CaSPAr Use', [Required()])
+    caspar_terms_accepted = BooleanField('CaSPAr Terms of Service', [Required()])
+    eccc_terms_accepted = BooleanField('Environment and Cimate Change Canada Terms of Service', [Required()])
+
+
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+security = Security(app, user_datastore, confirm_register_form=ExtendedRegisterForm)
 
 
 @app.cli.command()
