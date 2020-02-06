@@ -15,9 +15,10 @@ services:
        - backend
 
   cuizinart:
-     build: ./cuizinart
-       args:
-         userid:${USER_ID}
+     build: 
+       context: ./cuizinart
+       args: 
+         userid: ${USER_ID}
      restart: unless-stopped
      read_only: true  # make root fs read-only, but keep /tmp writable (for request files)
      tmpfs:
