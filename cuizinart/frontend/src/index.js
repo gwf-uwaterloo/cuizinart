@@ -67,7 +67,7 @@ class CuizinartApp extends Component {
         isLoading: false,
         selectDateSet: null,
         products: [],
-        selectedBackend: null,
+        selectedBackend: backends[0],
         globusId: '',
         sidebarOpen: true
     };
