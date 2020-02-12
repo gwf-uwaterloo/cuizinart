@@ -344,7 +344,7 @@ def update__info(jsonObj):
             dom=Domain(extent =ext)
             success_message+="1 domain\n"
         else:
-            if(dom.ext!=ext):
+            if(dom.extent!=ext):
                 dom.extent=ext
                 success_message+="1 domain\n"
 
