@@ -33,7 +33,6 @@ class MapComp extends Component {
     componentDidUpdate(prevProps, prevState, snapshot) {
         if(prevProps.selectDateSet!=this.props.selectDateSet&&this.props.selectDateSet){
             let bounds=  this.props.selectDateSet.bbox;
-            bounds=bounds.some(x=>x[1]>180)?bounds.map(x=>[x[0],x[1]-360]):bounds
             this.leafletMap.leafletElement.flyToBounds(bounds);
         }
     }
@@ -265,7 +264,7 @@ class MapComp extends Component {
 
                         {
                             d && d.bbox ?
-                                <Polygon positions={d.bbox.some(x=>x[1]>180)?d.bbox.map(x=>[x[0],x[1]-360]):d.bbox} color={d.color}>
+                                <Polygon positions={d.bbox} color={d.color}>
                                     <Tooltip sticky>{d.label}</Tooltip>
                                 </Polygon>
                                 : ""
