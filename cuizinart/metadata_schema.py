@@ -117,7 +117,6 @@ class Request(db.Model):
     file_location = db.Column(db.String)
     n_files = db.Column(db.Integer)
     file_size_mb = db.Column(db.Integer)
-    acl_id = db.Column(db.String)
     backend = db.Column(db.String)
 
     def __repr__(self):
