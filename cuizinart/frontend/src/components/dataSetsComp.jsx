@@ -151,7 +151,9 @@ export default class SideBar extends Component {
                                 <h5 className={"mb-0"}><span className="label label-default">Forecast Windows: </span>
                                 </h5>
                                 < FormGroup row={true}>
-                                    {d.horizons.map(va =>
+                                    {d.horizons
+                                    .sort((a, b) => a.description- b.description)
+                                    .map(va =>
                                         <FormControlLabel key={`div-${shortid.generate()}`} control={
                                             <Checkbox checked={va.selected} className={"pr-1"}
                                                       onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
@@ -165,7 +167,9 @@ export default class SideBar extends Component {
                                 <h5 className={"mb-0"}><span className="label label-default">Forecast Issues: </span>
                                 </h5>
                                 <FormGroup row={true}>
-                                    {d.issues.map(va =>
+                                    {d.issues
+                                    .sort((a, b) => new Date('1970/01/01 ' + a.description) - new Date('1970/01/01 ' + b.description))
+                                    .map(va =>
                                         <FormControlLabel key={`div-${shortid.generate()}`} control={
                                             <Checkbox checked={va.selected} className={"pr-1"}
                                                       onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>

@@ -1,8 +1,13 @@
 FROM python:3.6
 
-RUN useradd -ms /bin/bash gwf
+# because Docker shares permissions of mounted files, we need our user in the container to
+# have the same uid as the user outside. Only this way, we can read/write our files from
+# inside *and* outside the container without needing global rw-permissions on the files.
+ARG userid
+RUN useradd -u $userid -ms /bin/bash gwf
 
-RUN curl -sL https://deb.nodesource.com/setup_11.x | bash -
+
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 RUN apt-get install -y nodejs
 RUN apt-get install -y vim curl
 RUN apt-get update && apt-get -y install libgdal-dev

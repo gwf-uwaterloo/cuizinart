@@ -19,7 +19,7 @@ L.Icon.Default.mergeOptions({
 const stamenTonerTiles = 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png'; // Attribution: Wikimedia Maps | Map data OpenStreetMap contributors
 const stamenTonerAttr = '<a href="https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use"> Wikimedia Maps </a> | Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const zoomLevel = 4;
-let mapCenter = [43.4643, -80.5204];
+let mapCenter = [43.4643, -80.5204  ];
 
 class MapComp extends Component {
     constructor(props) {
@@ -30,6 +30,12 @@ class MapComp extends Component {
     state = {
         currentZoomLevel: zoomLevel
     };
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if(prevProps.selectDateSet!=this.props.selectDateSet&&this.props.selectDateSet){
+            let bounds=  this.props.selectDateSet.bbox;
+            this.leafletMap.leafletElement.flyToBounds(bounds);
+        }
+    }
 
     componentDidMount() {
         const leafletMap = this.leafletMap.leafletElement;
@@ -165,6 +171,7 @@ class MapComp extends Component {
 
     callbackUpdate() {
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
+
         if (this.props.selectDateSet) {
             this.props.drawCallback(geojsonData.features);
         } else {

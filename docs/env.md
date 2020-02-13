@@ -7,6 +7,7 @@
 |PASSWORD_SALT|`<salt>`|Random string used by password encryption (Don't reuse secret key)|
 |LOG_DIRECTORY|`<path>`|Directory to put log files|
 |LOG_LEVEL|`DEBUG`|optional. If `DEBUG`, will log on debug level, else on info|
+|USER_ID|`<uid>`|uid of the user on the host system that runs cuizinart. Because Docker shares permissions of mounted files, we need our user in the container to have the same uid as the user outside. Only this way, we can read/write our files from inside _and_ outside the container without needing global rw-permissions on the files.|
 ||||
 |PYSPARK_URL|`pyspark:5001`|URL where Cuizinart can send jobs to the pyspark slicer. If not using Docker, use `localhost:5001`|
 |SSH_USER_NAME|`<graham_user>`|User on tuna that is used to `scp` jobs to Graham|

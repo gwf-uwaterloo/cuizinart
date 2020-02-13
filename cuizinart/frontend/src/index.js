@@ -67,7 +67,7 @@ class CuizinartApp extends Component {
         isLoading: false,
         selectDateSet: null,
         products: [],
-        selectedBackend: null,
+        selectedBackend: backends[0],
         globusId: '',
         sidebarOpen: true
     };
@@ -105,6 +105,7 @@ class CuizinartApp extends Component {
             let coord = p.domain.extent.coordinates[0].map(function (arr) {
                 return [arr[1], arr[0]];
             });
+            coord=coord.some(x=>x[1]>180)?coord.map(x=>[x[0],x[1]-360]):coord
             //console.log(coord);
             let product = {
                 id: p.product_id,
