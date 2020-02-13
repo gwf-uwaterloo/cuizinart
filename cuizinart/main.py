@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime, timedelta,time
+from datetime import datetime, timedelta, time, timezone
 from email.message import EmailMessage
 
 import flask_login
@@ -149,35 +149,31 @@ def report_job_result():
         logger.error(err)
         return jsonify({'message': err}), 500
 
-    request_user_email = job_result['user_email']
-    request_status = job_result['request_status']
-    request_files = job_result['file_location']
-    num_files = job_result['n_files']
-    file_size = job_result['file_size_MB']
-    processing_time = job_result['processing_time_s']
-
-    request_db_entry.request_status = request_status
-    request_db_entry.file_location = request_files
-    request_db_entry.n_files = num_files
-    request_db_entry.processing_time_s = processing_time
-    request_db_entry.file_size_mb = file_size
-    request_db_entry.request_valid = job_result['valid']
-    request_db_entry.email_sent_time = job_result['email_sent']
-    request_db_entry.processed_time = job_result['processed_time']
-    request_db_entry.processed_stat = job_result['processed_stat']
-    request_db_entry.acl_id = job_result['acl_id']
+    request_db_entry.request_status = job_result.get('request_status', request_db_entry.request_status)
+    request_db_entry.request_valid = job_result.get('valid', request_db_entry.request_valid)
+    request_db_entry.processed_stat = job_result.get('processed_stat', request_db_entry.processed_stat)
+    request_db_entry.file_location = job_result.get('file_location', request_db_entry.file_location)
+    request_db_entry.n_files = job_result.get('n_files', request_db_entry.n_files)
+    request_db_entry.file_size_mb = job_result.get('file_size_MB', request_db_entry.file_size_mb)
+    request_db_entry.processing_time_s = job_result.get('processing_time_s', request_db_entry.processing_time_s)
+    if 'email_sent' in job_result:
+        request_db_entry.email_sent_time = datetime.fromtimestamp(job_result['email_sent'], timezone.utc)
+    if 'processed_time' in job_result:
+        request_db_entry.processed_time = datetime.fromtimestamp(job_result['processed_time'], timezone.utc)
     db.session.add(request_db_entry)
     db.session.commit()
 
     # only send result-email to the user if the backend wants us to.
     # (the backend might send emails itself, in which case we wouldn't want to send something again)
     if 'send_email' in job_result and job_result['send_email']:
-        subject = 'CaSPAr request {} completed with status {}'.format(request_id, request_status)
+        request_user_email = job_result['user_email']
+        subject = 'CaSPAr request {} completed with status {}'.format(request_id, request_db_entry.request_status)
         message = 'Your CaSPAr request with id {} was processed with status {}.\n\n'.format(request_id,
-                                                                                            request_status) \
-                  + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
-                                                                           processing_time) \
-                  + 'You can now locate your files under the following path: {}'.format(request_files)
+                                                                                            request_db_entry.request_status) \
+                  + 'The job generated {} file{} in {} seconds. \n'.format(request_db_entry.num_files,
+                                                                           's' if request_db_entry.num_files != 1 else '',
+                                                                           request_db_entry.processing_time) \
+                  + 'You can now locate your files under the following path: {}'.format(request_db_entry.request_files)
 
         try:
             send_notification_email(request_user_email, subject, message)
