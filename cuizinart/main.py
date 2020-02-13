@@ -306,9 +306,10 @@ def update__info(jsonObj):
         db.session.add(product)
     else:
         if(t<product.start_date):
-            success_message=""
+            success_message="1 date\n"
             product.start_date =t
         if(t>product.end_date):
+            success_message="1 date\n"
             product.end_date=t
     
     var_list=[]    
@@ -319,14 +320,15 @@ def update__info(jsonObj):
             new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
             var_list.append(new_variable)
         else:
-            query.is_live=variable["islive"]
-            query.name=variable["long_name"]
-            query.ec_varname=variable['vname_eccc']
-            query.level=variable['level_human']
-            query.grid_mapping=variable['grid_mapping']
-            query.type=variable['type']
-            query.unit=variable['units']
-            update_count+=1
+            if(query.is_live!=variable["islive"]) or (query.name!=variable["long_name"]) or (query.ec_varname!=variable['vname_eccc']) or (query.level!=variable["level_human"]) or query.grid_mapping!=variable["grid_mapping"] or query.type!=variable["type"] or query.unit!=variable["units"]:
+                query.is_live=variable["islive"]
+                query.name=variable["long_name"]
+                query.ec_varname=variable['vname_eccc']
+                query.level=variable['level_human']
+                query.grid_mapping=variable['grid_mapping']
+                query.type=variable['type']
+                query.unit=variable['units']
+                update_count+=1
     if update_count+len(var_list)>0:
         success_message+=str(update_count+len(var_list))+"variable(s)\n"
     if "grid" in data:
@@ -382,7 +384,7 @@ def update__info(jsonObj):
             product.issues=issue_list
         db.session.add_all(issue_list)
     db.session.commit()
-    return success_message+"successfully added"
+    return "Completed task with:\n"+success_message+"successfully added\n"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
