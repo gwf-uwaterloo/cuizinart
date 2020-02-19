@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import time
 import traceback
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, timezone
 from email.message import EmailMessage
 
 import flask_login
@@ -24,7 +24,7 @@ logger = logging.getLogger('cuizinart')
 CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-pyspark_permission = Permission(RoleNeed('pyspark'))
+report_result_permission = Permission(RoleNeed('pyspark'), RoleNeed('cASPAr'))  # this means "pyspark OR cASPAr"
 caspar_permission = Permission(RoleNeed('cASPAr'))
 
 def parse_json(obj):
@@ -91,6 +91,7 @@ def fetch_result():
     This is the main REST endpoint. It receives the processing request as a JSON string.
     Depending on the specified backend, it passes the request on to be processed by Slurm or PySpark.
     """
+    now = datetime.utcnow()
     json_request = request.get_json()
     logger.info(json_request)
 
@@ -98,7 +99,7 @@ def fetch_result():
 
     backend, product, geojson, start_time, end_time, variables, horizons, issues = parse_json(json_request)
 
-    request_id = '{}_{}'.format(user.email, int(time.time()))
+    request_id = '{}_{}'.format(user.email, int(now.timestamp()))
     if Request.query.filter_by(request_name=request_id).first() is not None:
         request_id = request_id + '-1'
 
@@ -107,7 +108,7 @@ def fetch_result():
         return jsonify({'message': 'Unknown product {}'.format(product)}), 400
 
     request_db_entry = Request(request_name=request_id, user=user, request_status='Received', request_json=json_request,
-                               product_id=product_entry.product_id)
+                               product_id=product_entry.product_id, received_time=now)
 
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
@@ -135,44 +136,50 @@ def fetch_result():
 
 @app.route('/reportJobResult', methods=['POST'])
 @auth_token_required
-@pyspark_permission.require()
+@report_result_permission.require()
 def report_job_result():
     """
     REST endpoint to report success or failure of a job.
     """
     job_result = request.get_json()
     request_id = job_result['request_id']
-
-    request_user_email = job_result['user_email']
-    request_status = job_result['request_status']
-    request_files = job_result['file_location']
-    num_files = job_result['n_files']
-    file_size = job_result['file_size_MB']
-    processing_time = job_result['processing_time_s']
-
     request_db_entry = Request.query.filter_by(request_name=request_id).first()
     if request_db_entry is None:
-        print('Request not found in database')
-    else:
-        request_db_entry.request_status = request_status
-        request_db_entry.file_location = request_files
-        request_db_entry.n_files = num_files
-        request_db_entry.processing_time_s = processing_time
-        request_db_entry.file_size_mb = file_size
-        db.session.add(request_db_entry)
-        db.session.commit()
+        err = 'Request {} not found in database'.format(request_id)
+        logger.error(err)
+        return jsonify({'message': err}), 500
 
-    subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
-    message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
-              + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
-                                                                       processing_time) \
-              + 'You can now locate your files under the following path: {}'.format(request_files)
+    request_db_entry.request_status = job_result.get('request_status', request_db_entry.request_status)
+    request_db_entry.request_valid = job_result.get('valid', request_db_entry.request_valid)
+    request_db_entry.processed_stat = job_result.get('processed_stat', request_db_entry.processed_stat)
+    request_db_entry.file_location = job_result.get('file_location', request_db_entry.file_location)
+    request_db_entry.n_files = job_result.get('n_files', request_db_entry.n_files)
+    request_db_entry.file_size_mb = job_result.get('file_size_MB', request_db_entry.file_size_mb)
+    request_db_entry.processing_time_s = job_result.get('processing_time_s', request_db_entry.processing_time_s)
+    if 'email_sent' in job_result:
+        request_db_entry.email_sent_time = datetime.fromtimestamp(job_result['email_sent'], timezone.utc)
+    if 'processed_time' in job_result:
+        request_db_entry.processed_time = datetime.fromtimestamp(job_result['processed_time'], timezone.utc)
+    db.session.add(request_db_entry)
+    db.session.commit()
 
-    try:
-        send_notification_email(request_user_email, subject, message)
-    except:
-        logger.info(traceback.format_exc())
-        return jsonify({'message': 'Error when sending notification email'}), 500
+    # only send result-email to the user if the backend wants us to.
+    # (the backend might send emails itself, in which case we wouldn't want to send something again)
+    if 'send_email' in job_result and job_result['send_email']:
+        request_user_email = job_result['user_email']
+        subject = 'CaSPAr request {} completed with status {}'.format(request_id, request_db_entry.request_status)
+        message = 'Your CaSPAr request with id {} was processed with status {}.\n\n'.format(request_id,
+                                                                                            request_db_entry.request_status) \
+                  + 'The job generated {} file{} in {} seconds. \n'.format(request_db_entry.num_files,
+                                                                           's' if request_db_entry.num_files != 1 else '',
+                                                                           request_db_entry.processing_time) \
+                  + 'You can now locate your files under the following path: {}'.format(request_db_entry.request_files)
+
+        try:
+            send_notification_email(request_user_email, subject, message)
+        except:
+            logger.error(traceback.format_exc())
+            return jsonify({'message': 'Error when sending notification email'}), 500
 
     return '{message: "Success"}'
 

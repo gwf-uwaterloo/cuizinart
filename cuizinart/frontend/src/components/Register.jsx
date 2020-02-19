@@ -51,7 +51,7 @@ export default class Register extends Component {
             && this.state.organization.length > 0 && this.state.usage_proposal.length > 0
             && this.state.areas_of_interest.length > 0
             && this.state.caspar_terms_accepted && this.state.eccc_terms_accepted
-            && this.state.globus_id.length > 0
+            && this.validateEmail(this.state.globus_id)  // a GlobusID has the same format as an email address
         );
     }
 
