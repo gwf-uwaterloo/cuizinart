@@ -61,6 +61,10 @@ export default class About extends Component {
                             <a href="mailto:caspar.data@uwaterloo.ca">caspar.data@uwaterloo.ca</a><br/>
                             <a className="ml-auto" href="http://www.caspar-data.ca" target="_blank"
                                rel="noopener noreferrer">http://www.caspar-data.ca</a>
+                            <h5>Citation</h5>
+                            <p>
+                            Mai et al. (2019).<br/> The Canadian Surface Prediction Archive (CaSPAr): A Platform to Enhance Environmental Modeling in Canada and Globally.Bulletin of the American Meteorological Society, https://doi.org/10.1175/BAMS-D-19-0143.1.
+                            </p>
                         </CardContent>
                     </Card>
                 </Modal.Body>
