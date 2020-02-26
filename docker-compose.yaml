@@ -30,7 +30,7 @@ services:
      networks:
        - backend
      ports:
-       - '5000:5000'
+       - '7084:5000'
      volumes:
        - ${NC_INPUT_PATH}:${NC_INPUT_PATH}
        - ${LOG_DIRECTORY}:${LOG_DIRECTORY}
