@@ -16,8 +16,8 @@ L.Icon.Default.mergeOptions({
 });
 
 //L.Marker.prototype.options.icon = DefaultIcon;
-const stamenTonerTiles = 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png'; // Attribution: Wikimedia Maps | Map data OpenStreetMap contributors
-const stamenTonerAttr = '<a href="https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use"> Wikimedia Maps </a> | Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const mapTileServer = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const mapTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const zoomLevel = 4;
 let mapCenter = [43.4643, -80.5204];
 
@@ -251,8 +251,8 @@ class MapComp extends Component {
                          zoom={zoomLevel}
                     >
                         <TileLayer
-                            attribution={stamenTonerAttr}
-                            url={stamenTonerTiles}
+                            attribution={mapTileAttribution}
+                            url={mapTileServer}
                         />
 
                         {
