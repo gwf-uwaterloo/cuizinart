@@ -16,6 +16,7 @@ from flask_principal import RoleNeed, Permission
 from flask_security import auth_token_required
 from shapely.geometry import shape
 import json as js
+import dbBuild
 from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Request,Variable, db
 from settings import app, BACKEND_SLURM, BACKEND_PYSPARK, PYSPARK_URL, SSH_USER_NAME, SSH_TARGET_PATH, \
     EMAIL_ADDRESS, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_PASSWORD, EMAIL_SMTP_USERNAME
