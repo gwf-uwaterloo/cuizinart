@@ -6,8 +6,7 @@ from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Reques
 m={}
 @app.cli.command()
 def db_build():
-    print("aa")
-    with open ("Tbl_prod_backup.csv") as csvfile:
+    with open ("DB_Backup/Tbl_prod_backup.csv") as csvfile:
         reader=csv.reader(csvfile)
         for row in reader:
             prod=Product(product_id=row['prodkey'],key=row['prod'],name=row['product_name'],start_date=row['startdate'],end_date=row['enddate'])
