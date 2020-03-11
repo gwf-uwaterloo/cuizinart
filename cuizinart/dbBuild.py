@@ -10,7 +10,7 @@ def db_build():
     with open ("DB_Backup/Tbl_prod_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
-            prod=Product(product_id= int(row['prodkey']),key=row['prod'],name=row['product_name'],start_date=datetime.strptime(row['startdate'],'%Y-%m-%d %H:%M:$S'),end_date=datetime.strptime(row['enddate'],'%Y-%m-%d %H:%M:%S'))
+            prod=Product(product_id= int(row['prodkey']),key=row['prod'],name=row['product_name'],start_date=datetime.strptime(row['startdate'],'%Y-%m-%d %H:%M:%S'),end_date=datetime.strptime(row['enddate'],'%Y-%m-%d %H:%M:%S'))
             prod.horizons=[]
             prod.issues=[]
             prod.variables=[]
