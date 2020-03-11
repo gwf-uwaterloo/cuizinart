@@ -38,7 +38,7 @@ def db_build():
     with open("DB_Backup/Tbl_vbl_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
-            var=Variable(variable_id=int(row["vblkey"]),key=row["vbl"],name=["vbl_name"],unit=row["units"],ec_varname=row["ec_vname"],level=["level"],is_live=row['islive'],type=row['type'])
+            var=Variable(variable_id=int(row["vblkey"]),key=row["vbl"],name=["vbl_name"],unit=row["units"],ec_varname=row["ec_vname"],level=["level"],is_live=(row['islive']=='t'),type=row['type'])
             m[row['product_id']].variables.append(var)
             db.session.add(var)
     # with open("DB_Backup/Tbl_request_backup") as csvfile:
