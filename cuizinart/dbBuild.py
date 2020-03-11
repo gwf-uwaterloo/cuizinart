@@ -27,7 +27,7 @@ def db_build():
         reader=csv.DictReader(csvfile)
         for row in reader:
             issue=Issue(issue_id=row['issuekey'],issue=row["avail_issues"])
-            m[row['product_id']].issue.append(issue)
+            m[row['product_id']].issues.append(issue)
             db.session.add(issue)
     with open("DB_Backup/Tbl_grid_user.csv") as csvfile:
         reader=csv.DictReader(csvfile)
