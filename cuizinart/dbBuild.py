@@ -34,7 +34,7 @@ def db_build():
         for row in reader:
             user= User(id=row["userkey"],email=row['email'],first_name=row['firstname'],last_name=row['lastname'],organization=row['employer'],globus_id=row['globus_id'])
             db.session.add(user)
-    with open("DB_Backup/Tbl_vbl_backup") as csvfile:
+    with open("DB_Backup/Tbl_vbl_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
             var=Variable(variable_id=row["vblkey"],key=row["vbl"],name=["vbl_name"],unit=row["units"],ec_varname=row["ec_vname"],level=["level"],is_live=row['islive'],type=row['type'])
