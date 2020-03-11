@@ -27,7 +27,7 @@ def db_build():
     with open("DB_Backup/Tbl_issues_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
-            issue=Issue(issue_id=int(row['issuekey']),time(hour = issue=int(row["avail_issues"])))
+            issue=Issue(issue_id=int(row['issuekey']),issue=time(hour = int(row["avail_issues"])))
             m[row['product_id']].issues.append(issue)
             db.session.add(issue)
     with open("DB_Backup/Tbl_user_backup.csv") as csvfile:
