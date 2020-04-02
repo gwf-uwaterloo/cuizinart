@@ -4,6 +4,7 @@ from metadata_schema import ProductSchema, Product, Domain,Horizon,Issue, Reques
 from datetime import datetime, timedelta, time, timezone
 import json
 import sys
+import re
 
 csv.field_size_limit(sys.maxsize)
 
@@ -11,6 +12,7 @@ m={}
 usermap={}
 pmap={}
 emails=set()
+user_email={}
 @app.cli.command()
 def db_build():
     with open ("DB_Backup/Tbl_prod_backup.csv") as csvfile:
@@ -47,8 +49,8 @@ def db_build():
                 user.requests=[]
                 emails.add(row['email'])
                 db.session.add(user)
-                usermap[row['uid']]=user
-            
+                usermap[row['email']]=user
+            user_email[row['uid']]=row['email']   
     with open("DB_Backup/Tbl_vbl_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
@@ -58,26 +60,28 @@ def db_build():
     with open("DB_Backup/Tbl_request_backup.csv") as csvfile:
         reader=csv.DictReader(csvfile)
         for row in reader:
-            req=Request(request_id=row['requestkey'],request_name=row["request_id"],request_valid=(row['valid']=='t'),file_location=row['file_location'],request_status=row['request_status'])
-            if(row['processing_time_s']!=""):
-                req.processing_time_s=int(row["processing_time_s"])
-            if(row['file_size_mb']!=""):
-                req.file_size_mb=int(row['file_size_mb'])
-            if(row["processed_stat"]!=""):
-                req.processed_stat=int(row["processed_stat"])
-            if(row['sent'] != ""):
-                if(len(row['sent'])<20):
-                    req.received_time=datetime.strptime(row['sent'],'%Y-%m-%d %H:%M:%S')
-                else:
-                    req.received_time=datetime.strptime(row['sent'],'%Y-%m-%d %H:%M:%S.%f')
-            if(row["processed"]!=""):
-                req.processed_time=datetime.strptime(row["processed"],'%Y-%m-%d %H:%M:%S.%f')
-            if(row['email_sent']!=""):
-                req.email_sent_time=datetime.strptime(row['email_sent'],'%Y-%m-%d %H:%M:%S.%f')
-            if(row['req_str']!=""):
-                req.request_json=json.loads(row['req_str'])
-            if(row['uid'] in usermap and row['prod'] in pmap):
-                usermap[row['uid']].requests.append(req)
-                pmap[row['prod']].requests.append(req)
-                db.session.add(req)
+            reqid=int(re.findall(r'\d+', row['request_id'])[0])
+            if(reqid>137):
+                req=Request(request_id=row['requestkey'],request_name=row["request_id"],request_valid=(row['valid']=='t'),file_location=row['file_location'],request_status=row['request_status'])
+                if(row['processing_time_s']!=""):
+                    req.processing_time_s=int(row["processing_time_s"])
+                if(row['file_size_mb']!=""):
+                    req.file_size_mb=int(row['file_size_mb'])
+                if(row["processed_stat"]!=""):
+                    req.processed_stat=int(row["processed_stat"])
+                if(row['sent'] != ""):
+                    if(len(row['sent'])<20):
+                        req.received_time=datetime.strptime(row['sent'],'%Y-%m-%d %H:%M:%S')
+                    else:
+                        req.received_time=datetime.strptime(row['sent'],'%Y-%m-%d %H:%M:%S.%f')
+                if(row["processed"]!=""):
+                    req.processed_time=datetime.strptime(row["processed"],'%Y-%m-%d %H:%M:%S.%f')
+                if(row['email_sent']!=""):
+                    req.email_sent_time=datetime.strptime(row['email_sent'],'%Y-%m-%d %H:%M:%S.%f')
+                if(row['req_str']!=""):
+                    req.request_json=json.loads(row['req_str'])
+                if(user_email[row['uid']] in usermap and row['prod'] in pmap):
+                    usermap[user_email[row['uid']]].requests.append(req)
+                    pmap[row['prod']].requests.append(req)
+                    db.session.add(req)
     db.session.commit()
