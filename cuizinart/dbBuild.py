@@ -29,7 +29,7 @@ def db_build():
             prod.issues = []
             prod.variables = []
             prod.requests = []
-            prod.domain = Domain(extent=json.loads('{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-83.3203125,43.068887774169625],[-73.47656249999999,43.068887774169625],[-73.47656249999999,48.922499263758255],[-83.3203125,48.922499263758255],[-83.3203125,43.068887774169625]]]}}]}'))
+            prod.domain = Domain(extent=json.loads('{"type":"Polygon","coordinates":[[[-83.3203125,43.068887774169625],[-73.47656249999999,43.068887774169625],[-73.47656249999999,48.922499263758255],[-83.3203125,48.922499263758255],[-83.3203125,43.068887774169625]]]}'))
             m[row['product_id']] = prod
             pmap[row['prod']] = prod
             db.session.add(prod)
@@ -67,10 +67,10 @@ def db_build():
         for row in reader:
             var = Variable(variable_id=int(row['vblkey']),
                            key=row['vbl'],
-                           name=['vbl_name'],
+                           name=row['vbl_name'],
                            unit=row['units'],
                            ec_varname=row['ec_vname'],
-                           level=['level'],
+                           level=row['level'],
                            is_live=(row['islive'] == 't'),
                            type=row['type'])
             m[row['product_id']].variables.append(var)
@@ -102,8 +102,8 @@ def db_build():
                     req.email_sent_time = datetime.strptime(row['email_sent'], '%Y-%m-%d %H:%M:%S.%f')
                 if(row['req_str'] != ''):
                     req.request_json = json.loads(row['req_str'])
-                if(user_email[row['uid']] in usermap and row['prod'] in pmap):
-                    usermap[user_email[row['uid']]].requests.append(req)
-                    pmap[row['prod']].requests.append(req)
-                    db.session.add(req)
+                    if(user_email[row['uid']] in usermap and row['prod'] in pmap):
+                        usermap[user_email[row['uid']]].requests.append(req)
+                        pmap[row['prod']].requests.append(req)
+                        db.session.add(req)
     db.session.commit()
