@@ -301,95 +301,108 @@ def update():
     except: 
         return str(traceback.format_exc()), 500
 
+
 def update__info(jsonObj):
-    key=next(iter(jsonObj))
+    key = next(iter(jsonObj))
     data = request.get_json()[key]
-    product_key=data['product_info']['product']
+    product_key = data['product_info']['product']
     product = Product.query.filter_by(key=data['product_info']['product']).first()
-    time_string= data['date']
-    t=datetime.strptime(time_string,'%Y-%m-%d')
-    success_message=""
+    time_string = data['date']
+    t = datetime.strptime(time_string, '%Y-%m-%d')
+    success_message = ""
     if not product:
-        product=Product(key=product_key,name=product_key,temporal_resolution=None,start_date=t,end_date=t)
+        product = Product(key=product_key,
+                          name=product_key,
+                          temporal_resolution=None,
+                          start_date=t,
+                          end_date=t)
         db.session.add(product)
     else:
-        if(t<product.start_date):
-            success_message="1 date\n"
-            product.start_date =t
-        if(t>product.end_date):
-            success_message="1 date\n"
-            product.end_date=t
+        if(t < product.start_date):
+            success_message = "1 date\n"
+            product.start_date = t
+        if(t > product.end_date):
+            success_message = "1 date\n"
+            product.end_date = t
     
-    var_list=[]    
-    update_count=0
+    var_list = []    
+    update_count = 0
     for variable in data['variables']:
-        query= Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
+        query = Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
         if not query:
-            new_variable=Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
+            new_variable = Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
             var_list.append(new_variable)
         else:
-            if(query.is_live!=variable["islive"]) or (query.name!=variable["long_name"]) or (query.ec_varname!=variable['vname_eccc']) or (query.level!=variable["level_human"]) or query.grid_mapping!=variable["grid_mapping"] or query.type!=variable["type"] or query.unit!=variable["units"]:
-                query.is_live=variable["islive"]
-                query.name=variable["long_name"]
-                query.ec_varname=variable['vname_eccc']
-                query.level=variable['level_human']
-                query.grid_mapping=variable['grid_mapping']
-                query.type=variable['type']
-                query.unit=variable['units']
-                update_count+=1
-    if update_count+len(var_list)>0:
-        success_message+=str(update_count+len(var_list))+"variable(s)\n"
+            if(query.is_live != variable["islive"])
+            or (query.name != variable["long_name"])
+            or (query.ec_varname != variable['vname_eccc'])
+            or (query.level != variable["level_human"])
+            or query.grid_mapping != variable["grid_mapping"]
+            or query.type != variable["type"]
+            or query.unit != variable["units"]:
+                query.is_live = variable["islive"]
+                query.name = variable["long_name"]
+                query.ec_varname = variable['vname_eccc']
+                query.level = variable['level_human']
+                query.grid_mapping = variable['grid_mapping']
+                query.type = variable['type']
+                query.unit = variable['units']
+                update_count += 1
+    if update_count+len(var_list) > 0:
+        success_message += str(update_count+len(var_list))+"variable(s)\n"
     if "grid" in data:
-        product.grid=data["grid"]
+        product.grid = data["grid"]
     if "dimensions" in data:
-        product.dimension=data["dimensions"]
+        product.dimension = data["dimensions"]
     if "projections" in data:
-        product.projection=data["projections"]
+        product.projection = data["projections"]
 
-    dom=Domain.query.filter_by(product_id=product.product_id).first()
+    dom = Domain.query.filter_by(product_id=product.product_id).first()
     if 'domain' in data:
-        domain=data['domain'][0]
-        ext=domain['geometry']
+        domain = data['domain'][0]
+        ext = domain['geometry']
         if not dom:
-            dom=Domain(extent =ext)
-            success_message+="1 domain\n"
+            dom = Domain(extent=ext)
+            success_message += "1 domain\n"
         else:
-            if(dom.extent!=ext):
-                dom.extent=ext
-                success_message+="1 domain\n"
+            if(dom.extent != ext):
+                dom.extent = ext
+                success_message += "1 domain\n"
 
-    product.variables=product.variables+var_list
-    product.domain=dom
+    product.variables = product.variables+var_list
+    product.domain = dom
     db.session.add(dom)
-    hor_list=[]
+    hor_list = []
     if 'horizon' in data:
         for horizons in data['horizon']:
-            if not Horizon.query.filter_by(horizon=horizons,product_id=product.product_id).first():
-                hor=Horizon(horizon=horizons)
+            if not Horizon.query.filter_by(horizon=horizons,
+                                           product_id=product.product_id).first():
+                hor = Horizon(horizon=horizons)
                 hor_list.append(hor)
-    if len(hor_list)>0:
-        success_message+=str(len(hor_list))+"horizon(s)\n"
+    if len(hor_list) > 0:
+        success_message += str(len(hor_list))+"horizon(s)\n"
 
-    issue_list=[]
+    issue_list = []
     if 'issues' in data:
         for issues in data['issues']:
-            if not Issue.query.filter_by(issue=time(hour = issues),product_id=product.product_id).first():
-                 iss=Issue(issue =time(hour = issues))
-                 issue_list.append(iss)
-    if len(issue_list)>0:
-        success_message+=str(len(issue_list))+"issue(s)\n"
+            if not Issue.query.filter_by(issue=time(hour=issues),
+                                         product_id=product.product_id).first():
+                iss = Issue(issue=time(hour=issues))
+                issue_list.append(iss)
+    if len(issue_list) > 0:
+        success_message += str(len(issue_list))+"issue(s)\n"
     db.session.add_all(var_list)
     if 'horizon' in data:
         if product.horizons:
-            product.horizons=product.horizons+hor_list
+            product.horizons = product.horizons+hor_list
         else:
-            product.horizons=hor_list 
+            product.horizons = hor_list
         db.session.add_all(hor_list)
     if 'issues' in data:
         if product.issues:
-            product.issues=product.issues+issue_list
+            product.issues = product.issues+issue_list
         else:
-            product.issues=issue_list
+            product.issues = issue_list
         db.session.add_all(issue_list)
     db.session.commit()
     return "Completed task with:\n"+success_message+"successfully added\n"
