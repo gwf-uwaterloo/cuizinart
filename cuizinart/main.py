@@ -333,13 +333,13 @@ def update__info(jsonObj):
             new_variable = Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
             var_list.append(new_variable)
         else:
-            if(query.is_live != variable["islive"])
-            or (query.name != variable["long_name"])
-            or (query.ec_varname != variable['vname_eccc'])
-            or (query.level != variable["level_human"])
-            or query.grid_mapping != variable["grid_mapping"]
-            or query.type != variable["type"]
-            or query.unit != variable["units"]:
+            if((query.is_live != variable["islive"]) or
+               (query.name != variable["long_name"]) or
+               (query.ec_varname != variable['vname_eccc']) or
+               (query.level != variable["level_human"]) or
+               query.grid_mapping != variable["grid_mapping"] or
+               query.type != variable["type"] or
+               query.unit != variable["units"]):
                 query.is_live = variable["islive"]
                 query.name = variable["long_name"]
                 query.ec_varname = variable['vname_eccc']
