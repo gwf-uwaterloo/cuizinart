@@ -52,11 +52,19 @@ def db_build():
         reader = csv.DictReader(csvfile)
         for row in reader:
             if(not (row['email'] in emails)):
+                curr_time = datetime.now()
                 user = User(id=int(row['userkey']), email=row['email'],
                             first_name=row['firstname'],
                             last_name=row['lastname'],
                             organization=row['employer'],
-                            globus_id=row['globus_id'])
+                            globus_id=row['globus_id'],
+                            usage_proposal=row['proposal'],
+                            areas_of_interest=row['subjects'],
+                            active=True,
+                            confirmed_at=curr_time,
+                            agreed_disclaimer_at=curr_time,
+                            caspar_terms_accepted=True,
+                            eccc_terms_accepted=True)
                 user.requests = []
                 emails.add(row['email'])
                 db.session.add(user)
