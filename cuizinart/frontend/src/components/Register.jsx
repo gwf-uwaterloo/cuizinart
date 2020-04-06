@@ -220,6 +220,7 @@ export default class Register extends Component {
                                     required
                                     value={this.state.usage_proposal}
                                     onChange={this.handleChange}
+                                    inputProps={{maxLength: 1000}}
                                 />
                             </div>
                             <Select className={"m-2"}

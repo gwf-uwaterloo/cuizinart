@@ -149,7 +149,7 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255))
     organization = db.Column(db.String(255))
     areas_of_interest = db.Column(db.String(255))
-    usage_proposal = db.Column(db.String(255))
+    usage_proposal = db.Column(db.String(1000))
     globus_id = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
