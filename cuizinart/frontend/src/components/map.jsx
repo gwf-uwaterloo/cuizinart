@@ -277,7 +277,7 @@ class MapComp extends Component {
                                         showArea: false
                                     },
                                     circle: false,
-                                    marker: true,
+                                    marker: false,
                                     polyline: false,
                                     circlemarker: false
                                 }}
