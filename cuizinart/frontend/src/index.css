@@ -8,7 +8,7 @@ html {
 .Resizer {
   
   background: gray;
-  height: 100%;
+  height: calc(100vh - 64px);
   width: 4px;
   z-index: 1;
   cursor: col-resize;
@@ -22,4 +22,10 @@ html {
 .About .modal-dialog,
 .Disclaimer .modal-dialog {
   max-width: 80%;
+}
+
+.Pane.vertical.Pane1 {
+    height: calc(100vh - 64px);
+    position: relative;
+    overflow-y: scroll;
 }

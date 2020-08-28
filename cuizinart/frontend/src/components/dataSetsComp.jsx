@@ -31,6 +31,16 @@ export default class SideBar extends Component {
         this.props.updateDateSet({selectDateSet: curr});
     }
 
+    handleSelectAll(property, event) {
+        let curr = _.assign({}, this.props.selectDateSet);
+
+        for (var i=0; i < curr[property].length; i++) {
+            curr[property][i]["selected"] = event.target.checked;
+        }
+
+        this.props.updateDateSet({selectDateSet: curr});
+    }
+
     updateStartDate(date) {
         let utcDate = moment.utc(date.valueOf() + date.utcOffset() * 60000);  // Ignore local timezone
         this.props.updateUserInputs({
@@ -147,15 +157,20 @@ export default class SideBar extends Component {
                                 menuIsOpen={this.state.menuIsOpen}
                         />
                         {(d.horizons.length > 0) ?
-                            <div>
-                                <h5 className={"mb-0"}><span className="label label-default">Forecast Windows: </span>
+                            <div className={"row m-0"}>
+                                <h5 className={"p-0 mb-1 col-12"}><span className="label label-default mr-auto">Forecast Horizons: </span>
+                                    <FormControlLabel key={`div-${shortid.generate()}`} className={"m-0"} control={
+                                            <Checkbox checked={d.horizons.every((v) => v["selected"])} className={"p-0"}
+                                                      onChange={(e) => this.handleSelectAll('horizons', e)}/>
+                                        } label={"Select all"}/>
                                 </h5>
-                                < FormGroup row={true}>
+
+                                <FormGroup row={true} className={"pl-3"}>
                                     {d.horizons
                                     .sort((a, b) => a.description- b.description)
                                     .map(va =>
-                                        <FormControlLabel key={`div-${shortid.generate()}`} control={
-                                            <Checkbox checked={va.selected} className={"pr-1"}
+                                        <FormControlLabel key={`div-${shortid.generate()}`} style={{width:"65px"}} control={
+                                            <Checkbox checked={va.selected} className={"p-0"}
                                                       onChange={(e) => this.handleCheckbox('horizons', va.key, e)}/>
                                         } label={va["description"]}/>
                                     )}
@@ -163,15 +178,20 @@ export default class SideBar extends Component {
                             </div> : <div></div>
                         }
                         {(d.issues.length > 0) ?
-                            <div>
-                                <h5 className={"mb-0"}><span className="label label-default">Forecast Issues: </span>
+                            <div className={"row m-0"}>
+                                <h5 className={"p-0 mb-1 col-12"}><span className="label label-default mr-auto">Forecast Issues: </span>
+                                    <FormControlLabel key={`div-${shortid.generate()}`} className={"m-0"} control={
+                                            <Checkbox checked={d.issues.every((v) => v["selected"])} className={"p-0"}
+                                                      onChange={(e) => this.handleSelectAll('issues', e)}/>
+                                        } label={"Select all"}/>
                                 </h5>
-                                <FormGroup row={true}>
+
+                                <FormGroup row={true} className={"pl-3"}>
                                     {d.issues
                                     .sort((a, b) => new Date('1970/01/01 ' + a.description) - new Date('1970/01/01 ' + b.description))
                                     .map(va =>
-                                        <FormControlLabel key={`div-${shortid.generate()}`} control={
-                                            <Checkbox checked={va.selected} className={"pr-1"}
+                                        <FormControlLabel key={`div-${shortid.generate()}`} style={{width:"65px"}} control={
+                                            <Checkbox checked={va.selected} className={"p-0"}
                                                       onChange={(e) => this.handleCheckbox('issues', va.key, e)}/>
                                         } label={va["description"]}/>
                                     )}
