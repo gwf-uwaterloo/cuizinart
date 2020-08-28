@@ -116,7 +116,7 @@ class CuizinartApp extends Component {
             let product = {
                 id: p.product_id,
                 value: p.key,
-                label: p.name,
+                label: p.key + ' - ' + p.name,
                 vars: _.map(p.variables, function (i) {
                     return { key: i.key, description: i.name, selected: false }
                 }),
