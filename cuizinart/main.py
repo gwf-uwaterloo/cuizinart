@@ -34,8 +34,8 @@ def parse_json(obj):
     end_time = obj['end_time']
     request_variables = obj['variables']
     geojson = obj['bounding_geom']
-    horizons = obj['window']
-    issues = obj['release']
+    horizons = obj['fcst_window']
+    issues = obj['issues']
 
     return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
@@ -143,8 +143,8 @@ def report_job_result():
     job_result = request.get_json()
     request_id = job_result['request_id']
 
-    request_user_email = job_result['user_email']
     request_status = job_result['request_status']
+    request_status_reason = job_result['status_reason']
     request_files = job_result['file_location']
     num_files = job_result['n_files']
     file_size = job_result['file_size_MB']
@@ -152,9 +152,11 @@ def report_job_result():
 
     request_db_entry = Request.query.filter_by(request_name=request_id).first()
     if request_db_entry is None:
-        print('Request not found in database')
+        logger.error('Request {} not found in database'.format(request_id))
+        return jsonify({'message': 'Request not found in database'}), 500
     else:
         request_db_entry.request_status = request_status
+        request_db_entry.status_reason = status_reason
         request_db_entry.file_location = request_files
         request_db_entry.n_files = num_files
         request_db_entry.processing_time_s = processing_time
@@ -162,8 +164,15 @@ def report_job_result():
         db.session.add(request_db_entry)
         db.session.commit()
 
+    user = User.query.filter_by(user_id=request_db_entry.user_id).first()
+    if user is None or user.email is None:
+        logger.error('No user/email found for request {}.'.format(request_id))
+        return jsonify({'message': 'Could not send email, no user or email address found for request'}), 500
+    request_user_email = user.email
+
     subject = 'Cuizinart request {} completed with status {}'.format(request_id, request_status)
-    message = 'Your Cuizinart request with id {} was processed with status {}.\n\n'.format(request_id, request_status) \
+    message = 'Your Cuizinart request with id {} was processed with status {} {}.\n\n'.format(request_id, request_status,
+        '' if status_reason is None else '({})'.format(status_reason)) \
               + 'The job generated {} file{} in {} seconds. \n'.format(num_files, 's' if num_files != 1 else '',
                                                                        processing_time) \
               + 'You can now locate your files under the following path: {}'.format(request_files)
@@ -171,7 +180,7 @@ def report_job_result():
     try:
         send_notification_email(request_user_email, subject, message)
     except:
-        logger.info(traceback.format_exc())
+        logger.error(traceback.format_exc())
         return jsonify({'message': 'Error when sending notification email'}), 500
 
     return '{message: "Success"}'
