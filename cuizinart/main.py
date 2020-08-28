@@ -114,6 +114,8 @@ def fetch_result():
     if backend == BACKEND_SLURM:
         json_request['request_id'] = request_id
         json_request['user_email'] = user.email
+        json_request['user_firstname'] = user.first_name
+        json_request['user_lastname'] = user.last_name
 
         json_request['globus_id'] = user.globus_id
         if user.globus_id is None or user.globus_id == '':
@@ -245,7 +247,7 @@ def process_slurm(json_request):
     """
     request_string = json.dumps(json_request)
 
-    file_name = '/tmp/__cuizinart-graham-request-{}-{}.dat'.format(json_request['globus_id'],
+    file_name = '/tmp/caspar-graham-request-{}-{}.dat'.format(json_request['globus_id'],
                                                               json_request['request_id'])
     with open(file_name, 'w') as f:
         f.write(request_string)
