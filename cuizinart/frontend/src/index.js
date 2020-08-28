@@ -106,6 +106,10 @@ class CuizinartApp extends Component {
                 return [arr[1], arr[0]];
             });
             coord=coord.some(x=>x[1]>180)?coord.map(x=>[x[0],x[1]-360]):coord
+
+            // don't allow end dates that are closer than 7 days to today
+            let end_date = moment.min(moment.utc(p.end_date), moment.utc().startOf('day').subtract(7, 'days')).format();
+
             //console.log(coord);
             let product = {
                 id: p.product_id,
@@ -123,7 +127,7 @@ class CuizinartApp extends Component {
                 color: '#17a2b8',
                 bbox: coord,
                 valid_start_time: p.start_date,
-                valid_end_time: p.end_date,
+                valid_end_time: end_date,
                 doi: p.doi
             };
             products.push(product);
