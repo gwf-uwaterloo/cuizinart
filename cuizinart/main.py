@@ -35,8 +35,8 @@ def parse_json(obj):
     end_time = obj['end_time']
     request_variables = obj['variables']
     geojson = obj['bounding_geom']
-    horizons = obj['window']
-    issues = obj['release']
+    horizons = obj['fcst_window']
+    issues = obj['issues']
 
     return backend, product, geojson, start_time, end_time, request_variables, horizons, issues
 
@@ -151,6 +151,7 @@ def report_job_result():
         return jsonify({'message': err}), 500
 
     request_db_entry.request_status = job_result.get('request_status', request_db_entry.request_status)
+    request_db_entry.status_reason = job_result.get('status_reason', request_db_entry.status_reason)
     request_db_entry.request_valid = job_result.get('valid', request_db_entry.request_valid)
     request_db_entry.processed_stat = job_result.get('processed_stat', request_db_entry.processed_stat)
     request_db_entry.file_location = job_result.get('file_location', request_db_entry.file_location)
@@ -167,10 +168,17 @@ def report_job_result():
     # only send result-email to the user if the backend wants us to.
     # (the backend might send emails itself, in which case we wouldn't want to send something again)
     if 'send_email' in job_result and job_result['send_email']:
+        user = User.query.filter_by(user_id=request_db_entry.user_id).first()
+        if user is None or user.email is None:
+            logger.error('No user/email found for request {}.'.format(request_id))
+            return jsonify({'message': 'Could not send email, no user or email address found for request'}), 500
+        request_user_email = user.email
+
         request_user_email = job_result['user_email']
         subject = 'CaSPAr request {} completed with status {}'.format(request_id, request_db_entry.request_status)
-        message = 'Your CaSPAr request with id {} was processed with status {}.\n\n'.format(request_id,
-                                                                                            request_db_entry.request_status) \
+        message = 'Your CaSPAr request with id {} was processed with status {} {}\n\n'.format(request_id,
+            request_db_entry.request_status,
+            '' if status_reason is None else '({})'.format(status_reason)) \
                   + 'The job generated {} file{} in {} seconds. \n'.format(request_db_entry.num_files,
                                                                            's' if request_db_entry.num_files != 1 else '',
                                                                            request_db_entry.processing_time) \
@@ -373,14 +381,14 @@ def update__info(jsonObj):
     product.domain = dom
     db.session.add(dom)
     hor_list = []
-    if 'horizon' in data:
-        for horizons in data['horizon']:
+    if 'fcst_window' in data:
+        for horizons in data['fcst_window']:
             if not Horizon.query.filter_by(horizon=horizons,
                                            product_id=product.product_id).first():
                 hor = Horizon(horizon=horizons)
                 hor_list.append(hor)
     if len(hor_list) > 0:
-        success_message += str(len(hor_list))+"horizon(s)\n"
+        success_message += str(len(hor_list)) + " forecasat window(s)\n"
 
     issue_list = []
     if 'issues' in data:
@@ -390,9 +398,9 @@ def update__info(jsonObj):
                 iss = Issue(issue=time(hour=issues))
                 issue_list.append(iss)
     if len(issue_list) > 0:
-        success_message += str(len(issue_list))+"issue(s)\n"
+        success_message += str(len(issue_list)) + " issue(s)\n"
     db.session.add_all(var_list)
-    if 'horizon' in data:
+    if 'fcst_window' in data:
         if product.horizons:
             product.horizons = product.horizons+hor_list
         else:
@@ -405,7 +413,7 @@ def update__info(jsonObj):
             product.issues = issue_list
         db.session.add_all(issue_list)
     db.session.commit()
-    return "Completed task with:\n"+success_message+"successfully added\n"
+    return "Completed task with:\n" + success_message + " successfully added\n"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -114,6 +114,7 @@ class Request(db.Model):
     received_time = db.Column(db.DateTime)
     request_valid = db.Column(db.Boolean)
     request_status = db.Column(db.String)
+    status_reason = db.Column(db.String)
     processed_stat = db.Column(db.Integer)
     processed_time = db.Column(db.DateTime)
     processing_time_s = db.Column(db.Integer)

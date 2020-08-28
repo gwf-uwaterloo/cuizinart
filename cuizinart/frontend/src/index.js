@@ -227,8 +227,8 @@ class CuizinartApp extends Component {
 
         let passLoad = {
             variables: Array.from(variables),
-            window: Array.from(horizons),
-            release: Array.from(issues),
+            fcst_window: Array.from(horizons),
+            issues: Array.from(issues),
             product: self.state.selectDateSet.value,
             backend: self.state.selectedBackend.value,
             bounding_geom: self.features,
