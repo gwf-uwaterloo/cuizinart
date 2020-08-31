@@ -317,7 +317,7 @@ def update__info(jsonObj):
     data = request.get_json()[key]
     product_key = data['product_info']['product']
     product = Product.query.filter_by(key=data['product_info']['product']).first()
-    if isinstance(time_strings, list):
+    if isinstance(data['date'], list):
         dates = [datetime.strptime(date, '%Y-%m-%d') for date in data['date']]
         t_min, t_max = min(dates), max(dates)
     else:
