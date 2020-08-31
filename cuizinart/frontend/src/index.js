@@ -199,6 +199,10 @@ class CuizinartApp extends Component {
                 horizons.add(v.description);
             }
         });
+        if ((self.state.selectDateSet.horizons.length > 0) && (horizons.size === 0)) {
+            self.props.enqueueSnackbar('No forecast window selected.', { variant: 'error' });
+            return;
+        }
 
         // add selected issues(forecast issues)
         self.state.selectDateSet.issues.forEach(v => {
@@ -206,6 +210,10 @@ class CuizinartApp extends Component {
                 issues.add(v.description);
             }
         });
+        if ((self.state.selectDateSet.issues.length > 0) && (issues.size === 0)) {
+            self.props.enqueueSnackbar('No forecast issue selected.', { variant: 'error' });
+            return;
+        }
 
         if (!self.userInputs || !self.userInputs.start_time || !self.userInputs.end_time) {
             self.props.enqueueSnackbar('No date range selected.', { variant: 'error' });

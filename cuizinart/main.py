@@ -317,23 +317,27 @@ def update__info(jsonObj):
     data = request.get_json()[key]
     product_key = data['product_info']['product']
     product = Product.query.filter_by(key=data['product_info']['product']).first()
-    time_string = data['date']
-    t = datetime.strptime(time_string, '%Y-%m-%d')
+    if isinstance(time_strings, list):
+        dates = [datetime.strptime(date, '%Y-%m-%d') for date in data['date']]
+        t_min, t_max = min(dates), max(dates)
+    else:
+        t_min = datetime.strptime(data['date'], '%Y-%m-%d')
+        t_max = t_min
     success_message = ""
     if not product:
         product = Product(key=product_key,
                           name=product_key,
                           temporal_resolution=None,
-                          start_date=t,
-                          end_date=t)
+                          start_date=t_min,
+                          end_date=t_max)
         db.session.add(product)
     else:
-        if(t < product.start_date):
+        if(t_min < product.start_date):
             success_message = "1 date\n"
-            product.start_date = t
-        if(t > product.end_date):
+            product.start_date = t_min
+        if(t_max > product.end_date):
             success_message = "1 date\n"
-            product.end_date = t
+            product.end_date = t_max
     
     var_list = []    
     update_count = 0
