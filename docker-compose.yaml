@@ -2,6 +2,23 @@ version: '3'
 
 services:
 
+  nginx:
+    image: nginx:latest
+    container_name: production_nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      - backend
+    depends_on:
+      - cuizinart
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
   postgres:
     image: postgres:11
     restart: unless-stopped
@@ -38,6 +55,14 @@ services:
        - ${DB_MIGRATIONS_FOLDER}:/tmp/gwf/migrations
      security_opt:
        - no-new-privileges:true
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
   pyspark:
     build: ./cuizinart_pyspark
