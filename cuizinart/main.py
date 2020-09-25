@@ -307,10 +307,12 @@ def eccc_terms():
 @auth_token_required
 @caspar_permission.require()
 def update():
+    request_json = request.get_json()
+    request_json.pop('auth_token', None)  # make sure we don't log the token
     try:
-        return update__info(request.get_json())
+        return update__info(request_json)
     except: 
-        logger.exception('updateInfo failed with an exception on the json input {}'.format(request.get_json()))
+        logger.exception('updateInfo failed with an exception on the json input {}'.format(request_json))
         return str(traceback.format_exc()), 500
 
 
