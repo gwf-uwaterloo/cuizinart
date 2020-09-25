@@ -94,6 +94,7 @@ def fetch_result():
     """
     now = datetime.utcnow()
     json_request = request.get_json()
+    json_request.pop('auth_token', None)  # make sure we don't log the token
     logger.info(json_request)
 
     user = flask_login.current_user
