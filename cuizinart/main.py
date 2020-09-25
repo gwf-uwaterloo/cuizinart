@@ -61,7 +61,8 @@ def get_boundaries():
     output = product_schema.dump(products).data
     for i in range(len(output)):
         output[i]['variables'] = list(filter(lambda var: var['is_live'], output[i]['variables']))
-    return jsonify(output)
+
+    return jsonify([p for p in output if len(p['variables']) > 0])
 
 
 @app.route('/filterProducts', methods=['POST'])
@@ -310,13 +311,13 @@ def update():
     request_json = request.get_json()
     request_json.pop('auth_token', None)  # make sure we don't log the token
     try:
-        return update__info(request_json)
+        return _update_info(request_json)
     except: 
         logger.exception('updateInfo failed with an exception on the json input {}'.format(request_json))
         return str(traceback.format_exc()), 500
 
 
-def update__info(jsonObj):
+def _update_info(jsonObj):
     key = next(iter(jsonObj))
     data = request.get_json()[key]
     product_key = data['product_info']['product']
@@ -327,53 +328,62 @@ def update__info(jsonObj):
     else:
         t_min = datetime.strptime(data['date'], '%Y-%m-%d')
         t_max = t_min
-    success_message = ""
+    success_message = ''
     if not product:
         product = Product(key=product_key,
-                          name=product_key,
+                          name=data['product_info'].get('product_name', product_key),
                           temporal_resolution=None,
                           start_date=t_min,
                           end_date=t_max)
         db.session.add(product)
     else:
-        if(t_min < product.start_date):
-            success_message = "1 date\n"
+        if t_min < product.start_date:
+            success_message = '1 date\n'
             product.start_date = t_min
-        if(t_max > product.end_date):
-            success_message = "1 date\n"
+        if t_max > product.end_date:
+            success_message = '1 date\n'
             product.end_date = t_max
+        if data['product_info'].get('product_name', product.name) != product.name:
+            success_message += '1 product name\n'
+            product.name = data['product_info']['product_name']
     
     var_list = []    
     update_count = 0
     for variable in data['variables']:
         query = Variable.query.filter_by(key=variable['short_name'],product_id=product.product_id).first()
         if not query:
-            new_variable = Variable(key=variable['short_name'],name=variable['long_name'],grid_mapping=variable["grid_mapping"],is_live =variable['islive'],ec_varname=variable["vname_eccc"],type=variable["type"],level=variable["level_human"],unit=variable["units"])
+            new_variable = Variable(key=variable['short_name'], name=variable['long_name'],
+                                    grid_mapping=variable['grid_mapping'],
+                                    is_live=variable['islive'],
+                                    ec_varname=variable['vname_eccc'],
+                                    type=variable['type'],
+                                    level=variable['level_human'],
+                                    unit=variable['units'])
             var_list.append(new_variable)
         else:
-            if((query.is_live != variable["islive"]) or
-               (query.name != variable["long_name"]) or
-               (query.ec_varname != variable['vname_eccc']) or
-               (query.level != variable["level_human"]) or
-               query.grid_mapping != variable["grid_mapping"] or
-               query.type != variable["type"] or
-               query.unit != variable["units"]):
-                query.is_live = variable["islive"]
-                query.name = variable["long_name"]
+            if query.is_live != variable['islive'] or
+               query.name != variable['long_name'] or
+               query.ec_varname != variable['vname_eccc'] or
+               query.level != variable['level_human'] or
+               query.grid_mapping != variable['grid_mapping'] or
+               query.type != variable['type'] or
+               query.unit != variable['units']:
+                query.is_live = variable['islive']
+                query.name = variable['long_name']
                 query.ec_varname = variable['vname_eccc']
                 query.level = variable['level_human']
                 query.grid_mapping = variable['grid_mapping']
                 query.type = variable['type']
                 query.unit = variable['units']
                 update_count += 1
-    if update_count+len(var_list) > 0:
-        success_message += str(update_count+len(var_list))+"variable(s)\n"
-    if "grid" in data:
-        product.grid = data["grid"]
-    if "dimensions" in data:
-        product.dimension = data["dimensions"]
-    if "projections" in data:
-        product.projection = data["projections"]
+    if update_count + len(var_list) > 0:
+        success_message += str(update_count+len(var_list)) + 'variable(s)\n'
+    if 'grid' in data:
+        product.grid = data['grid']
+    if 'dimensions' in data:
+        product.dimension = data['dimensions']
+    if 'projections' in data:
+        product.projection = data['projections']
 
     dom = Domain.query.filter_by(product_id=product.product_id).first()
     if 'domain' in data:
@@ -381,13 +391,13 @@ def update__info(jsonObj):
         ext = domain['geometry']
         if not dom:
             dom = Domain(extent=ext)
-            success_message += "1 domain\n"
+            success_message += '1 domain\n'
         else:
-            if(dom.extent != ext):
+            if dom.extent != ext:
                 dom.extent = ext
-                success_message += "1 domain\n"
+                success_message += '1 domain\n'
 
-    product.variables = product.variables+var_list
+    product.variables = product.variables + var_list
     product.domain = dom
     db.session.add(dom)
     hor_list = []
@@ -398,7 +408,7 @@ def update__info(jsonObj):
                 hor = Horizon(horizon=horizons)
                 hor_list.append(hor)
     if len(hor_list) > 0:
-        success_message += str(len(hor_list)) + " forecasat window(s)\n"
+        success_message += str(len(hor_list)) + ' forecasat window(s)\n'
 
     issue_list = []
     if 'issues' in data:
@@ -408,7 +418,7 @@ def update__info(jsonObj):
                 iss = Issue(issue=time(hour=issues))
                 issue_list.append(iss)
     if len(issue_list) > 0:
-        success_message += str(len(issue_list)) + " issue(s)\n"
+        success_message += str(len(issue_list)) + ' issue(s)\n'
     db.session.add_all(var_list)
     if 'fcst_window' in data:
         if product.horizons:
@@ -423,10 +433,7 @@ def update__info(jsonObj):
             product.issues = issue_list
         db.session.add_all(issue_list)
     db.session.commit()
-    return "Completed task with:\n" + success_message + " successfully added\n"
+    return 'Completed task with:\n' + success_message + ' successfully added\n'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
-
-
