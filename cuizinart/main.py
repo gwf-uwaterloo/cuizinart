@@ -90,6 +90,7 @@ def fetch_result():
     Depending on the specified backend, it passes the request on to be processed by Slurm or PySpark.
     """
     json_request = request.get_json()
+    json_request.pop('auth_token', None)  # make sure we don't log the token
     logger.info(json_request)
 
     user = flask_login.current_user
