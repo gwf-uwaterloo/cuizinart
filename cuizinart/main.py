@@ -309,7 +309,7 @@ def update():
     try:
         return update__info(request.get_json())
     except: 
-        logger.exception('updateInfo failed with an exception')
+        logger.exception('updateInfo failed with an exception on the json input {}'.format(request.get_json()))
         return str(traceback.format_exc()), 500
 
 
