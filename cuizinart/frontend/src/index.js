@@ -110,7 +110,6 @@ class CuizinartApp extends Component {
             // don't allow end dates that are closer than 7 days to today
             let end_date = moment.min(moment.utc(p.end_date), moment.utc().startOf('day').subtract(7, 'days')).format();
 
-            //console.log(coord);
             let product = {
                 id: p.product_id,
                 value: p.key,
@@ -132,7 +131,18 @@ class CuizinartApp extends Component {
             };
             products.push(product);
         });
-        return products;
+        return products.sort(function(a, b) {
+            var nameA = a.label.toLowerCase();
+            var nameB = b.label.toLowerCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
+
     };
 
     updateDateSet = (dataSet) => {
