@@ -306,17 +306,19 @@ class CuizinartApp extends Component {
 
     errorHandling = (error) => {
         let message = '';
-        if (error.response.status === 401) {
-            localStorage.removeItem('auth_token');
-            message = 'Authentication expired. Please log in again.'
-        } else if (error.response.status === 413) {
-            message = 'Payload too large. Use a smaller shapefile or GeoJSON.'
-        } else if (error.response && error.response.data) {
-            if (error.response.data.message) {
-                message = error.response.data.message;
-            } else if (error.response.data.response && error.response.data.response.errors) {
-                let err = error.response.data.response.errors;
-                message = err[Object.keys(err)[0]][0];
+        if (error.response) {
+            if (error.response.status === 401) {
+                localStorage.removeItem('auth_token');
+                message = 'Authentication expired. Please log in again.'
+            } else if (error.response.status === 413) {
+                message = 'Payload too large. Use a smaller shapefile or GeoJSON.'
+            } else if (error.response && error.response.data) {
+                if (error.response.data.message) {
+                    message = error.response.data.message;
+                } else if (error.response.data.response && error.response.data.response.errors) {
+                    let err = error.response.data.response.errors;
+                    message = err[Object.keys(err)[0]][0];
+                }
             }
         }
         if (message === "") {
