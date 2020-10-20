@@ -5,8 +5,8 @@ import json
 import time
 
 email = 'caspar.data@uwaterloo.ca'
-login_url = "http://206.167.181.226/login"
-post_url = "http://206.167.181.226/fetchResult"
+login_url = "https://caspar-data.ca/login"
+post_url = "https://caspar-data.ca/fetchResult"
 
 
 def post_request(url, token, jsondata):
