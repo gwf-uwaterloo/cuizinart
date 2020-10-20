@@ -30,5 +30,5 @@ RUN mv /home/gwf/cuizinart/docker-entrypoint.sh /home/gwf/
 RUN chmod +x /home/gwf/docker-entrypoint.sh
 
 HEALTHCHECK --interval=5m --timeout=10s --retries=3 \
- CMD curl -f http://localhost:5000/ || exit 1
+ CMD curl -f https://caspar-data.ca/ || exit 1
 CMD ["/bin/bash", "/home/gwf/docker-entrypoint.sh"]
