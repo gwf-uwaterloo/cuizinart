@@ -50,7 +50,7 @@ app.config['SECURITY_SEND_REGISTER_EMAIL'] = True
 app.config['SECURITY_RECOVERABLE'] = True
 app.config['SECURITY_CHANGEABLE'] = True
 app.config['SECURITY_EMAIL_SENDER'] = EMAIL_ADDRESS
-app.config['SECURITY_EMAIL_SUBJECT_REGISTER'] = 'Welcome to Cuizinart'
+app.config['SECURITY_EMAIL_SUBJECT_REGISTER'] = 'Welcome to CaSPAr'
 app.config['WTF_CSRF_ENABLED'] = False
 
 app.config['MAIL_SERVER'] = EMAIL_SMTP_SERVER

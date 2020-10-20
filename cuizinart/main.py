@@ -310,6 +310,7 @@ def eccc_terms():
 def update():
     request_json = request.get_json()
     request_json.pop('auth_token', None)  # make sure we don't log the token
+    logger.info('Starting updateInfo with json input {}'.format(request_json))
     try:
         return _update_info(request_json)
     except: 
@@ -377,7 +378,7 @@ def _update_info(jsonObj):
                 query.unit = variable['units']
                 update_count += 1
     if update_count + len(var_list) > 0:
-        success_message += str(update_count+len(var_list)) + 'variable(s)\n'
+        success_message += str(update_count + len(var_list)) + 'variable(s)\n'
     if 'grid' in data:
         product.grid = data['grid']
     if 'dimensions' in data:
@@ -408,7 +409,7 @@ def _update_info(jsonObj):
                 hor = Horizon(horizon=horizons)
                 hor_list.append(hor)
     if len(hor_list) > 0:
-        success_message += str(len(hor_list)) + ' forecasat window(s)\n'
+        success_message += str(len(hor_list)) + ' forecast window(s)\n'
 
     issue_list = []
     if 'issues' in data:
@@ -422,13 +423,13 @@ def _update_info(jsonObj):
     db.session.add_all(var_list)
     if 'fcst_window' in data:
         if product.horizons:
-            product.horizons = product.horizons+hor_list
+            product.horizons = product.horizons + hor_list
         else:
             product.horizons = hor_list
         db.session.add_all(hor_list)
     if 'issues' in data:
         if product.issues:
-            product.issues = product.issues+issue_list
+            product.issues = product.issues + issue_list
         else:
             product.issues = issue_list
         db.session.add_all(issue_list)
