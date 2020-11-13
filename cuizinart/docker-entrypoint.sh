@@ -1,3 +1,5 @@
+umask 0002  # make sure request files are created with group-write permission so they will be editable by the group on the backend server.
+
 if [ ! -f /tmp/gwf/migrations/env.py  ]
 then
     echo "db init"
