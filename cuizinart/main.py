@@ -254,10 +254,12 @@ def process_slurm(json_request):
     with open(file_name, 'w') as f:
         f.write(request_string)
 
-    os.system(
+    status = os.system(
         'scp -i "/home/gwf/.ssh/id_rsa" {} {}@{}'.format(
             file_name, SSH_USER_NAME, SSH_TARGET_PATH))
-
+    if status != 0:
+        logger.error('scp call for request {} returned status code {}. Keeping request file.'.format(json_request['request_id'], status))
+        return jsonify({'message': 'Error while sending request {} to compute backend.'.format(json_request['request_id'])}), 400
     os.remove(file_name)
 
     return 'Request with id {} submitted successfully.'.format(json_request['request_id'])
