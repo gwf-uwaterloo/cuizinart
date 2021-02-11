@@ -119,7 +119,7 @@ export default class SideBar extends Component {
                                         variant="outlined"
                                         shouldDisableDate={(date) => this.handleInvalidDate(date)}
                                         format={"YYYY-MM-DD"}
-                                        minDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
+                                        minDate={moment.utc(d.valid_start_time).subtract(1, "days").format("YYYY-MM-DD")}  // workaround to make minDate work in all timezones
                                         maxDate={moment.utc(d.valid_end_time).format("YYYY-MM-DD") + " 23:59:59"}
                                         mask={[/\d/, /\d/, /\d/, /\d/, "-", /\d/, /\d/, "-", /\d/, /\d/]}
                                     />
@@ -132,7 +132,7 @@ export default class SideBar extends Component {
                                         onChange={(date) => this.updateEndDate(date)}
                                         variant="outlined"
                                         shouldDisableDate={(date) => this.handleInvalidDate(date)}
-                                        minDate={moment.utc(d.valid_start_time).format("YYYY-MM-DD")}
+                                        minDate={moment.utc(d.valid_start_time).subtract(1, "days").format("YYYY-MM-DD")}  // workaround to make minDate work in all timezones
                                         maxDate={moment.utc(d.valid_end_time).format("YYYY-MM-DD") + " 23:59:59"}
                                         format={"YYYY-MM-DD"}
                                         mask={[/\d/, /\d/, /\d/, /\d/, "-", /\d/, /\d/, "-", /\d/, /\d/]}
