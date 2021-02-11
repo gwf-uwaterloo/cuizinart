@@ -90,6 +90,7 @@ def fetch_result():
     Depending on the specified backend, it passes the request on to be processed by Slurm or PySpark.
     """
     json_request = request.get_json()
+    json_request.pop('auth_token', None)  # make sure we don't log the token
     logger.info(json_request)
 
     user = flask_login.current_user
@@ -152,7 +153,8 @@ def report_job_result():
 
     request_db_entry = Request.query.filter_by(request_name=request_id).first()
     if request_db_entry is None:
-        print('Request not found in database')
+        logger.error('Request {} not found in database'.format(request_id))
+        return jsonify({'message': 'Request not found in database'}), 500
     else:
         request_db_entry.request_status = request_status
         request_db_entry.file_location = request_files
@@ -171,7 +173,7 @@ def report_job_result():
     try:
         send_notification_email(request_user_email, subject, message)
     except:
-        logger.info(traceback.format_exc())
+        logger.error(traceback.format_exc())
         return jsonify({'message': 'Error when sending notification email'}), 500
 
     return '{message: "Success"}'
@@ -238,10 +240,12 @@ def process_slurm(json_request):
     with open(file_name, 'w') as f:
         f.write(request_string)
 
-    os.system(
+    status = os.system(
         'scp -i "/home/gwf/.ssh/id_rsa" {} {}@{}'.format(
             file_name, SSH_USER_NAME, SSH_TARGET_PATH))
-
+    if status != 0:
+        logger.error('scp call for request {} returned status code {}. Keeping request file.'.format(json_request['request_id'], status))
+        return jsonify({'message': 'Error while sending request {} to compute backend.'.format(json_request['request_id'])}), 400
     os.remove(file_name)
 
     return 'Request with id {} submitted successfully.'.format(json_request['request_id'])

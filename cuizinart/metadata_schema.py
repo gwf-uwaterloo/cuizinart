@@ -16,7 +16,7 @@ class Product(db.Model):
     product_id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String, unique=True, nullable=False)
     name = db.Column(db.String, nullable=False)
-    temporal_resolution = db.Column(db.Interval, nullable=False)
+    temporal_resolution = db.Column(db.Interval)
     doi = db.Column(db.String)
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
