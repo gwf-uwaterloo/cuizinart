@@ -65,6 +65,8 @@ export default class About extends Component {
                                 of interest, provide geographical bounds, and after a short wait, are delivered a custom
                                 dataset that meets their exact specifications.
                             </p>
+                            <a href="https://github.com/gwf-uwaterloo/cuizinart/blob/master/docs/DM_checklist_NetCDF.pdf"
+                               target="_blank" rel="noopener noreferrer">Checklist for new NetCDF Datasets</a><br/>
                             <a href="mailto:gwf.cuizinart@uwaterloo.ca">gwf.cuizinart@uwaterloo.ca</a><br/>
                             <a className="ml-auto" href="https://gwf.usask.ca" target="_blank"
                                rel="noopener noreferrer">https://gwf.usask.ca</a>
