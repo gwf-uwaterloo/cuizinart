@@ -1,6 +1,7 @@
 .id_rsa*
 .env
 *.pdf
+!docs/*.pdf
 data/
 *.iml
 .idea
