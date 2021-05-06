@@ -14,7 +14,7 @@ click-plugins==1.0.4
 cligj==0.5.0
 Flask==1.0.2
 Flask-BabelEx==0.9.3
-Flask-Cors==3.0.7
+Flask-Cors==3.0.9
 Flask-Login==0.4.1
 Flask-Mail==0.9.1
 flask-marshmallow==0.9.0
