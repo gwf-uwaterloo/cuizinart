@@ -10,7 +10,7 @@ itsdangerous==1.1.0
 Jinja2==2.11.3
 MarkupSafe==1.1.1
 netCDF4==1.4.3.1
-numpy==1.16.2
+numpy==1.22.0
 protobuf==3.7.0
 py4j==0.10.7
 pyparsing==2.3.1

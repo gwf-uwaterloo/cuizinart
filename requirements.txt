@@ -32,7 +32,7 @@ MarkupSafe==1.1.0
 marshmallow==2.18.1
 marshmallow-sqlalchemy==0.16.0
 netCDF4==1.4.2
-numpy==1.16.0
+numpy==1.22.0
 passlib==1.7.1
 pathtools==0.1.2
 proj==0.1.0
