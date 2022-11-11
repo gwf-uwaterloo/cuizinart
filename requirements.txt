@@ -40,7 +40,7 @@ protobuf==3.6.1
 psycopg2==2.7.7
 py4j==0.10.8.1
 pyparsing==2.3.1
-pyspark==2.4.0
+pyspark==3.2.2
 python-dateutil==2.7.5
 python-dotenv==0.10.1
 python-editor==1.0.4
